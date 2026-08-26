@@ -10,27 +10,40 @@ async function renderizarModuloProductos(container) {
 
     const esAdmin = usuarioActual && (usuarioActual.rol.toUpperCase() === 'ADMIN' || usuarioActual.rol.toUpperCase() === 'ADMINISTRADOR');
     let botonesAccionHtml = esAdmin ? `
-        <button class="btn-nuevo-producto" onclick="abrirFormularioCrearProducto()">✨ + Nuevo</button>
-        <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);" onclick="abrirModalImportarCSV()">📂 Importar CSV</button>
-        <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);" onclick="exportarCatalogoCSV()">📥 Exportar Todo</button>
-        <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-nuevo-producto" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); text-decoration: none;">🌐 Catálogo Web</a>
-        <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);" onclick="abrirModalQrCatalogo()">📱 QR Catálogo</button>
-        <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);" onclick="eliminarProductosSeleccionados()">🗑️ Eliminar</button>
+        <div class="toolbar-group-actions">
+            <button class="btn-modern btn-primary-action" onclick="abrirFormularioCrearProducto()">✨ Nuevo</button>
+            <button class="btn-modern btn-success-action" onclick="abrirModalImportarCSV()">📂 Importar</button>
+            <button class="btn-modern btn-info-action" onclick="exportarCatalogoCSV()">📥 Exportar</button>
+            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
+            <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
+            <button class="btn-modern btn-danger-action" onclick="eliminarProductosSeleccionados()">🗑️ Eliminar</button>
+        </div>
+        <div class="toolbar-group-actions">
+            <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
+            <div class="toolbar-search-box">
+                <span>🔍</span>
+                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+            </div>
+        </div>
     ` : `
-        <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-nuevo-producto" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); text-decoration: none;">🌐 Catálogo Web</a>
-        <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);" onclick="abrirModalQrCatalogo()">📱 QR Catálogo</button>
+        <div class="toolbar-group-actions">
+            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
+            <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
+        </div>
+        <div class="toolbar-group-actions">
+            <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
+            <div class="toolbar-search-box">
+                <span>🔍</span>
+                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+            </div>
+        </div>
     `;
 
     container.innerHTML = `
         <div class="card">
-            <h3 style="color: #0f172a; margin-bottom: 0.5rem;">Catálogo de Productos y Joyas</h3>
+            <h3 style="color: #0f172a; margin-bottom: 0.75rem; font-size: 1.1rem;">Catálogo de Productos y Joyas</h3>
             <div class="catalog-toolbar">
                 ${botonesAccionHtml}
-                <button class="btn-discreet-refresh" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
-                <div class="search-expandable-box" id="searchExpandableBox" onclick="expandirBuscador()">
-                    <button type="button" class="search-expandable-icon" title="Buscar en catálogo">🔍</button>
-                    <input type="text" id="inputBuscadorCatalogo" class="search-expandable-input" placeholder="Buscar por SKU, Código de Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
-                </div>
             </div>
             <div id="vistaProductosInterna"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario...</p></div>
         </div>
@@ -62,8 +75,8 @@ async function renderizarModuloProductos(container) {
                     </div>
                     <div class="form-group"><label>URL de la Foto</label><input type="text" id="prodFoto" placeholder="https://..." style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     <div style="display: flex; gap: 10px; margin-top: 1rem;">
-                        <button type="submit" class="btn-nuevo-producto" style="flex: 1; background: #0f172a; justify-content: center;">💾 Guardar Producto</button>
-                        <button type="button" class="btn-action" onclick="cerrarModalProducto()" style="flex: 1; background: #ef4444; color: white; border: none; font-weight: bold;">Cancelar</button>
+                        <button type="submit" class="btn-modern btn-primary-action" style="flex: 1; justify-content: center;">💾 Guardar Producto</button>
+                        <button type="button" class="btn-modern btn-danger-action" onclick="cerrarModalProducto()" style="flex: 1; justify-content: center;">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -260,8 +273,9 @@ async function eliminarProductosSeleccionados() {
 
 function expandirBuscador() {
     const box = document.getElementById("searchExpandableBox");
-    box.classList.add("expanded");
-    document.getElementById("inputBuscadorCatalogo").focus();
+    if (box) box.classList.add("expanded");
+    const input = document.getElementById("inputBuscadorCatalogo");
+    if (input) input.focus();
 }
 
 async function forzarRecargaCatalogo() {
@@ -304,7 +318,9 @@ async function cargarListaProductos(forzarRed = false) {
 }
 
 function filtrarCatalogoEnVivo() {
-    const query = document.getElementById("inputBuscadorCatalogo").value.toLowerCase().trim();
+    const inputElem = document.getElementById("inputBuscadorCatalogo");
+    if (!inputElem) return;
+    const query = inputElem.value.toLowerCase().trim();
     if (!query) {
         listaProductosFiltradosCache = listaProductosCache;
         paginaActual = 1;
@@ -401,6 +417,7 @@ function renderizarTablaProductosPaginada() {
         html += `</tr>`;
     });
     html += `</tbody></table></div>`;
+    html += pagHtml('bottom-pagination');
     contenedor.innerHTML = html;
 }
 
