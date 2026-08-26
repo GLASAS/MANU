@@ -9,49 +9,90 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
     container.innerHTML = `
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:10px;">
-                <h3 style="color: #0f172a; margin: 0;">${titulo}</h3>
-                <button class="btn-nuevo-producto" style="background:${color};" onclick="abrirFormularioMovimiento('${tipoMovimiento}')">+ Registrar ${tipoMovimiento === 'ENTRADAS' ? 'Entrada' : 'Salida'}</button>
+                <div>
+                    <h3 style="color: #0f172a; margin: 0;">${titulo}</h3>
+                    <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0;">Gestione y registre las ${tipoMovimiento.toLowerCase()} vinculadas a SKU o Código de Barras.</p>
+                </div>
+                <button class="btn-nuevo-producto" style="background:${color};" onclick="abrirModalFormularioMovimiento('${tipoMovimiento}')">+ Registrar ${tipoMovimiento === 'ENTRADAS' ? 'Entrada' : 'Salida'}</button>
             </div>
+            
+            <!-- Buscador para filtrar Entradas / Salidas -->
+            <div class="catalog-toolbar" style="margin-bottom: 1rem;">
+                <input type="text" id="filtroMovimientoInput" placeholder="🔍 Buscar por SKU, Código de Barras, Motivo..." style="max-width: 400px; padding: 8px; border:1px solid #cbd5e1; border-radius:6px; width:100%;" oninput="filtrarTablaMovimientos()">
+            </div>
+
             <div id="tablaMovimientosContenedor">Cargando registros...</div>
         </div>`;
 
     const res = await API.llamar(tipoMovimiento === 'ENTRADAS' ? "obtenerEntradas" : "obtenerSalidas", {}, "GET");
+    window.cacheMovimientosActual = (res && res.status === "success" && res.data) ? res.data : [];
+    renderizarTablaMovimientosFiltrada(window.cacheMovimientosActual, tipoMovimiento);
+}
+
+function renderizarTablaMovimientosFiltrada(registros, tipoMovimiento) {
     const contenedor = document.getElementById("tablaMovimientosContenedor");
-
-    if (res && res.status === "success" && res.data && res.data.length > 0) {
-        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>ID</th><th>Fecha</th><th>SKU / Referencia</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th><th>Observaciones</th>`;
-        if (tipoMovimiento === 'SALIDAS') html += `<th>Acciones</th>`;
-        html += `</tr></thead><tbody>`;
-
-        res.data.forEach(m => {
-            let idMov = m.ID_Movimiento || m.ID_Salida || m.id_movimiento || m.id_salida || '-';
-            let sku = m.SKU || m.sku || '-';
-            html += `<tr><td><strong>${idMov}</strong></td><td>${m.Fecha || m.fecha || '-'}</td><td><strong style="color: #d97706;">${sku}</strong></td><td>${m.Cantidad || m.cantidad || 1}</td><td>${m.Motivo || m.motivo || '-'}</td><td>${m.Usuario || m.usuario || '-'}</td><td>${m.Observaciones || m.observaciones || '-'}</td>`;
-            if (tipoMovimiento === 'SALIDAS') {
-                html += `<td><button class="btn-action btn-delete" onclick="reversarSalidaUnica('${idMov}')" title="Reversar Salida">↩️ Anular</button></td>`;
-            }
-            html += `</tr>`;
-        });
-        html += `</tbody></table></div>`;
-        contenedor.innerHTML = html;
-    } else {
+    if (!registros || registros.length === 0) {
         contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay registros de ${tipoMovimiento.toLowerCase()} en el sistema.</p>`;
+        return;
     }
+
+    let html = `<div class="table-container"><table class="data-table"><thead><tr><th>ID</th><th>Fecha</th><th>SKU</th><th>Cantidad</th><th>Motivo / Detalle</th><th>Usuario</th><th>Observaciones</th>`;
+    if (tipoMovimiento === 'SALIDAS') html += `<th>Acciones</th>`;
+    html += `</tr></thead><tbody>`;
+
+    registros.forEach(m => {
+        let idMov = m.ID_Movimiento || m.ID_Salida || m.ID_Entrada || m.id_movimiento || '-';
+        let sku = m.SKU || m.sku || '-';
+        let cantidad = m.Cantidad || m.cantidad || 1;
+        let motivo = m.Motivo || m.motivo || '-';
+        let usuario = m.Usuario || m.usuario || '-';
+        let obs = m.Observaciones || m.observaciones || '-';
+        let fecha = m.Fecha || m.fecha || '-';
+
+        html += `<tr><td><strong>${idMov}</strong></td><td>${fecha}</td><td><strong style="color: #d97706;">${sku}</strong></td><td>${cantidad}</td><td>${motivo}</td><td>${usuario}</td><td>${obs}</td>`;
+        if (tipoMovimiento === 'SALIDAS') {
+            html += `<td><button class="btn-action btn-delete" onclick="reversarSalidaUnica('${idMov}')" title="Reversar Salida">↩️ Anular</button></td>`;
+        }
+        html += `</tr>`;
+    });
+    html += `</tbody></table></div>`;
+    contenedor.innerHTML = html;
 }
 
-function abrirFormularioMovimiento(tipo) {
-    let skuInput = prompt(`Ingrese el SKU de la joya para registrar la ${tipo}:`);
-    if (!skuInput) return;
-    let motivoInput = prompt("Ingrese el Motivo (Ej: Venta, Reparación, Ajuste, Producción):", tipo === 'ENTRADAS' ? 'Producción Taller' : 'Venta Cliente');
-    if (!motivoInput) return;
-    let obsInput = prompt("Observaciones adicionales (opcional):", "") || "";
-
-    registrarMovimientoServidor(tipo, skuInput.trim().toUpperCase(), motivoInput, obsInput);
+function filtrarTablaMovimientos() {
+    let q = document.getElementById("filtroMovimientoInput").value.toLowerCase();
+    let filtrados = window.cacheMovimientosActual.filter(m => {
+        let sku = String(m.SKU || m.sku || "").toLowerCase();
+        let motivo = String(m.Motivo || m.motivo || "").toLowerCase();
+        let obs = String(m.Observaciones || m.observaciones || "").toLowerCase();
+        return sku.includes(q) || motivo.includes(q) || obs.includes(q);
+    });
+    // Detectar tipo actual por el título
+    let esEntrada = document.getElementById("viewTitle").textContent.includes("Entradas");
+    renderizarTablaMovimientosFiltrada(filtrados, esEntrada ? 'ENTRADAS' : 'SALIDAS');
 }
 
-async function registrarMovimientoServidor(tipo, sku, motivo, obs) {
+function abrirModalFormularioMovimiento(tipo) {
+    let skuOrBar = prompt(`Ingrese el SKU o el Código de Barras de la joya para la ${tipo.toLowerCase()}:`);
+    if (!skuOrBar) return;
+    let motivo = prompt("Motivo (Ej: Venta, Reparación, Producción Taller):", tipo === 'ENTRADAS' ? 'Producción Taller' : 'Venta Cliente');
+    if (!motivo) return;
+    let cantidad = prompt("Cantidad:", "1") || "1";
+    let obs = prompt("Observaciones adicionales:", "") || "";
+
+    registrarMovimientoServidor(tipo, skuOrBar.trim().toUpperCase(), motivo, cantidad, obs);
+}
+
+async function registrarMovimientoServidor(tipo, skuOrBar, motivo, cantidad, obs) {
     let accion = tipo === 'ENTRADAS' ? 'registrarEntrada' : 'registrarSalida';
-    let payload = { action: accion, sku: sku, motivo: motivo, observaciones: obs, usuario: usuarioActual ? usuarioActual.usuario : 'ADMIN' };
+    let payload = { 
+        action: accion, 
+        sku: skuOrBar, 
+        motivo: motivo, 
+        cantidad: Number(cantidad) || 1, 
+        observaciones: obs, 
+        usuario: usuarioActual ? usuarioActual.usuario : 'ADMIN' 
+    };
     
     const res = await API.llamar(accion, payload, "POST");
     if (res && res.status === "success") {
@@ -64,14 +105,14 @@ async function registrarMovimientoServidor(tipo, sku, motivo, obs) {
 }
 
 async function reversarSalidaUnica(idSalida) {
-    if (!confirm(`¿Está seguro de anular la salida [${idSalida}]? El producto volverá a estado DISPONIBLE.`)) return;
+    if (!confirm(`¿Anular la salida [${idSalida}]? El producto volverá a estado DISPONIBLE.`)) return;
     const res = await API.llamar("reversarSalida", { action: "reversarSalida", id_salida: idSalida, usuario: usuarioActual ? usuarioActual.usuario : 'ADMIN' }, "POST");
     if (res && res.status === "success") {
         alert(res.message);
         localStorage.removeItem("cache_productos_manu");
         renderizarModuloEntradasSalidas(document.getElementById('contentBody'), 'SALIDAS');
     } else {
-        alert("Error al reversar: " + (res ? res.message : "Desconocido"));
+        alert("Error al reversar.");
     }
 }
 
@@ -94,7 +135,7 @@ async function renderizarModuloKardex(container) {
 
         const contenedor = document.getElementById("tablaKardexContenedor");
         if (movs.length === 0) {
-            contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay movimientos registrados en el Kardex.</p>`;
+            contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay movimientos en el Kardex.</p>`;
             return;
         }
 
