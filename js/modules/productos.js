@@ -76,7 +76,7 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
-                    <!-- SECCIÓN DE FOTO INTEGRADA EN EL MODAL -->
+                    <!-- SECCIÓN DE FOTO CON COMPRESIÓN COMPATIBLE -->
                     <div class="form-group">
                         <label>📸 Fotografía de la Joya (Cámara o Galería)</label>
                         <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
@@ -107,8 +107,8 @@ function procesarImagenModulo(event, previewId) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            const MAX_WIDTH = 350;
-            const MAX_HEIGHT = 350;
+            const MAX_WIDTH = 400;
+            const MAX_HEIGHT = 400;
             let width = img.width;
             let height = img.height;
 
@@ -122,7 +122,6 @@ function procesarImagenModulo(event, previewId) {
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
             
-            // Compresión al 50% para garantizar que el Base64 sea extremadamente liviano y no de error de servidor
             fotoBase64Temporal = canvas.toDataURL('image/jpeg', 0.5);
             
             const preview = document.getElementById(previewId);
