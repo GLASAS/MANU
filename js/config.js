@@ -10,10 +10,9 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.1523"
+  VERSION: "V1.1415"
 };
 
-// 🔑 LLAVE UNIFICADA DE SESIÓN (coincide con el login)
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
 let listaProductosCache = [];
 let listaProductosFiltradosCache = [];
@@ -53,7 +52,6 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle("active");
 }
 
-// 🌐 ENRUTADOR PRINCIPAL DE BLOQUES
 async function cambiarVista(vista, event) {
     if (event) event.preventDefault();
     const contenedor = document.getElementById('contentBody');
@@ -73,14 +71,13 @@ async function cambiarVista(vista, event) {
             </div>`;
     } else if (vista === 'productos') {
         if (tituloVista) tituloVista.textContent = "Catálogo de Productos";
-        if (typeof renderizarModuloProductos === 'function') {
-            await renderizarModuloProductos(contenedor);
-        } else {
-            contenedor.innerHTML = `<p style="color:#64748b; text-align:center; padding:2rem;">Cargando catálogo de productos...</p>`;
-        }
+        if (typeof renderizarModuloProductos === 'function') await renderizarModuloProductos(contenedor);
     } else if (vista === 'inventario') {
         if (tituloVista) tituloVista.textContent = "Inventario y Arqueo";
         if (typeof renderizarModuloInventario === 'function') await renderizarModuloInventario(contenedor);
+    } else if (vista === 'actualizacion_oro') {
+        if (tituloVista) tituloVista.textContent = "Actualización del Valor del Oro";
+        renderizarModuloActualizacionOro(contenedor);
     } else if (vista === 'entradas') {
         if (tituloVista) tituloVista.textContent = "Entradas de Inventario";
         if (typeof renderizarModuloEntradasSalidas === 'function') await renderizarModuloEntradasSalidas(contenedor, 'ENTRADAS');
@@ -100,6 +97,35 @@ async function cambiarVista(vista, event) {
 
     if (window.innerWidth <= 768) {
         toggleSidebar();
+    }
+}
+
+function renderizarModuloActualizacionOro(container) {
+    container.innerHTML = `
+        <div class="card" style="max-width: 550px; margin: 0 auto;">
+            <h3 style="margin-bottom: 0.5rem; color: #0f172a;">🪙 Actualización del Valor del Oro del Día</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Este valor se utilizará como base para multiplicar automáticamente por los gramos de cada pieza.</p>
+            <form id="formOroDia" onsubmit="ejecutarActualizacionOro(event)">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 6px;">Valor del Gramo de Oro Actual ($ COP) *</label>
+                    <input type="number" id="inputValorOroDiaModal" required style="font-size: 1.25rem; font-weight: bold; color: #d97706;" value="${window.valorOroDelDiaCache || 250000}">
+                </div>
+                <button type="submit" class="btn-form-save" style="width: 100%; padding: 12px; font-size: 1rem; background: #0f172a; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar y Actualizar Valor del Oro</button>
+            </form>
+        </div>`;
+}
+
+async function ejecutarActualizacionOro(event) {
+    event.preventDefault();
+    const nuevoValor = Number(document.getElementById("inputValorOroDiaModal").value);
+    if (isNaN(nuevoValor) || nuevoValor <= 0) { alert("Por favor ingrese un valor válido."); return; }
+
+    const res = await API.llamar("actualizarValorOroDia", { action: "actualizarValorOroDia", valor_oro_dia: nuevoValor }, "POST");
+    if (res && res.status === "success") {
+        alert(res.message);
+        window.valorOroDelDiaCache = nuevoValor;
+    } else {
+        alert("Error al actualizar: " + (res ? res.message : "Desconocido"));
     }
 }
 
