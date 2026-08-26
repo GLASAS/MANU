@@ -198,8 +198,13 @@ function cerrarModalProducto() {
 
 async function guardarProductoServidor(e) {
     e.preventDefault();
+    
+    // Detectamos automáticamente si estamos editando (SKU readonly) o creando (SKU editable)
+    const esEdicion = document.getElementById("prodSku").readOnly;
+    const accionServidor = esEdicion ? "editarProducto" : "crearProducto";
+
     let payload = {
-        action: "guardarProducto",
+        action: accionServidor,
         sku: document.getElementById("prodSku").value.trim().toUpperCase(),
         codigo_barra: document.getElementById("prodCodigoBarra").value.trim(),
         nombre: document.getElementById("prodNombre").value.trim(),
@@ -216,7 +221,7 @@ async function guardarProductoServidor(e) {
         estado: "DISPONIBLE"
     };
 
-    const res = await API.llamar("guardarProducto", payload, "POST");
+    const res = await API.llamar(accionServidor, payload, "POST");
     if (res && res.status === "success") {
         alert(res.message);
         cerrarModalProducto();
