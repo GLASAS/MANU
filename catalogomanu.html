@@ -120,7 +120,7 @@
         .price-old { font-size: 0.85rem; color: #94a3b8; text-decoration: line-through; margin-right: 6px; font-weight: 600; }
         .price-val-discount { font-size: 1.2rem; font-weight: bold; color: #dc2626; }
 
-        /* Insignia SOLD inferior con el mismo formato imponente y llamativo */
+        /* Insignia SOLD inferior */
         .sold-badge-pro {
             background: #ffffff;
             border: 2px solid #0f172a;
@@ -141,11 +141,10 @@
             letter-spacing: 3px;
         }
 
-        /* Botón de Certificado para productos disponibles */
+        /* Botones de acción */
         .btn-cert-link { background: #0f172a; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: background 0.2s; }
         .btn-cert-link:hover { background: #1e293b; }
 
-        /* Botón de WhatsApp "Quiero uno igual" en verde oficial */
         .btn-whatsapp-link { background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: background 0.2s; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2); }
         .btn-whatsapp-link:hover { background: #20ba5a; }
 
@@ -193,7 +192,6 @@
         let valorOroDiaGlobal = 250000;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // Sincronización automática absoluta y directa desde CONFIG global
             let empresaNombre = "MANU JOYEROS";
             let empresaNit = "900.000.000-1";
             let empresaTel = "+57 (300) 8123125";
@@ -204,165 +202,4 @@
 
             if (typeof CONFIG !== 'undefined') {
                 if (CONFIG.VERSION) versionSistema = CONFIG.VERSION;
-                if (CONFIG.NOMBRE_EMPRESA) empresaNombre = CONFIG.NOMBRE_EMPRESA;
-                if (CONFIG.NIT) empresaNit = CONFIG.NIT;
-                if (CONFIG.TELEFONO) empresaTel = CONFIG.TELEFONO;
-                if (CONFIG.DIRECCION) empresaDir = CONFIG.DIRECCION;
-                if (CONFIG.EDIFICIO_O_LOCAL) empresaEdificio = CONFIG.EDIFICIO_O_LOCAL;
-                if (CONFIG.CIUDAD) empresaCiudad = CONFIG.CIUDAD;
-            }
-
-            document.getElementById("lblFooterEmpresa").textContent = empresaNombre;
-            document.getElementById("lblFooterNit").textContent = empresaNit;
-            document.getElementById("lblFooterTel").textContent = empresaTel;
-            document.getElementById("lblFooterDir").textContent = empresaDir;
-            document.getElementById("lblFooterEdificio").textContent = empresaEdificio;
-            document.getElementById("lblFooterCiudad").textContent = empresaCiudad;
-            document.getElementById("lblCatalogVersion").textContent = `Versión ${versionSistema} • ${empresaNombre}`;
-
-            await cargarDatosCatalogo();
-        });
-
-        async function cargarDatosCatalogo() {
-            try {
-                const [resOro, resProd] = await Promise.all([
-                    API.llamar("obtenerValorOroDia", {}, "GET"),
-                    API.llamar("obtenerProductos", {}, "GET")
-                ]);
-
-                if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
-                    valorOroDiaGlobal = Number(resOro.valor_oro_dia);
-                }
-
-                if (resProd && resProd.status === "success" && resProd.data) {
-                    productosGlobales = resProd.data;
-                    renderizarProductos(productosGlobales);
-                } else {
-                    document.getElementById("catalogGrid").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444; font-weight: bold;">No se pudo cargar el inventario de joyas.</p>`;
-                }
-            } catch (error) {
-                document.getElementById("catalogGrid").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444;">Error de conexión con el servidor.</p>`;
-            }
-        }
-
-        function filtrarPorCategoria(categoria, event) {
-            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-            if (event && event.target) event.target.classList.add("active");
-
-            if (categoria === 'TODOS') {
-                renderizarProductos(productosGlobales);
-            } else {
-                const filtrados = productosGlobales.filter(p => String(p.ID_Categoria || p.categoria || "").trim().toUpperCase() === categoria);
-                renderizarProductos(filtrados);
-            }
-        }
-
-        function renderizarProductos(lista) {
-            const grid = document.getElementById("catalogGrid");
-            if (!lista || lista.length === 0) {
-                grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 40px 0;">No hay joyas disponibles en esta categoría.</p>`;
-                return;
-            }
-
-            let html = "";
-            lista.forEach(p => {
-                let sku = p.SKU || p.sku || "SN";
-                let nombre = p.Nombre || p.nombre || "Joya Exclusiva";
-                let material = p.Material_Oro || p.Material || p.material || p.ID_Proveedor || "ORO 18K";
-                let color = p.Color || p.ID_Subcategoria || "";
-                
-                let pesoCrudo = p.Peso || p.peso || 0;
-                let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
-
-                let valPiedra = Number(p.Valor_Piedra) || 0;
-                let margen = Number(p.Porcentaje_Venta) || 100;
-                let descPct = Number(p.Tiene_Descuento) || 0;
-
-                let baseVentaCalculada = valPiedra + (pesoItem * valorOroDiaGlobal);
-                let precioBase = baseVentaCalculada * (1 + (margen / 100));
-                let valorVenta = precioBase - (precioBase * (descPct / 100));
-                let precioBaseFinal = Math.round(isNaN(precioBase) ? 0 : precioBase);
-                let valorVentaFinal = Math.round(isNaN(valorVenta) ? 0 : valorVenta);
-
-                let foto = p.Foto || p.foto || "";
-                let fotoHtml = foto ? `<img src="${foto}" alt="${nombre}" loading="lazy">` : `<span style="font-size: 3.5rem;">💍</span>`;
-
-                // Validar si el producto tiene descuento
-                let tieneDescuento = descPct > 0;
-                let discountTagHtml = tieneDescuento ? `
-                    <div class="discount-badge-pro">
-                        <span class="discount-top-text">UP TO</span>
-                        <span class="discount-main-num">${descPct}%</span>
-                        <span class="discount-bottom-text">OFF</span>
-                    </div>
-                ` : '';
-
-                // Validar si el producto está vendido o no disponible
-                let estadoItem = String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase();
-                let esVendido = (estadoItem !== "DISPONIBLE" && estadoItem !== "" && estadoItem !== "-");
-
-                let skuToken = btoa(sku);
-                let certLink = `https://glasas.github.io/MANU_JOYEROS/cert.html?token=${skuToken}`;
-                
-                // Enlace de WhatsApp directo con el mensaje "Quiero uno igual"
-                let textoWp = encodeURIComponent(`Hola MANU JOYEROS, vi esta joya en el catálogo digital (marcada como SOLD) y quiero uno igual:\n\n*SKU:* ${sku}\n*Modelo:* ${nombre}\n*Material:* ${material} ${color ? '• ' + color : ''} ${pesoItem > 0 ? '• ' + pesoItem + 'g' : ''}\n*(Nota: Adjunto la foto de la joya de referencia).*`);
-                let whatsappLink = `https://wa.me/573208123125?text=${textoWp}`;
-
-                // Renderizado dinámico de la sección inferior
-                let seccionInferiorHtml = '';
-                if (esVendido) {
-                    seccionInferiorHtml = `
-                        <div>
-                            <span class="price-label-cat">Estado</span>
-                            <div class="sold-badge-pro">
-                                <span class="sold-main-text">SOLD</span>
-                            </div>
-                        </div>
-                        <a href="${whatsappLink}" target="_blank" class="btn-whatsapp-link" title="Solicitar Fabricación">💬 Quiero uno igual</a>
-                    `;
-                } else if (tieneDescuento) {
-                    seccionInferiorHtml = `
-                        <div>
-                            <span class="price-label-cat">Oferta Especial</span>
-                            <div>
-                                <span class="price-old">$${precioBaseFinal.toLocaleString()}</span>
-                                <span class="price-val-discount">$${valorVentaFinal.toLocaleString()} COP</span>
-                            </div>
-                        </div>
-                        <a href="${certLink}" target="_blank" class="btn-cert-link">📜 Certificado</a>
-                    `;
-                } else {
-                    seccionInferiorHtml = `
-                        <div>
-                            <span class="price-label-cat">Valor Comercial</span>
-                            <span class="price-val-cat">$${valorVentaFinal.toLocaleString()} COP</span>
-                        </div>
-                        <a href="${certLink}" target="_blank" class="btn-cert-link">📜 Certificado</a>
-                    `;
-                }
-
-                html += `
-                    <div class="product-card">
-                        <div class="product-img-box">
-                            <span class="sku-tag">SKU: ${sku}</span>
-                            ${discountTagHtml}
-                            ${fotoHtml}
-                        </div>
-                        <div class="product-info">
-                            <div class="product-title">${nombre}</div>
-                            <div class="product-details">
-                                Material: ${material} ${color ? '• ' + color : ''} ${pesoItem > 0 ? '• ' + pesoItem + 'g' : ''}
-                            </div>
-                            <div class="product-price-row">
-                                ${seccionInferiorHtml}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            grid.innerHTML = html;
-        }
-    </script>
-</body>
-</html>
+                if (CONFIG
