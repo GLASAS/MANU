@@ -10,7 +10,7 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.1600"
+  VERSION: "V1.1542"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -52,7 +52,6 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle("active");
 }
 
-// 🌐 ENRUTADOR PRINCIPAL DE BLOQUES
 async function cambiarVista(vista, event) {
     if (event) event.preventDefault();
     const contenedor = document.getElementById('contentBody');
