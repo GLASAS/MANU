@@ -16,7 +16,7 @@
         <button class="image-modal-close" onclick="cerrarZoomImagen()">Cerrar ✕</button>
     </div>
 
-    <!-- MODAL DE QR Y CÓDIGO DE BARRAS -->
+    <!-- MODAL DE QR Y CÓDIGO DE BARRAS (SOLO DESCARGA PNG) -->
     <div class="image-modal" id="modalQrBarra" onclick="cerrarModalQr()">
         <div style="background: white; padding: 18px; border-radius: 12px; text-align: center; max-width: 380px; width: 90%; color: #0f172a;" onclick="event.stopPropagation()">
             <div style="font-size: 0.75rem; font-weight: bold; color: #64748b; letter-spacing: 1px; margin-bottom: 2px;" id="lblModalEmpresaTitle">MANU JOYEROS</div>
@@ -35,9 +35,10 @@
 
                 <div id="modalDescLabel" style="font-size: 0.72rem; color: #475569; margin-top: 4px;">Certificado Digital y Trazabilidad</div>
                 
+                <!-- Botones exclusivos de Descarga en PNG (Sin Imprimir) -->
                 <div class="no-print" style="margin-top: 8px; display: flex; gap: 8px; justify-content: center;">
-                    <button type="button" class="btn-action" onclick="imprimirSeccion('printSectionQr')">🖨️ Imprimir</button>
-                    <button type="button" class="btn-action" onclick="descargarQrPNG()">📥 Descargar QR</button>
+                    <button type="button" class="btn-action" onclick="descargarQrPNG()" style="background: #0f172a; color: white;">📥 Descargar QR</button>
+                    <button type="button" class="btn-action" onclick="descargarBarcodePNG()" style="background: #059669; color: white;">📥 Descargar Barras</button>
                 </div>
             </div>
             <button class="image-modal-close no-print" onclick="cerrarModalQr()" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar Ventana</button>
@@ -67,7 +68,7 @@
             <a href="#" class="nav-link" onclick="cambiarVista('cambiar_password', event)">🔑 Cambiar Contraseña</a>
             <a href="#" class="nav-link text-danger" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
-        <div class="sidebar-footer-version" id="versionSidebarLabel">MANU JOYEROS V1.1542</div>
+        <div class="sidebar-footer-version" id="versionSidebarLabel">MANU JOYEROS V1.1543</div>
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
