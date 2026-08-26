@@ -89,7 +89,7 @@
         </div>
     </main>
 
-    <!-- SCRIPTS ENLAZADOS -->
+    <!-- SCRIPTS GLOBALES Y MÓDULOS -->
     <script src="./js/config.js"></script>
     <script src="./js/api.js"></script>
     <script src="./js/modules/productos.js"></script>
@@ -97,5 +97,58 @@
     <script src="./js/modules/movimientos.js"></script>
     <script src="./js/modules/proveedores.js"></script>
     <script src="./js/modules/usuarios.js"></script>
+    
+    <script>
+        // Función completa con validación de confirmación para Cambio de Contraseña
+        function renderizarModuloCambiarPassword(container) {
+            container.innerHTML = `
+                <div class="card" style="max-width: 500px; margin: 0 auto;">
+                    <h3 style="margin-bottom: 0.5rem; color: #0f172a;">🔑 Cambiar Contraseña</h3>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Actualice su contraseña de acceso al sistema.</p>
+                    
+                    <form id="formCambiarPass" onsubmit="ejecutarCambioPassword(event)">
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label>Contraseña Actual *</label>
+                            <input type="password" id="passActual" required placeholder="••••••••">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label>Nueva Contraseña *</label>
+                            <input type="password" id="passNueva" required placeholder="••••••••">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label>Confirmar Nueva Contraseña *</label>
+                            <input type="password" id="passConfirmar" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn-form-save" style="width: 100%;">💾 Actualizar Contraseña</button>
+                    </form>
+                </div>`;
+        }
+
+        async function ejecutarCambioPassword(event) {
+            event.preventDefault();
+            const passwordActual = document.getElementById("passActual").value.trim();
+            const passwordNueva = document.getElementById("passNueva").value.trim();
+            const passwordConfirmar = document.getElementById("passConfirmar").value.trim();
+
+            if (passwordNueva !== passwordConfirmar) { 
+                alert("⚠️ Las nuevas contraseñas no coinciden. Por favor verifique."); 
+                return; 
+            }
+
+            const res = await API.llamar("cambiarPassword", { 
+                action: "cambiarPassword", 
+                usuario: usuarioActual.usuario, 
+                password_actual: passwordActual, 
+                password_nueva: passwordNueva 
+            }, "POST");
+
+            if (res && res.status === "success") { 
+                alert(res.message); 
+                document.getElementById("formCambiarPass").reset(); 
+            } else { 
+                alert("Error: " + (res ? res.message : "No se pudo actualizar la contraseña.")); 
+            }
+        }
+    </script>
 </body>
 </html>
