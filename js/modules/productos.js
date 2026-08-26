@@ -49,7 +49,6 @@ async function renderizarModuloProductos(container) {
             <div id="vistaProductosInterna"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario...</p></div>
         </div>
 
-        <!-- MODAL FORMULARIO -->
         <div class="image-modal" id="modalFormularioProducto" onclick="cerrarModalProducto()">
             <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto; color: #0f172a;" onclick="event.stopPropagation()">
                 <h3 id="modalProductoTitulo" style="margin-bottom: 1rem; color: #0f172a;">✨ Registrar Nuevo Producto</h3>
@@ -286,9 +285,6 @@ async function cargarListaProductos(forzarRed = false) {
     renderizarTablaProductosPaginada();
 }
 
-/**
- * Búsqueda optimizada con debounce (elimina el desfase y la lentitud al escribir o escanear rápido)
- */
 function filtrarCatalogoEnVivoOptimizado() {
     clearTimeout(timeoutBuscador);
     timeoutBuscador = setTimeout(() => {
