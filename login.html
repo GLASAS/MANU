@@ -99,7 +99,6 @@
         <p style="margin-top: 1.5rem; font-size: 0.75rem; color: #94a3b8;">Versión V1.1715 • MANU JOYEROS</p>
     </div>
 
-    <!-- Referencias a tus módulos core -->
     <script src="./js/config.js"></script>
     <script src="./js/api.js"></script>
     
@@ -112,7 +111,6 @@
             const btnSubmit = document.getElementById('btnSubmit');
             const lblMensaje = document.getElementById('lblMensaje');
 
-            // Resetear UI
             lblMensaje.style.display = 'none';
             lblMensaje.className = '';
             
@@ -121,12 +119,11 @@
                 return;
             }
 
-            // Estado de carga
             btnSubmit.disabled = true;
             btnSubmit.textContent = 'Verificando credenciales...';
 
             try {
-                // Llamada rápida a Google Apps Script a través de tu api.js
+                // Comunicación estandarizada utilizando el api.js del sistema
                 const res = await API.llamar("login", {
                     action: "login",
                     usuario: usuarioInput.toUpperCase(),
@@ -136,11 +133,10 @@
                 if (res && res.status === "success") {
                     let usuarioData = res.data;
                     
-                    // 1. Validación estricta y rápida de fecha de vencimiento
+                    // 1. Validación rápida de la fecha de vencimiento
                     if (usuarioData.Vencimiento) {
                         let fechaVencimiento = new Date(usuarioData.Vencimiento);
                         let hoy = new Date();
-                        // Eliminamos la hora para comparar solo las fechas
                         hoy.setHours(0,0,0,0);
                         if (fechaVencimiento < hoy) {
                             mostrarMensaje('❌ Su cuenta ha vencido. Contacte al administrador.', 'msg-error');
@@ -150,30 +146,21 @@
                         }
                     }
 
-                    // 2. Control estricto de máximo 2 sesiones simultáneas
+                    // 2. Control estricto de máximo 2 sesiones simultáneas (expulsa al más antiguo)
                     const claveStorage = `sesiones_${usuarioData.usuario}`;
                     let sesionesActivas = JSON.parse(localStorage.getItem(claveStorage) || "[]");
-                    
-                    // Generamos un identificador único para esta nueva sesión
                     const tokenActual = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
                     
-                    // Añadimos la sesión actual al registro
-                    sesionesActivas.push({
-                        token: tokenActual,
-                        timestamp: Date.now()
-                    });
-
-                    // Regla de oro: Si hay más de 2 sesiones, eliminamos la más antigua (la primera de la lista)
+                    sesionesActivas.push({ token: tokenActual, timestamp: Date.now() });
                     if (sesionesActivas.length > 2) {
-                        sesionesActivas.shift(); 
+                        sesionesActivas.shift(); // Saca la sesión más antigua
                     }
 
-                    // Guardamos la información en el navegador
                     localStorage.setItem(claveStorage, JSON.stringify(sesionesActivas));
                     localStorage.setItem("sesion_token_actual", tokenActual);
                     localStorage.setItem("usuario_activo", JSON.stringify(usuarioData));
 
-                    // 3. Redirección inmediata
+                    // 3. Ingreso inmediato
                     mostrarMensaje('✅ Acceso correcto, ingresando...', 'msg-info');
                     window.location.href = "./index.html";
                     
@@ -184,7 +171,7 @@
                 }
             } catch (error) {
                 console.error(error);
-                mostrarMensaje('❌ Error de conexión. Intente nuevamente.', 'msg-error');
+                mostrarMensaje('❌ Error de conexión con el servidor. Intente nuevamente.', 'msg-error');
                 btnSubmit.disabled = false;
                 btnSubmit.textContent = 'Ingresar al Sistema';
             }
