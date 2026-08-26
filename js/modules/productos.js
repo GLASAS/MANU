@@ -43,24 +43,24 @@ function exportarCatalogoCSV() {
         return;
     }
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "SKU;Nombre;Categoria;Color;Material;Peso;Valor_Oro;Valor_Piedra;Porcentaje_Venta;Tiene_Descuento;Ubicacion;Codigo_Barra;Estado\n";
+    csvContent += "SKU;Codigo_Barra;Nombre;Categoria;Color;Material;Peso;Valor_Oro;Valor_Piedra;Porcentaje_Venta;Tiene_Descuento;Ubicacion;Estado\n";
 
     listaProductosFiltradosCache.forEach(p => {
         let sku = p.SKU || "";
+        let codigoBarra = p.Codigo_Barra || "";
         let nombre = `"${(p.Nombre || "").replace(/"/g, '""')}"`;
         let cat = p.ID_Categoria || "";
         let color = p.Color || p.ID_Subcategoria || "";
-        let mat = p.Material_Oro || p.Material || p.material || p.ID_Proveedor || "";
-        let peso = p.Peso || p.peso || "0";
+        let mat = p.Material_Oro || p.Material || "";
+        let peso = p.Peso || "0";
         let vOro = p.Valor_Oro || "0";
         let vPiedra = p.Valor_Piedra || "0";
         let margen = p.Porcentaje_Venta || "100";
         let desc = p.Tiene_Descuento || "0";
         let ubicacion = p.ID_Ubicacion || "";
-        let codigoBarra = p.Codigo_Barra || "";
-        let estadoItem = p.Estado || p.estado || "DISPONIBLE";
+        let estadoItem = p.Estado || "DISPONIBLE";
 
-        csvContent += [sku, nombre, cat, color, mat, peso, vOro, vPiedra, margen, desc, ubicacion, codigoBarra, estadoItem].join(";") + "\n";
+        csvContent += [sku, codigoBarra, nombre, cat, color, mat, peso, vOro, vPiedra, margen, desc, ubicacion, estadoItem].join(";") + "\n";
     });
 
     let encodedUri = encodeURI(csvContent);
@@ -88,39 +88,20 @@ function abrirModalImportarCSV() {
                 let linea = lineas[i].trim();
                 if (!linea) continue;
                 let cols = linea.split(';');
-                if (cols.length >= 2) {
-                    let matCSV = cols[2] ? cols[2].replace(/"/g, '').trim() : 'ORO';
-                    let piedraCSV = cols[3] ? cols[3].trim() : '';
-                    let colorCSV = cols[4] ? cols[4].trim() : 'AMARILLO';
-                    let pesoCSV = cols[5] && cols[5].trim() !== "" ? cols[5].trim() : '0';
-                    
-                    let limpiarValor = (val) => {
-                        if (!val) return 0;
-                        let s = String(val).replace(/\$/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
-                        return parseFloat(s) || 0;
-                    };
-
-                    let valOroCSV = limpiarValor(cols[6]);
-                    let valPiedraCSV = limpiarValor(cols[7]);
-                    let costoTotalCSV = valOroCSV + valPiedraCSV;
-
+                if (cols.length >= 3) {
                     productosArray.push({
-                        nombre: cols[0] ? cols[0].replace(/"/g, '').trim() : '',
-                        categoria: cols[1] ? cols[1].trim() : 'ANILLOS',
-                        material: matCSV,
-                        Material_Oro: matCSV,
-                        Material: matCSV,
-                        ID_Proveedor: matCSV,
-                        piedra: piedraCSV,
-                        color: colorCSV,
-                        ID_Subcategoria: colorCSV,
-                        peso: pesoCSV,
-                        valor_oro: valOroCSV,
-                        valor_piedra: valPiedraCSV,
-                        valor_compra: costoTotalCSV,
-                        porcentaje_venta: cols[8] && cols[8].trim() !== "" ? parseFloat(cols[8]) || 100 : 100,
-                        tiene_descuento: cols[9] && cols[9].trim() !== "" ? parseFloat(cols[9]) || 0 : 0,
-                        ubicacion: cols[10] ? cols[10].trim() : 'VITRINA 1',
+                        sku: cols[0] ? cols[0].trim() : '',
+                        codigo_barra: cols[1] ? cols[1].trim() : '',
+                        nombre: cols[2] ? cols[2].replace(/"/g, '').trim() : '',
+                        categoria: cols[3] ? cols[3].trim() : 'ANILLOS',
+                        color: cols[4] ? cols[4].trim() : 'AMARILLO',
+                        material: cols[5] ? cols[5].trim() : 'ORO',
+                        peso: cols[6] ? cols[6].trim() : '0',
+                        valor_oro: parseFloat(cols[7]) || 0,
+                        valor_piedra: parseFloat(cols[8]) || 0,
+                        porcentaje_venta: parseFloat(cols[9]) || 100,
+                        tiene_descuento: parseFloat(cols[10]) || 0,
+                        ubicacion: cols[11] ? cols[11].trim() : 'VITRINA 1',
                         estado: 'DISPONIBLE'
                     });
                 }
@@ -132,14 +113,14 @@ function abrirModalImportarCSV() {
             }
 
             if (confirm(`Se detectaron ${productosArray.length} productos. ¿Desea importarlos masivamente?`)) {
-                document.getElementById("vistaProductosInterna").innerHTML = `<div style="text-align: center; padding: 3rem;"><h3 style="color: #3b82f6;">⏳ Importando ${productosArray.length} productos masivamente...</h3></div>`;
+                document.getElementById("vistaProductosInterna").innerHTML = `<div style="text-align: center; padding: 3rem;"><h3 style="color: #3b82f6;">⏳ Importando productos...</h3></div>`;
                 const res = await API.llamar("importarMasivoProductos", { action: "importarMasivoProductos", productos: productosArray }, "POST");
                 if (res && res.status === "success") {
                     alert(res.message);
                     localStorage.removeItem("cache_productos_manu");
                     renderizarModuloProductos(document.getElementById('contentBody'));
                 } else {
-                    alert("Error en la importación: " + (res ? res.message : "Desconocido"));
+                    alert("Error en la importación.");
                     renderizarModuloProductos(document.getElementById('contentBody'));
                 }
             }
@@ -157,13 +138,13 @@ function seleccionarTodosCheckboxes(source) {
 async function eliminarProductosSeleccionados() {
     const checkboxes = document.querySelectorAll('.sku-checkbox:checked');
     if (checkboxes.length === 0) {
-        alert("Por favor seleccione al menos un producto para eliminar.");
+        alert("Por favor seleccione al menos un producto.");
         return;
     }
-    if (!confirm(`¿Está seguro de eliminar los ${checkboxes.length} productos seleccionados?`)) return;
+    if (!confirm(`¿Eliminar los ${checkboxes.length} productos seleccionados?`)) return;
 
-    let skusAEliminar = Array.from(checkboxes).map(cb => cb.value);
-    const res = await API.llamar("eliminarMasivoProductos", { action: "eliminarMasivoProductos", skus: skusAEliminar }, "POST");
+    let skus = Array.from(checkboxes).map(cb => cb.value);
+    const res = await API.llamar("eliminarMasivoProductos", { action: "eliminarMasivoProductos", skus: skus }, "POST");
     if (res && res.status === "success") {
         alert(res.message);
         localStorage.removeItem("cache_productos_manu");
@@ -230,11 +211,12 @@ function filtrarCatalogoEnVivo() {
     listaProductosFiltradosCache = listaProductosCache.filter(p => {
         const sku = String(p.SKU || p.sku || "").toLowerCase();
         const nombre = String(p.Nombre || p.nombre || "").toLowerCase();
+        const codigoBarra = String(p.Codigo_Barra || p.codigo_barra || "").toLowerCase();
         const categoria = String(p.ID_Categoria || "").toLowerCase();
         const material = String(p.Material_Oro || p.Material || "").toLowerCase();
         const color = String(p.Color || "").toLowerCase();
         const ubicacion = String(p.ID_Ubicacion || "").toLowerCase();
-        const codigoBarra = String(p.Codigo_Barra || "").toLowerCase();
+        
         return terminos.every(t => sku.includes(t) || codigoBarra.includes(t) || nombre.includes(t) || categoria.includes(t) || material.includes(t) || color.includes(t) || ubicacion.includes(t));
     });
     paginaActual = 1;
@@ -279,9 +261,9 @@ function renderizarTablaProductosPaginada() {
     let html = pagHtml('top-pagination');
     html += `<div class="table-container"><table class="data-table"><thead><tr>`;
     if (esAdmin) {
-        html += `<th><input type="checkbox" onclick="seleccionarTodosCheckboxes(this)"></th><th>Fecha</th><th>SKU</th><th>Producto</th><th>Categoría</th><th>Color</th><th>Material</th><th>Peso</th><th>Costo</th><th>Margen</th><th>Desc.</th><th>Venta Final</th><th>Ubicación</th><th>Foto</th><th>Etiqueta</th><th>Acciones</th>`;
+        html += `<th><input type="checkbox" onclick="seleccionarTodosCheckboxes(this)"></th><th>Fecha</th><th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Categoría</th><th>Color</th><th>Material</th><th>Peso</th><th>Costo</th><th>Margen</th><th>Desc.</th><th>Venta Final</th><th>Ubicación</th><th>Foto</th><th>Etiqueta</th><th>Acciones</th>`;
     } else {
-        html += `<th>SKU</th><th>Producto</th><th>Color</th><th>Material</th><th>Peso</th><th>Venta Final</th><th>Ubicación</th><th>Foto</th>`;
+        html += `<th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Color</th><th>Material</th><th>Peso</th><th>Venta Final</th><th>Ubicación</th><th>Foto</th>`;
     }
     html += `</tr></thead><tbody>`;
 
@@ -297,14 +279,10 @@ function renderizarTablaProductosPaginada() {
 
         let colorTabla = p.Color || p.ID_Subcategoria || '-';
         let materialTabla = p.Material_Oro || p.Material || '-';
-        let codigoBarraVal = p.Codigo_Barra || '7700000000000';
+        let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '-';
         let fotoVal = p.Foto || '';
 
-        let fechaArqueoLink = document.getElementById("arqFechaInput") ? document.getElementById("arqFechaInput").value : new Date().toISOString().split('T')[0];
-        let respArqueoLink = document.getElementById("arqResponsableInput") ? document.getElementById("arqResponsableInput").value : (usuarioActual ? usuarioActual.nombre : '');
-        let auditadoALink = document.getElementById("arqAuditadoAInput") ? document.getElementById("arqAuditadoAInput").value : '';
-        let metaArq = `&fecha_arq=${encodeURIComponent(fechaArqueoLink)}&resp_arq=${encodeURIComponent(respArqueoLink)}&auditado_a=${encodeURIComponent(auditadoALink)}`;
-
+        let metaArq = `&fecha_arq=${new Date().toISOString().split('T')[0]}&resp_arq=${encodeURIComponent(usuarioActual ? usuarioActual.nombre : '')}`;
         let btnQr = `<td><button class="btn-action btn-qr" onclick="abrirModalEtiqueta('${p.SKU}', '${encodeURIComponent(p.Nombre || '')}', '${codigoBarraVal}', '${encodeURIComponent(fotoVal)}', '${valorVenta}', '${encodeURIComponent(metaArq)}')">🏷️</button></td>`;
 
         html += `<tr>`;
@@ -312,21 +290,19 @@ function renderizarTablaProductosPaginada() {
             let fechaLimpia = p.Fecha_Creacion ? String(p.Fecha_Creacion).split('T')[0] : '-';
             let descBadge = descPct > 0 ? `<span class="badge" style="background-color: #ef4444;">${descPct}%</span>` : `0%`;
             let acciones = `<td><div class="btn-action-container"><button class="btn-action btn-edit" onclick="abrirFormularioEditarProducto('${encodeURIComponent(JSON.stringify(p))}')">✏️</button><button class="btn-action btn-delete" onclick="eliminarProducto('${p.SKU}')">🗑️</button></div></td>`;
-            html += `<td><input type="checkbox" class="sku-checkbox" value="${p.SKU}"></td><td>${fechaLimpia}</td><td><strong>${p.SKU}</strong></td><td>${p.Nombre}</td><td>${p.ID_Categoria}</td><td>${colorTabla}</td><td>${materialTabla}</td><td>${pesoItem}g</td><td>$${costo.toLocaleString()}</td><td>${margen}%</td><td>${descBadge}</td><td><strong style="color: #10b981;">$${valorVenta.toLocaleString()}</strong></td><td>${p.ID_Ubicacion}</td><td>${fotoHtml}</td>${btnQr}${acciones}`;
+            html += `<td><input type="checkbox" class="sku-checkbox" value="${p.SKU}"></td><td>${fechaLimpia}</td><td><strong>${p.SKU}</strong></td><td><code>${codigoBarraVal}</code></td><td>${p.Nombre}</td><td>${p.ID_Categoria}</td><td>${colorTabla}</td><td>${materialTabla}</td><td>${pesoItem}g</td><td>$${costo.toLocaleString()}</td><td>${margen}%</td><td>${descBadge}</td><td><strong style="color: #10b981;">$${valorVenta.toLocaleString()}</strong></td><td>${p.ID_Ubicacion}</td><td>${fotoHtml}</td>${btnQr}${acciones}`;
         } else {
-            html += `<td><strong>${p.SKU}</strong></td><td>${p.Nombre}</td><td>${colorTabla}</td><td>${materialTabla}</td><td>${pesoItem}g</td><td><strong style="color: #10b981;">$${valorVenta.toLocaleString()}</strong></td><td>${p.ID_Ubicacion}</td><td>${fotoHtml}</td>`;
+            html += `<td><strong>${p.SKU}</strong></td><td><code>${codigoBarraVal}</code></td><td>${p.Nombre}</td><td>${colorTabla}</td><td>${materialTabla}</td><td>${pesoItem}g</td><td><strong style="color: #10b981;">$${valorVenta.toLocaleString()}</strong></td><td>${p.ID_Ubicacion}</td><td>${fotoHtml}</td>`;
         }
         html += `</tr>`;
     });
     html += `</tbody></table></div>`;
-    html += pagHtml('bottom-pagination');
     contenedor.innerHTML = html;
 }
 
 function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorVentaStr, metaEncoded) {
-    let metadataArqueo = decodeURIComponent(metaEncoded || '');
-    document.getElementById("modalSkuLabel").textContent = `SKU: ${sku}`;
-    let certUrl = `https://glasas.github.io/MANU/cert.html?token=${btoa(sku)}${metadataArqueo}`;
+    document.getElementById("modalSkuLabel").textContent = `SKU: ${sku} | Barras: ${codigoBarra}`;
+    let certUrl = `https://glasas.github.io/MANU/cert.html?token=${btoa(sku)}${decodeURIComponent(metaEncoded || '')}`;
     document.getElementById("imgQrGenerado").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(certUrl)}`;
     document.getElementById("modalQrBarra").classList.add("active");
 }
@@ -334,10 +310,7 @@ function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorV
 function abrirZoomImagen(url) { document.getElementById("imgModalSrc").src = url; document.getElementById("imageModal").classList.add("active"); }
 function cerrarZoomImagen() { document.getElementById("imageModal").classList.remove("active"); }
 function cerrarModalQr() { document.getElementById("modalQrBarra").classList.remove("active"); }
-
-function imprimirSeccion(id) {
-    window.print();
-}
+function imprimirSeccion(id) { window.print(); }
 
 function descargarQrPNG() {
     let img = document.getElementById("imgQrGenerado");
@@ -350,13 +323,8 @@ function descargarQrPNG() {
     document.body.removeChild(a);
 }
 
-function abrirFormularioNuevoProducto() {
-    alert("Módulo de Creación de Producto rápido activo.");
-}
-
-function abrirFormularioEditarProducto(json) {
-    alert("Módulo de Edición de Producto activo.");
-}
+function abrirFormularioNuevoProducto() { alert("Módulo de Creación de Producto rápido activo."); }
+function abrirFormularioEditarProducto(json) { alert("Módulo de Edición de Producto activo."); }
 
 async function eliminarProducto(sku) {
     if (!confirm(`¿Eliminar producto SKU [${sku}]?`)) return;
