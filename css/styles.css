@@ -13,6 +13,7 @@
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Estilos Login */
@@ -22,6 +23,7 @@ body.login-body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    padding: 1rem;
 }
 
 .login-card {
@@ -67,7 +69,7 @@ body.login-body {
     align-items: center;
 }
 
-.password-container input, .form-group input[type="text"], .form-group input[type="date"], .form-group select {
+.password-container input, .form-group input[type="text"], .form-group input[type="password"], .form-group input[type="number"], .form-group input[type="date"], .form-group select {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #cbd5e1;
@@ -75,6 +77,7 @@ body.login-body {
     font-size: 1rem;
     outline: none;
     transition: border-color 0.2s;
+    background: #fff;
 }
 
 .password-container input {
@@ -145,19 +148,30 @@ body.app-body {
     display: flex;
     flex-direction: column;
     transition: transform 0.3s ease;
-    z-index: 100;
+    z-index: 1000;
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 900;
+}
+
+.sidebar-overlay.active {
+    display: block;
 }
 
 .sidebar-header {
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     text-align: center;
 }
 
-/* 🌟 Control estricto del tamaño del logotipo en la barra lateral */
 .sidebar-logo-container {
     width: 100%;
-    max-width: 150px;
+    max-width: 140px;
     margin: 0 auto 8px auto;
     text-align: center;
 }
@@ -165,7 +179,7 @@ body.app-body {
 .sidebar-logo-img {
     width: 100%;
     height: auto;
-    max-height: 60px;
+    max-height: 55px;
     object-fit: contain;
     border-radius: 6px;
     display: block;
@@ -183,17 +197,18 @@ body.app-body {
 }
 
 .sidebar-nav {
-    padding: 1rem 0;
+    padding: 0.5rem 0;
     flex: 1;
     overflow-y: auto;
 }
 
 .nav-link {
     display: block;
-    padding: 0.75rem 1.5rem;
+    padding: 0.7rem 1.25rem;
     color: #94a3b8;
     text-decoration: none;
     font-weight: 500;
+    font-size: 0.9rem;
     transition: all 0.2s;
 }
 
@@ -206,9 +221,9 @@ body.app-body {
 .text-danger { color: #f87171 !important; }
 
 .sidebar-footer-version {
-    padding: 1rem;
+    padding: 0.85rem;
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #64748b;
     border-top: 1px solid rgba(255,255,255,0.1);
 }
@@ -227,6 +242,7 @@ body.app-body {
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    min-height: 65px;
 }
 
 .menu-toggle {
@@ -235,15 +251,18 @@ body.app-body {
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
+    color: var(--primary);
+    padding: 4px 8px;
 }
 
 .user-info {
     font-weight: 600;
     color: var(--primary);
+    font-size: 0.95rem;
 }
 
 .content-body {
-    padding: 2rem;
+    padding: 1.5rem;
     overflow-y: auto;
     flex: 1;
 }
@@ -252,18 +271,18 @@ body.app-body {
 .welcome-banner {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     color: var(--white);
-    padding: 25px 30px;
+    padding: 22px 25px;
     border-radius: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .welcome-text h1 {
     margin: 0;
-    font-size: 22px;
+    font-size: 1.25rem;
     font-weight: 600;
 }
 
@@ -274,44 +293,46 @@ body.app-body {
 .welcome-text p {
     margin: 6px 0 0 0;
     color: #94a3b8;
-    font-size: 13px;
+    font-size: 0.85rem;
 }
 
 /* Tarjetas y Contenedores */
 .card {
     background: var(--white);
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.04);
     border: 1px solid #e2e8f0;
 }
 
-/* Tablas Profesionales */
+/* Tablas Profesionales Responsive */
 .table-container {
     width: 100%;
     overflow-x: auto;
     margin-top: 1rem;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+    white-space: nowrap;
 }
 
 .data-table th {
     background-color: #f8fafc;
     color: var(--primary);
-    padding: 12px 16px;
+    padding: 12px 14px;
     font-weight: 600;
     border-bottom: 1px solid #e2e8f0;
 }
 
 .data-table td {
-    padding: 12px 16px;
+    padding: 12px 14px;
     border-bottom: 1px solid #f1f5f9;
     color: var(--text-color);
 }
@@ -320,13 +341,13 @@ body.app-body {
     background-color: #f8fafc;
 }
 
-/* Botones y Herramientas */
+/* Herramientas y Botones */
 .catalog-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 1.5rem;
+    gap: 10px;
+    margin-bottom: 1.25rem;
     flex-wrap: wrap;
 }
 
@@ -334,27 +355,41 @@ body.app-body {
     background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
     color: white;
     border: none;
-    padding: 0.65rem 1.25rem;
+    padding: 0.6rem 1.1rem;
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .btn-nuevo-producto:hover {
     opacity: 0.9;
 }
 
-.btn-discreet-refresh {
+.btn-action-container {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-action {
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    width: 38px;
-    height: 38px;
+    border-radius: 6px;
+    padding: 5px 8px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.85rem;
+}
+
+.btn-action.btn-delete {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
 }
 
 /* Modales */
@@ -366,7 +401,8 @@ body.app-body {
     background: rgba(0, 0, 0, 0.75);
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 2000;
+    padding: 1rem;
 }
 
 .image-modal.active {
@@ -375,24 +411,13 @@ body.app-body {
 
 .image-modal-content {
     max-width: 90%;
-    max-height: 90vh;
+    max-height: 85vh;
     border-radius: 8px;
 }
 
-.image-modal-close {
-    margin-top: 10px;
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
 .img-thumbnail-container {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     border-radius: 6px;
     overflow: hidden;
     cursor: pointer;
@@ -415,8 +440,10 @@ body.app-body {
     justify-content: space-between;
     align-items: center;
     margin-top: 1rem;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     color: #64748b;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .pagination-buttons {
@@ -433,6 +460,7 @@ body.app-body {
     cursor: pointer;
     font-weight: 600;
     color: var(--primary);
+    font-size: 0.85rem;
 }
 
 .btn-page:disabled {
@@ -440,10 +468,10 @@ body.app-body {
     cursor: not-allowed;
 }
 
-/* Responsive */
+/* Adaptabilidad para Móviles (iOS y Android) */
 @media (max-width: 768px) {
     .sidebar {
-        position: absolute;
+        position: fixed;
         height: 100%;
         transform: translateX(-100%);
     }
@@ -456,6 +484,16 @@ body.app-body {
     .welcome-banner {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 12px;
+    }
+    .card {
+        padding: 1rem;
+    }
+    .catalog-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .catalog-toolbar button, .catalog-toolbar input, .catalog-toolbar select {
+        width: 100%;
     }
 }
