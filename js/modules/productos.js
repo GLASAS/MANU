@@ -301,9 +301,25 @@ function renderizarTablaProductosPaginada() {
 }
 
 function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorVentaStr, metaEncoded) {
+    let metadataArqueo = decodeURIComponent(metaEncoded || '');
     document.getElementById("modalSkuLabel").textContent = `SKU: ${sku} | Barras: ${codigoBarra}`;
-    let certUrl = `https://glasas.github.io/MANU/cert.html?token=${btoa(sku)}${decodeURIComponent(metaEncoded || '')}`;
+    let certUrl = `https://glasas.github.io/MANU/cert.html?token=${btoa(sku)}${metadataArqueo}`;
     document.getElementById("imgQrGenerado").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(certUrl)}`;
+    
+    try {
+        JsBarcode("#barcodeElement", codigoBarra && codigoBarra !== '-' ? codigoBarra : sku, {
+            format: "CODE128",
+            lineColor: "#0f172a",
+            width: 1.5,
+            height: 40,
+            displayValue: true,
+            fontSize: 12,
+            margin: 2
+        });
+    } catch(e) {
+        console.error("Error generando código de barras:", e);
+    }
+
     document.getElementById("modalQrBarra").classList.add("active");
 }
 
