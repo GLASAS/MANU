@@ -52,7 +52,17 @@ async function renderizarModuloInventario(container) {
     window.listaDisponiblesArqueo.forEach(p => { if (window.arqueoEstados[p.SKU] === undefined) window.arqueoEstados[p.SKU] = ""; });
     construirTablaArqueo(window.listaArqueoFiltradaCache);
 }
-
+function filtrarTablaArqueo() {
+    let q = document.getElementById("filtroArqTexto").value.toLowerCase();
+    let est = document.getElementById("filtroArqEstado").value;
+    window.listaArqueoFiltradaCache = window.listaDisponiblesArqueo.filter(p => {
+        let txt = (String(p.SKU || "") + String(p.Codigo_Barra || p.codigo_barra || "") + String(p.Nombre || "") + String(p.ID_Ubicacion || "")).toLowerCase().includes(q);
+        let e = window.arqueoEstados[p.SKU] || "";
+        let matchEst = est === 'TODOS' || (est === 'PRESENTE' && e === 'PRESENTE') || (est === 'FALTANTE' && e === 'FALTANTE') || (est === 'PENDIENTE' && e === '');
+        return txt && matchEst;
+    });
+    construirTablaArqueo(window.listaArqueoFiltradaCache);
+}
 function construirTablaArqueo(productos) {
     let total = window.listaDisponiblesArqueo.length;
     let presentes = 0, faltantes = 0;
