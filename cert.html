@@ -3,187 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificado de Autenticidad - MANU JOYEROS</title>
+    <title>Certificado Digital de Autenticidad - MANU JOYEROS</title>
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .cert-card { background: #ffffff; width: 100%; max-width: 480px; padding: 30px 30px 42px 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 2px solid #e2e8f0; text-align: center; position: relative; }
-        .cert-header { border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
         
-        /* Contenedor del Logotipo Oficial */
-        .cert-logo-container { width: 100%; max-width: 160px; margin: 0 auto; }
-        .cert-logo-img { width: 100%; height: auto; display: block; object-fit: contain; }
-
-        .cert-subtitle { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: #d97706; font-weight: 600; }
+        .cert-card { background: #ffffff; width: 100%; max-width: 650px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; overflow: hidden; position: relative; }
         
-        .product-img-container { width: 180px; height: 180px; margin: 0 auto 20px auto; border-radius: 12px; border: 2px solid #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .product-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .cert-header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 30px 20px; text-align: center; }
+        .cert-logo { max-width: 160px; background: white; padding: 8px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .cert-title { font-size: 1.1rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #d97706; margin: 0; }
         
-        .sku-badge { display: inline-block; background: #0f172a; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 15px; }
-        .product-desc { font-size: 0.95rem; color: #334155; line-height: 1.5; margin-bottom: 20px; padding: 0 10px; }
+        .cert-body { padding: 30px; }
         
-        .price-box { background: #f1f5f9; padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed #cbd5e1; }
-        .price-label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: bold; display: block; margin-bottom: 2px; }
-        .price-value { font-size: 1.5rem; font-weight: bold; color: #10b981; }
-
-        .company-info { font-size: 0.78rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; line-height: 1.4; }
+        .cert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .cert-field { background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .cert-field-label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: bold; display: block; margin-bottom: 4px; }
+        .cert-field-value { font-size: 1rem; color: #0f172a; font-weight: 600; }
         
-        .btn-print { margin-top: 20px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(15,23,42,0.2); }
-        .btn-print:hover { transform: translateY(-1px); }
-
-        .cert-version-label { position: absolute; bottom: 8px; right: 15px; font-size: 0.68rem; color: #94a3b8; font-weight: 600; }
+        .cert-img-container { width: 100%; height: 280px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 25px; }
+        .cert-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .cert-seal { text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 20px; color: #475569; font-size: 0.85rem; line-height: 1.5; }
+        
+        .no-print { text-align: center; margin-top: 20px; }
+        .btn-print { background: #0f172a; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2); transition: background 0.2s; }
+        .btn-print:hover { background: #1e293b; }
 
         @media print {
             body { background: white; padding: 0; }
-            .cert-card { box-shadow: none; border: none; max-width: 100%; padding: 10px; }
-            .no-print { display: none !important; }
-            .cert-version-label { position: fixed; bottom: 5px; right: 10px; }
+            .no-print { display: none; }
+            .cert-card { box-shadow: none; border: none; max-width: 100%; }
         }
     </style>
 </head>
 <body>
 
-    <div class="cert-card" id="certContainer">
-        <div class="cert-header">
-            <div class="cert-logo-container">
-                <img src="manu_joyeros.jpg" alt="MANU JOYEROS" class="cert-logo-img">
+    <div style="width: 100%; max-width: 650px;">
+        <div class="cert-card" id="certContainer">
+            <div class="cert-header">
+                <img src="manu_joyeros.jpg" alt="MANU JOYEROS" class="cert-logo">
+                <div class="cert-title">Certificado Digital de Autenticidad</div>
             </div>
-            <div class="cert-subtitle">Certificado de Autenticidad y Garantía</div>
+
+            <div class="cert-body">
+                <div class="cert-img-container" id="certImgBox">
+                    <span style="font-size: 4rem;">💍</span>
+                </div>
+
+                <div class="cert-grid">
+                    <div class="cert-field">
+                        <span class="cert-field-label">SKU / Referencia</span>
+                        <span class="cert-field-value" id="lblCertSku">Cargando...</span>
+                    </div>
+                    <div class="cert-field">
+                        <span class="cert-field-label">Código de Barras</span>
+                        <span class="cert-field-value" id="lblCertBarra">-</span>
+                    </div>
+                </div>
+
+                <div class="cert-field" style="margin-bottom: 20px;">
+                    <span class="cert-field-label">Descripción de la Joya</span>
+                    <span class="cert-field-value" id="lblCertNombre">Cargando detalles de la pieza...</span>
+                </div>
+
+                <div class="cert-grid">
+                    <div class="cert-field">
+                        <span class="cert-field-label">Categoría / Material</span>
+                        <span class="cert-field-value" id="lblCertMaterial">-</span>
+                    </div>
+                    <div class="cert-field">
+                        <span class="cert-field-label">Ubicación / Vitrina</span>
+                        <span class="cert-field-value" id="lblCertUbicacion">-</span>
+                    </div>
+                </div>
+
+                <div class="cert-seal">
+                    <strong>MANU JOYEROS S.A.S.</strong><br>
+                    Este documento certifica la trazabilidad y calidad garantizada de la pieza descrita conforme a los estándares de alta joyería.<br>
+                    <em style="color: #d97706; margin-top: 6px; display: inline-block;">🪙 ¡Joyas que trascienden el tiempo!</em>
+                </div>
+            </div>
         </div>
 
-        <div id="contentArea">
-            <p style="color: #64748b; padding: 40px 0;">Consultando información del producto...</p>
+        <div class="no-print">
+            <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar Certificado</button>
         </div>
-
-        <div class="cert-version-label" id="lblCertVersion">Versión Cargando... • MANU JOYEROS</div>
     </div>
 
-    <!-- Carga estricta y ordenada de configuración -->
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            // Sincronización automática y robusta de la versión y datos corporativos desde CONFIG
-            let empresaNombre = "MANU JOYEROS";
-            let empresaNit = "900.000.000-1";
-            let empresaTel = "+57 (300) 8123125";
-            let empresaDir = "Ak 7 #115-60 Local 217";
-            let empresaEdificio = "Hacienda Santa Barbara";
-            let empresaCiudad = "Bogotá D.C., Colombia";
-            let versionSistema = "V1.1100";
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
 
-            if (typeof CONFIG !== 'undefined') {
-                if (CONFIG.VERSION) versionSistema = CONFIG.VERSION;
-                if (CONFIG.NOMBRE_EMPRESA) empresaNombre = CONFIG.NOMBRE_EMPRESA;
-                if (CONFIG.NIT) empresaNit = CONFIG.NIT;
-                if (CONFIG.TELEFONO) empresaTel = CONFIG.TELEFONO;
-                if (CONFIG.DIRECCION) empresaDir = CONFIG.DIRECCION;
-                if (CONFIG.EDIFICIO_O_LOCAL) empresaEdificio = CONFIG.EDIFICIO_O_LOCAL;
-                if (CONFIG.CIUDAD) empresaCiudad = CONFIG.CIUDAD;
-            }
-
-            document.getElementById("lblCertVersion").textContent = `Versión ${versionSistema} • ${empresaNombre}`;
-
-            const params = new URLSearchParams(window.location.search);
-            let skuBuscado = "";
-
-            const tokenParam = params.get("token");
-            const skuParam = params.get("sku");
-
-            if (tokenParam) {
-                try {
-                    skuBuscado = atob(tokenParam);
-                } catch (e) {
-                    skuBuscado = tokenParam;
-                }
-            } else if (skuParam) {
-                skuBuscado = skuParam;
-            }
-
-            if (!skuBuscado) {
-                document.getElementById("contentArea").innerHTML = `<p style="color: #ef4444; font-weight: bold;">⚠️ Error: No se especificó ningún código válido en la URL.</p>`;
+            if (!token) {
+                document.getElementById("lblCertNombre").textContent = "❌ Token de certificación no válido o ausente.";
                 return;
             }
 
             try {
-                const [resOro, resProd] = await Promise.all([
-                    API.llamar("obtenerValorOroDia", {}, "GET"),
-                    API.llamar("obtenerProductos", {}, "GET")
-                ]);
+                // Decodificamos el SKU que viene cifrado en Base64 por el QR
+                const skuBuscado = atob(token).trim();
 
-                let valorOroDiaLocal = 250000;
-                if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
-                    valorOroDiaLocal = Number(resOro.valor_oro_dia);
+                const res = await API.llamar("obtenerProductos", {}, "GET");
+                if (res && res.status === "success" && res.data) {
+                    const producto = res.data.find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuBuscado.toUpperCase());
+
+                    if (producto) {
+                        document.getElementById("lblCertSku").textContent = producto.SKU || producto.sku || "-";
+                        document.getElementById("lblCertBarra").textContent = producto.Codigo_Barra || producto.codigo_barra || "-";
+                        document.getElementById("lblCertNombre").textContent = producto.Nombre || producto.nombre || "Joya Exclusiva MANU";
+                        
+                        let materialTxt = (producto.Material_Oro || producto.Material || "ORO") + (producto.Color ? ' • ' + producto.Color : '');
+                        document.getElementById("lblCertMaterial").textContent = materialTxt;
+                        
+                        document.getElementById("lblCertUbicacion").textContent = producto.ID_Ubicacion || producto.ubicacion || "VITRINA";
+
+                        if (producto.Foto || producto.foto) {
+                            document.getElementById("certImgBox").innerHTML = `<img src="${producto.Foto || producto.foto}" alt="Joya Certificada">`;
+                        }
+                    } else {
+                        document.getElementById("lblCertNombre").textContent = "⚠️ No se encontró información registrada para este SKU.";
+                    }
+                } else {
+                    document.getElementById("lblCertNombre").textContent = "❌ Error al conectar con la base de datos del inventario.";
                 }
-
-                if (!resProd || resProd.status !== "success" || !resProd.data) {
-                    throw new Error("No se pudo conectar con la base de datos.");
-                }
-
-                const producto = resProd.data.find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === String(skuBuscado).trim().toUpperCase());
-
-                if (!producto) {
-                    document.getElementById("contentArea").innerHTML = `<p style="color: #ef4444; font-weight: bold;">⚠️ No se encontró ninguna joya registrada con el código: ${skuBuscado}</p>`;
-                    return;
-                }
-
-                let valPiedraItem = (producto.Valor_Piedra !== undefined && producto.Valor_Piedra !== null && String(producto.Valor_Piedra).trim() !== "") ? Number(producto.Valor_Piedra) : 0;
-                if (isNaN(valPiedraItem)) valPiedraItem = 0;
-
-                let margen = (producto.Porcentaje_Venta !== undefined && producto.Porcentaje_Venta !== null && String(producto.Porcentaje_Venta).trim() !== "") ? Number(producto.Porcentaje_Venta) : 100;
-                if (isNaN(margen)) margen = 100;
-
-                let descPct = (producto.Tiene_Descuento !== undefined && producto.Tiene_Descuento !== null && String(producto.Tiene_Descuento).trim() !== "") ? Number(producto.Tiene_Descuento) : 0;
-                if (isNaN(descPct)) descPct = 0;
-
-                let pesoCrudo = producto.Peso !== undefined && producto.Peso !== null && String(producto.Peso).trim() !== "" ? producto.Peso : (producto.peso !== undefined && producto.peso !== null && String(producto.peso).trim() !== "" ? producto.peso : 0);
-                let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
-
-                let baseVentaCalculada = valPiedraItem + (pesoItem * valorOroDiaLocal);
-                let precioBase = baseVentaCalculada * (1 + (margen / 100));
-                let valorVenta = precioBase - (precioBase * (descPct / 100));
-                if (isNaN(valorVenta)) valorVenta = 0;
-
-                let valorVentaFinal = Math.round(valorVenta);
-
-                let fotoSrc = producto.Foto || producto.foto || "";
-                let fotoHtml = fotoSrc ? `<img src="${fotoSrc}" alt="Joya Certificada">` : `<span style="font-size: 3rem;">💍</span>`;
-                let nombreProd = producto.Nombre || producto.nombre || "Joya de Alta Joyería";
-                let materialProd = producto.Material_Oro || producto.Material || producto.material || producto.ID_Proveedor || "ORO DE 18K";
-                let colorProd = producto.Color || producto.ID_Subcategoria || "";
-
-                // Inyección dinámica oficial con los datos unificados
-                document.getElementById("contentArea").innerHTML = `
-                    <div class="product-img-container">
-                        ${fotoHtml}
-                    </div>
-
-                    <div class="sku-badge">SKU: ${producto.SKU || producto.sku || skuBuscado}</div>
-                    
-                    <div class="product-desc">
-                        <strong>${nombreProd}</strong><br>
-                        <span style="font-size: 0.82rem; color: #64748b;">Material: ${materialProd} ${colorProd ? '• Color: ' + colorProd : ''} ${pesoItem > 0 ? '• Peso: ' + pesoItem + 'g' : ''}</span>
-                    </div>
-
-                    <div class="price-box">
-                        <span class="price-label">Valor Comercial Estimado</span>
-                        <span class="price-value">$${valorVentaFinal.toLocaleString()} COP</span>
-                    </div>
-
-                    <div class="company-info">
-                        <strong>${empresaNombre}</strong><br>
-                        NIT: ${empresaNit} • Tel: ${empresaTel}<br>
-                        Dirección Principal: ${empresaDir}<br>
-                        ${empresaEdificio}<br>
-                        ${empresaCiudad}<br>
-                        <em>Certificamos la autenticidad y calidad de esta pieza de alta joyería.</em>
-                    </div>
-
-                    <button class="btn-print no-print" onclick="window.print()">🖨️ Imprimir Certificado</button>
-                `;
-
-            } catch (error) {
-                document.getElementById("contentArea").innerHTML = `<p style="color: #ef4444;">Error al cargar el certificado: ${error.message}</p>`;
+            } catch (e) {
+                console.error(e);
+                document.getElementById("lblCertNombre").textContent = "❌ Error al procesar el código de certificación.";
             }
         });
     </script>
