@@ -1,151 +1,168 @@
 /**
- * MANU JOYEROS - Módulo de Movimientos y Kardex (movimientos.js)
+ * MANU JOYEROS - Módulo de Entradas, Salidas y Kardex (movimientos.js)
  */
 
-async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
-    let titulo = tipoMovimiento === 'ENTRADAS' ? '📥 Entradas al Inventario' : '📤 Salidas del Inventario';
-    let color = tipoMovimiento === 'ENTRADAS' ? '#059669' : '#dc2626';
-
+async function renderizarModuloSalidas(container) {
     container.innerHTML = `
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:10px;">
-                <div>
-                    <h3 style="color: #0f172a; margin: 0;">${titulo}</h3>
-                    <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0;">Gestione y registre las ${tipoMovimiento.toLowerCase()} vinculadas a SKU o Código de Barras.</p>
-                </div>
-                <button class="btn-nuevo-producto" style="background:${color};" onclick="abrirModalFormularioMovimiento('${tipoMovimiento}')">+ Registrar ${tipoMovimiento === 'ENTRADAS' ? 'Entrada' : 'Salida'}</button>
-            </div>
+            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.1rem;">📤 Salidas del Inventario</h3>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.25rem;">Gestione y registre las salidas vinculadas a SKU o Código de Barras.</p>
             
-            <div class="catalog-toolbar" style="margin-bottom: 1rem;">
-                <input type="text" id="filtroMovimientoInput" placeholder="🔍 Buscar por SKU, Código de Barras, Motivo..." style="max-width: 400px; padding: 8px; border:1px solid #cbd5e1; border-radius:6px; width:100%;" oninput="filtrarTablaMovimientos()">
+            <div style="display: flex; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap;">
+                <button class="btn-modern btn-danger-action" onclick="abrirModalRegistrarSalida()">➕ Registrar Salida</button>
             </div>
 
-            <div id="tablaMovimientosContenedor">Cargando registros...</div>
+            <div class="toolbar-search-box" style="margin-bottom: 1.25rem;">
+                <span>🔍</span>
+                <input type="text" id="inputBuscadorSalidas" placeholder="Buscar por SKU, código de barras, motivo, usuario..." oninput="filtrarSalidasEnVivo()" style="width: 100%; padding: 8px 8px 8px 32px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            </div>
+
+            <div id="tablaSalidasContainer"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando registros de salidas...</p></div>
+        </div>
+
+        <!-- MODAL PROFESIONAL PARA REGISTRAR SALIDA (En vez de ventanita prompt) -->
+        <div class="image-modal" id="modalFormSalida" onclick="cerrarModalSalidaCustom()">
+            <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 480px; width: 95%; color: #0f172a; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+                <h3 style="margin-bottom: 1rem; color: #0f172a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">📤 Registrar Salida de Inventario</h3>
+                <form onsubmit="ejecutarRegistroSalidaCustom(event)">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">SKU o Código de Barras *</label>
+                        <input type="text" id="salidaInputSku" required placeholder="Escanee o escriba SKU..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.95rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">Motivo (Ej: Venta, Reparación, Producción Taller) *</label>
+                        <input type="text" id="salidaInputMotivo" required placeholder="Venta Cliente" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.95rem;" value="Venta Cliente">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">Cantidad *</label>
+                        <input type="number" id="salidaInputCantidad" required value="1" min="1" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.95rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">Observaciones adicionales</label>
+                        <input type="text" id="salidaInputObs" placeholder="Detalles o notas..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.95rem;">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" style="flex: 1; background-color: #0f172a; color: #ffffff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 500; cursor: pointer;">Aceptar</button>
+                        <button type="button" onclick="cerrarModalSalidaCustom()" style="flex: 1; background-color: #ef4444; color: #ffffff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 500; cursor: pointer;">Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>`;
 
-    const res = await API.llamar(tipoMovimiento === 'ENTRADAS' ? "obtenerEntradas" : "obtenerSalidas", {}, "GET");
-    window.cacheMovimientosActual = (res && res.status === "success" && res.data) ? res.data : [];
-    renderizarTablaMovimientosFiltrada(window.cacheMovimientosActual, tipoMovimiento);
+    await cargarListaSalidas();
 }
 
-function renderizarTablaMovimientosFiltrada(registros, tipoMovimiento) {
-    const contenedor = document.getElementById("tablaMovimientosContenedor");
-    if (!registros || registros.length === 0) {
-        contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay registros de ${tipoMovimiento.toLowerCase()} en el sistema.</p>`;
+function abrirModalRegistrarSalida() {
+    document.getElementById("salidaInputSku").value = "";
+    document.getElementById("salidaInputMotivo").value = "Venta Cliente";
+    document.getElementById("salidaInputCantidad").value = "1";
+    document.getElementById("salidaInputObs").value = "";
+    document.getElementById("modalFormSalida").classList.add("active");
+    setTimeout(() => document.getElementById("salidaInputSku").focus(), 100);
+}
+
+function cerrarModalSalidaCustom() {
+    document.getElementById("modalFormSalida").classList.remove("active");
+}
+
+async function ejecutarRegistroSalidaCustom(e) {
+    e.preventDefault();
+    let sku = document.getElementById("salidaInputSku").value.trim();
+    let motivo = document.getElementById("salidaInputMotivo").value.trim();
+    let cantidad = document.getElementById("salidaInputCantidad").value.trim();
+    let observaciones = document.getElementById("salidaInputObs").value.trim();
+
+    if (!sku) return;
+
+    cerrarModalSalidaCustom();
+
+    const res = await API.llamar("registrarSalida", {
+        action: "registrarSalida",
+        sku: sku,
+        motivo: motivo,
+        cantidad: cantidad,
+        observaciones: observaciones,
+        usuario: usuarioActual ? usuarioActual.usuario : "ADMIN"
+    }, "POST");
+
+    if (res && res.status === "success") {
+        alert(res.message);
+        localStorage.removeItem("cache_productos_manu");
+        renderizarModuloSalidas(document.getElementById('contentBody'));
+    } else {
+        alert("Error: " + (res ? res.message : "No se pudo registrar la salida."));
+    }
+}
+
+let listaSalidasCache = [];
+
+async function cargarListaSalidas() {
+    const contenedor = document.getElementById("tablaSalidasContainer");
+    const res = await API.llamar("obtenerSalidas", {}, "GET");
+    if (res && res.status === "success") {
+        listaSalidasCache = res.data || [];
+        renderizarTablaSalidas(listaSalidasCache);
+    } else {
+        contenedor.innerHTML = `<p style="color: #ef4444; text-align: center;">No hay registros de salidas en el sistema.</p>`;
+    }
+}
+
+function filtrarSalidasEnVivo() {
+    const query = document.getElementById("inputBuscadorSalidas").value.toLowerCase().trim();
+    if (!query) {
+        renderizarTablaSalidas(listaSalidasCache);
+        return;
+    }
+    const terminos = query.split(/\s+/);
+    const filtrados = listaSalidasCache.filter(s => {
+        const id = String(s.ID || s.id || "").toLowerCase();
+        const sku = String(s.SKU || s.sku || "").toLowerCase();
+        const fecha = String(s.Fecha || s.fecha || "").toLowerCase();
+        const motivo = String(s.Motivo || s.motivo || "").toLowerCase();
+        const usuario = String(s.Usuario || s.usuario || "").toLowerCase();
+        const obs = String(s.Observaciones || s.observaciones || "").toLowerCase();
+
+        return terminos.every(t => id.includes(t) || sku.includes(t) || fecha.includes(t) || motivo.includes(t) || usuario.includes(t) || obs.includes(t));
+    });
+    renderizarTablaSalidas(filtrados);
+}
+
+function renderizarTablaSalidas(data) {
+    const contenedor = document.getElementById("tablaSalidasContainer");
+    if (!data || data.length === 0) {
+        contenedor.innerHTML = `<p style="color: #64748b; text-align: center; padding: 2rem;">No hay registros de salidas en el sistema.</p>`;
         return;
     }
 
-    let html = `<div class="table-container"><table class="data-table"><thead><tr><th>ID</th><th>Fecha</th><th>SKU</th><th>Cantidad</th><th>Motivo / Detalle</th><th>Usuario</th><th>Observaciones</th>`;
-    if (tipoMovimiento === 'SALIDAS') html += `<th>Acciones</th>`;
-    html += `</tr></thead><tbody>`;
+    let html = `<div class="table-container"><table class="data-table"><thead><tr>
+        <th>ID</th><th>Fecha</th><th>SKU</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th><th>Observaciones</th><th>Acciones</th>
+    </tr></thead><tbody>`;
 
-    registros.forEach(m => {
-        let idMov = m.ID_Movimiento || m.ID_Salida || m.ID_Entrada || m.id_movimiento || '-';
-        let sku = m.SKU || m.sku || '-';
-        let cantidad = m.Cantidad || m.cantidad || 1;
-        let motivo = m.Motivo || m.motivo || '-';
-        let usuario = m.Usuario || m.usuario || '-';
-        let obs = m.Observaciones || m.observaciones || '-';
-        let fecha = m.Fecha || m.fecha || '-';
-
-        html += `<tr><td><strong>${idMov}</strong></td><td>${fecha}</td><td><strong style="color: #d97706;">${sku}</strong></td><td>${cantidad}</td><td>${motivo}</td><td>${usuario}</td><td>${obs}</td>`;
-        if (tipoMovimiento === 'SALIDAS') {
-            html += `<td><button class="btn-action btn-delete" onclick="reversarSalidaUnica('${idMov}')" title="Reversar Salida">↩️ Anular</button></td>`;
-        }
-        html += `</tr>`;
+    data.forEach(s => {
+        html += `<tr>
+            <td>${s.ID || s.id || ''}</td>
+            <td>${s.Fecha || s.fecha || ''}</td>
+            <td><strong>${s.SKU || s.sku || ''}</strong></td>
+            <td>${s.Cantidad || s.cantidad || 1}</td>
+            <td>${s.Motivo || s.motivo || ''}</td>
+            <td>${s.Usuario || s.usuario || ''}</td>
+            <td>${s.Observaciones || s.observaciones || ''}</td>
+            <td><button class="btn-action" onclick="anularSalida('${s.ID || s.id || ''}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Anular</button></td>
+        </tr>`;
     });
+
     html += `</tbody></table></div>`;
     contenedor.innerHTML = html;
 }
 
-function filtrarTablaMovimientos() {
-    let q = document.getElementById("filtroMovimientoInput").value.toLowerCase();
-    let filtrados = window.cacheMovimientosActual.filter(m => {
-        let sku = String(m.SKU || m.sku || "").toLowerCase();
-        let motivo = String(m.Motivo || m.motivo || "").toLowerCase();
-        let obs = String(m.Observaciones || m.observaciones || "").toLowerCase();
-        return sku.includes(q) || motivo.includes(q) || obs.includes(q);
-    });
-    let esEntrada = document.getElementById("viewTitle").textContent.includes("Entradas");
-    renderizarTablaMovimientosFiltrada(filtrados, esEntrada ? 'ENTRADAS' : 'SALIDAS');
-}
-
-function abrirModalFormularioMovimiento(tipo) {
-    let skuOrBar = prompt(`Ingrese el SKU o el Código de Barras de la joya para la ${tipo.toLowerCase()}:`);
-    if (!skuOrBar) return;
-    let motivo = prompt("Motivo (Ej: Venta, Reparación, Producción Taller):", tipo === 'ENTRADAS' ? 'Producción Taller' : 'Venta Cliente');
-    if (!motivo) return;
-    let cantidad = prompt("Cantidad:", "1") || "1";
-    let obs = prompt("Observaciones adicionales:", "") || "";
-
-    registrarMovimientoServidor(tipo, skuOrBar.trim().toUpperCase(), motivo, cantidad, obs);
-}
-
-async function registrarMovimientoServidor(tipo, skuOrBar, motivo, cantidad, obs) {
-    let accion = tipo === 'ENTRADAS' ? 'registrarEntrada' : 'registrarSalida';
-    let payload = { 
-        action: accion, 
-        sku: skuOrBar, 
-        motivo: motivo, 
-        cantidad: Number(cantidad) || 1, 
-        observaciones: obs, 
-        usuario: usuarioActual ? usuarioActual.usuario : 'ADMIN' 
-    };
-    
-    const res = await API.llamar(accion, payload, "POST");
+async function anularSalida(idSalida) {
+    if (!idSalida || !confirm(`¿Está seguro de anular la salida [${idSalida}]? El producto volverá a estar disponible.`)) return;
+    const res = await API.llamar("anularSalida", { action: "anularSalida", id: idSalida }, "POST");
     if (res && res.status === "success") {
         alert(res.message);
         localStorage.removeItem("cache_productos_manu");
-        renderizarModuloEntradasSalidas(document.getElementById('contentBody'), tipo);
+        renderizarModuloSalidas(document.getElementById('contentBody'));
     } else {
-        alert("Error al registrar: " + (res ? res.message : "Desconocido"));
-    }
-}
-
-async function reversarSalidaUnica(idSalida) {
-    if (!confirm(`¿Anular la salida [${idSalida}]? El producto volverá a estado DISPONIBLE.`)) return;
-    const res = await API.llamar("reversarSalida", { action: "reversarSalida", id_salida: idSalida, usuario: usuarioActual ? usuarioActual.usuario : 'ADMIN' }, "POST");
-    if (res && res.status === "success") {
-        alert(res.message);
-        localStorage.removeItem("cache_productos_manu");
-        renderizarModuloEntradasSalidas(document.getElementById('contentBody'), 'SALIDAS');
-    } else {
-        alert("Error al reversar.");
-    }
-}
-
-async function renderizarModuloKardex(container) {
-    container.innerHTML = `
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:10px;">
-                <h3 style="color: #0f172a; margin: 0;">📑 Kardex de Movimientos de Inventario</h3>
-                <button class="btn-nuevo-producto" onclick="renderizarModuloKardex(document.getElementById('contentBody'))">🔄 Actualizar</button>
-            </div>
-            <div id="tablaKardexContenedor">Cargando Kardex...</div>
-        </div>`;
-
-    try {
-        const [resE, resS] = await Promise.all([API.llamar("obtenerEntradas", {}, "GET"), API.llamar("obtenerSalidas", {}, "GET")]);
-        let movs = [];
-        if (resE && resE.status === "success" && resE.data) resE.data.forEach(e => movs.push({ ...e, Tipo: 'ENTRADA' }));
-        if (resS && resS.status === "success" && resS.data) resS.data.forEach(s => movs.push({ ...s, Tipo: 'SALIDA' }));
-        movs.sort((a, b) => new Date(b.Fecha || b.fecha || 0) - new Date(a.Fecha || a.fecha || 0));
-
-        const contenedor = document.getElementById("tablaKardexContenedor");
-        if (movs.length === 0) {
-            contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay movimientos en el Kardex.</p>`;
-            return;
-        }
-
-        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>Tipo</th><th>Fecha</th><th>SKU</th><th>Producto</th><th>Estado</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th></tr></thead><tbody>`;
-        movs.forEach(m => {
-            let tipo = m.Tipo || 'MOV';
-            let bg = tipo === 'ENTRADA' ? '#059669' : '#dc2626';
-            html += `<tr><td><span class="badge" style="background:${bg};">${tipo}</span></td><td>${m.Fecha||m.fecha||'-'}</td><td><strong>${m.SKU||m.sku||'-'}</strong></td><td>${m.Nombre_Producto||'-'}</td><td>${m.Estado_Actual||'DISPONIBLE'}</td><td>${m.Cantidad||m.cantidad||1}</td><td>${m.Motivo||m.motivo||'-'}</td><td>${m.Usuario||m.usuario||'-'}</td></tr>`;
-        });
-        html += `</tbody></table></div>`;
-        contenedor.innerHTML = html;
-    } catch (e) {
-        document.getElementById("tablaKardexContenedor").innerHTML = `<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar el Kardex.</p>`;
+        alert("Error al anular la salida.");
     }
 }
