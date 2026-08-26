@@ -16,7 +16,7 @@ async function renderizarModuloProductos(container) {
             <button class="btn-modern btn-primary-action" onclick="abrirFormularioCrearProducto()">✨ Nuevo</button>
             <button class="btn-modern btn-success-action" onclick="abrirModalImportarCSV()">📂 Importar</button>
             <button class="btn-modern btn-info-action" onclick="exportarCatalogoCSV()">📥 Exportar</button>
-            <a href="https://glasas.github.io/MANU_JOYEROS/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
+            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
             <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
             <button class="btn-modern btn-danger-action" onclick="eliminarProductosSeleccionados()">🗑️ Eliminar</button>
         </div>
@@ -29,7 +29,7 @@ async function renderizarModuloProductos(container) {
         </div>
     ` : `
         <div class="toolbar-group-actions">
-            <a href="https://glasas.github.io/MANU_JOYEROS/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
+            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
             <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
         </div>
         <div class="toolbar-group-actions">
@@ -76,7 +76,7 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
-                    <!-- SECCIÓN DE FOTO CON COMPRESIÓN COMPATIBLE -->
+                    <!-- SECCIÓN DE FOTO INTEGRADA CON COMPRESIÓN -->
                     <div class="form-group">
                         <label>📸 Fotografía de la Joya (Cámara o Galería)</label>
                         <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
@@ -490,7 +490,7 @@ function renderizarTablaProductosPaginada() {
 function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorVentaStr, metaEncoded) {
     let metadataArqueo = decodeURIComponent(metaEncoded || '');
     document.getElementById("modalSkuLabel").textContent = `SKU: ${sku} | Barras: ${codigoBarra}`;
-    let certUrl = `https://glasas.github.io/MANU/cert.html?token=${btoa(sku)}${metadataArqueo}`;
+    let certUrl = `https://glasas.github.io/MANU/catalogomanu?token=${btoa(sku)}${metadataArqueo}`;
     document.getElementById("imgQrGenerado").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(certUrl)}`;
     
     try {
