@@ -16,7 +16,7 @@ async function renderizarModuloProductos(container) {
             <button class="btn-modern btn-primary-action" onclick="abrirFormularioCrearProducto()">✨ Nuevo</button>
             <button class="btn-modern btn-success-action" onclick="abrirModalImportarCSV()">📂 Importar</button>
             <button class="btn-modern btn-info-action" onclick="exportarCatalogoCSV()">📥 Exportar</button>
-            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
+            <a href="https://glasas.github.io/MANU_JOYEROS/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
             <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
             <button class="btn-modern btn-danger-action" onclick="eliminarProductosSeleccionados()">🗑️ Eliminar</button>
         </div>
@@ -29,7 +29,7 @@ async function renderizarModuloProductos(container) {
         </div>
     ` : `
         <div class="toolbar-group-actions">
-            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
+            <a href="https://glasas.github.io/MANU_JOYEROS/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
             <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
         </div>
         <div class="toolbar-group-actions">
@@ -76,11 +76,15 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
-                    <!-- SECCIÓN DE FOTO CÁMARA O GALERÍA CON COMPRESIÓN -->
+                    <!-- SECCIÓN DE FOTO CON COMPRESIÓN COMPATIBLE -->
                     <div class="form-group">
-                        <label>Fotografía de la Joya (Cámara o Galería)</label>
-                        <input type="file" id="prodArchivoFoto" accept="image/*" capture="environment" onchange="procesarFotoCelular(event)" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
-                        <div id="previewFotoContainer" style="margin-top: 8px; text-align: center;"></div>
+                        <label>📸 Fotografía de la Joya (Cámara o Galería)</label>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                            <input type="file" accept="image/*" capture="environment" id="prodArchivoFoto" onchange="procesarImagenModulo(event, 'previewProdModulo')" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
+                        </div>
+                        <div style="margin-top: 10px; text-align: center;">
+                            <img id="previewProdModulo" src="" style="max-width: 150px; max-height: 150px; display: none; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: cover; margin: 0 auto;">
+                        </div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 1rem;">
@@ -93,7 +97,7 @@ async function renderizarModuloProductos(container) {
     await cargarListaProductos(false);
 }
 
-function procesarFotoCelular(event) {
+function procesarImagenModulo(event, previewId) {
     const archivo = event.target.files[0];
     if (!archivo) return;
     const lector = new FileReader();
@@ -102,24 +106,30 @@ function procesarFotoCelular(event) {
         img.onload = function() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
+            
+            const MAX_WIDTH = 400;
+            const MAX_HEIGHT = 400;
             let width = img.width;
             let height = img.height;
-            const maxDim = 300; // Máximo 300px para evitar saturar el POST
 
-            if (width > height && width > maxDim) {
-                height *= maxDim / width;
-                width = maxDim;
-            } else if (height > maxDim) {
-                width *= maxDim / height;
-                height = maxDim;
+            if (width > height) {
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            } else {
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
             }
 
             canvas.width = width;
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
-
-            fotoBase64Temporal = canvas.toDataURL('image/jpeg', 0.4); // Calidad 40% ultra liviana
-            document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoBase64Temporal}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #059669; display: block;">⚡ Foto optimizada y lista!</span>`;
+            
+            // Comprimimos al 60% para garantizar ligereza en el POST pero manteniendo alta nitidez visual
+            fotoBase64Temporal = canvas.toDataURL('image/jpeg', 0.6);
+            
+            const preview = document.getElementById(previewId);
+            if (preview) {
+                preview.src = fotoBase64Temporal;
+                preview.style.display = 'block';
+            }
         };
         img.src = e.target.result;
     };
@@ -138,8 +148,15 @@ function abrirFormularioCrearProducto() {
     document.getElementById("prodValorPiedra").value = "0";
     document.getElementById("prodMargen").value = "100";
     document.getElementById("prodDescuento").value = "0";
+    document.getElementById("prodUbicacion").value = "CAJA FUERTE";
     document.getElementById("prodArchivoFoto").value = "";
-    document.getElementById("previewFotoContainer").innerHTML = "";
+    
+    const preview = document.getElementById("previewProdModulo");
+    if (preview) {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+
     document.getElementById("modalFormularioProducto").classList.add("active");
 }
 
@@ -162,10 +179,15 @@ function abrirFormularioEditarProducto(jsonEncoded) {
     document.getElementById("prodUbicacion").value = p.ID_Ubicacion || "CAJA FUERTE";
     document.getElementById("prodArchivoFoto").value = "";
     
-    if (fotoBase64Temporal) {
-        document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoBase64Temporal}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #64748b; display: block;">Foto actual cargada</span>`;
-    } else {
-        document.getElementById("previewFotoContainer").innerHTML = "";
+    const preview = document.getElementById("previewProdModulo");
+    if (preview) {
+        if (fotoBase64Temporal) {
+            preview.src = fotoBase64Temporal;
+            preview.style.display = "block";
+        } else {
+            preview.src = "";
+            preview.style.display = "none";
+        }
     }
 
     document.getElementById("modalFormularioProducto").classList.add("active");
@@ -191,7 +213,7 @@ async function guardarProductoServidor(e) {
         porcentaje_venta: parseFloat(document.getElementById("prodMargen").value) || 100,
         tiene_descuento: parseFloat(document.getElementById("prodDescuento").value) || 0,
         ubicacion: document.getElementById("prodUbicacion").value.trim().toUpperCase(),
-        foto: fotoBase64Temporal,
+        foto: fotoBase64Temporal || "",
         estado: "DISPONIBLE"
     };
 
