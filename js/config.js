@@ -1,8 +1,16 @@
 /**
- * MANU JOYEROS - Configuración Global y Enrutador (config.js)
+ * MANU JOYEROS - Configuración Global y Versión del Sistema
  */
 const CONFIG = {
-  URL_API: "https://script.google.com/macros/s/AKfycbz_TU_SCRIPT_ID_REAL/exec" // ⚠️ Recuerda poner tu URL de Web App aquí
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw2dhdfkcK5j1ISFFb0vhMBuxz30CO4tECVTTeykg4be72WPeQoj_Oj6JerBfcQ9_C9/exec",
+  URL_API: "https://script.google.com/macros/s/AKfycbw2dhdfkcK5j1ISFFb0vhMBuxz30CO4tECVTTeykg4be72WPeQoj_Oj6JerBfcQ9_C9/exec",
+  NOMBRE_EMPRESA: "MANU JOYEROS",
+  NIT: "900.000.000-1",
+  TELEFONO: "+57 (320) 8123125",
+  DIRECCION: "Ak 7 #115-60 Local 1415",
+  EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
+  CIUDAD: "Bogotá D.C., Colombia",
+  VERSION: "V1.1415"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -66,7 +74,7 @@ async function cambiarVista(vista, event) {
         if (typeof renderizarModuloProductos === 'function') {
             await renderizarModuloProductos(contenedor);
         } else {
-            contenedor.innerHTML = `<p style="color:red; text-align:center; padding:2rem;">Cargando módulo de productos...</p>`;
+            contenedor.innerHTML = `<p style="color:#64748b; text-align:center; padding:2rem;">Cargando catálogo de productos...</p>`;
         }
     } else if (vista === 'inventario') {
         if (tituloVista) tituloVista.textContent = "Inventario y Arqueo";
