@@ -100,7 +100,6 @@
     </div>
 
     <script src="./js/config.js"></script>
-    <script src="./js/api.js"></script>
     
     <script>
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -123,17 +122,29 @@
             btnSubmit.textContent = 'Verificando credenciales...';
 
             try {
-                // Comunicación estandarizada utilizando el api.js del sistema
-                const res = await API.llamar("login", {
-                    action: "login",
-                    usuario: usuarioInput.toUpperCase(),
-                    password: passwordInput
-                }, "POST");
+                // Verificamos que la URL esté definida en config.js
+                const endpoint = typeof API_URL !== 'undefined' ? API_URL : window.API_URL;
+                if (!endpoint) {
+                    throw new Error("No se encontró la URL de la API en config.js");
+                }
 
-                if (res && res.status === "success") {
+                const respuesta = await fetch(endpoint, {
+                    method: "POST",
+                    redirect: "follow",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({
+                        action: "login",
+                        usuario: usuarioInput.toUpperCase(),
+                        password: passwordInput
+                    })
+                });
+
+                const res = await respuesta.json();
+
+                if (res && (res.status === "success" || res.status === "SUCCESS")) {
                     let usuarioData = res.data;
                     
-                    // 1. Validación rápida de la fecha de vencimiento
+                    // 1. Validación estricta y rápida de fecha de vencimiento
                     if (usuarioData.Vencimiento) {
                         let fechaVencimiento = new Date(usuarioData.Vencimiento);
                         let hoy = new Date();
@@ -146,14 +157,14 @@
                         }
                     }
 
-                    // 2. Control estricto de máximo 2 sesiones simultáneas (expulsa al más antiguo)
+                    // 2. Control estricto de máximo 2 sesiones simultáneas (bota al más antiguo)
                     const claveStorage = `sesiones_${usuarioData.usuario}`;
                     let sesionesActivas = JSON.parse(localStorage.getItem(claveStorage) || "[]");
                     const tokenActual = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
                     
                     sesionesActivas.push({ token: tokenActual, timestamp: Date.now() });
                     if (sesionesActivas.length > 2) {
-                        sesionesActivas.shift(); // Saca la sesión más antigua
+                        sesionesActivas.shift(); // Elimina la sesión más antigua
                     }
 
                     localStorage.setItem(claveStorage, JSON.stringify(sesionesActivas));
@@ -171,7 +182,7 @@
                 }
             } catch (error) {
                 console.error(error);
-                mostrarMensaje('❌ Error de conexión con el servidor. Intente nuevamente.', 'msg-error');
+                mostrarMensaje('❌ Error de conexión con el servidor. Verifique su red.', 'msg-error');
                 btnSubmit.disabled = false;
                 btnSubmit.textContent = 'Ingresar al Sistema';
             }
