@@ -20,18 +20,18 @@ async function renderizarModuloSalidas(container) {
             <div id="tablaSalidasContainer"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando registros de salidas...</p></div>
         </div>
 
-        <!-- MODAL PROFESIONAL PARA REGISTRAR SALIDA (En vez de ventanita prompt) -->
+        <!-- MODAL PROFESIONAL (Sin usar prompt) -->
         <div class="image-modal" id="modalFormSalida" onclick="cerrarModalSalidaCustom()">
             <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 480px; width: 95%; color: #0f172a; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
-                <h3 style="margin-bottom: 1rem; color: #0f172a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">📤 Registrar Salida de Inventario</h3>
+                <h3 style="margin-bottom: 1rem; color: #0f172a; font-size: 1.2rem;">📤 Registrar Salida de Inventario</h3>
                 <form onsubmit="ejecutarRegistroSalidaCustom(event)">
                     <div class="form-group" style="margin-bottom: 1rem;">
                         <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">SKU o Código de Barras *</label>
                         <input type="text" id="salidaInputSku" required placeholder="Escanee o escriba SKU..." style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.95rem;">
                     </div>
                     <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">Motivo (Ej: Venta, Reparación, Producción Taller) *</label>
-                        <input type="text" id="salidaInputMotivo" required placeholder="Venta Cliente" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.95rem;" value="Venta Cliente">
+                        <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">Motivo *</label>
+                        <input type="text" id="salidaInputMotivo" required style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.95rem;" value="Venta Cliente">
                     </div>
                     <div class="form-group" style="margin-bottom: 1rem;">
                         <label style="display: block; font-size: 0.85rem; font-weight: 500; color: #334155; margin-bottom: 4px;">Cantidad *</label>
@@ -73,7 +73,6 @@ async function ejecutarRegistroSalidaCustom(e) {
     let observaciones = document.getElementById("salidaInputObs").value.trim();
 
     if (!sku) return;
-
     cerrarModalSalidaCustom();
 
     const res = await API.llamar("registrarSalida", {
