@@ -74,11 +74,11 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
-                    <!-- SECCIÓN DE FOTO CON ADJUNTO DESDE GALERÍA / CÁMARA -->
+                    <!-- SECCIÓN DE FOTO ULTRA LIVIANA -->
                     <div class="form-group">
-                        <label>Fotografía de la Joya (Adjuntar desde galería o cámara)</label>
+                        <label>Fotografía de la Joya (Cámara o Galería - Ultra Liviana)</label>
                         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <input type="file" id="prodArchivoFoto" accept="image/*" onchange="convertirImagenLocalABase64(this)" style="font-size: 0.85rem; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; flex: 1; background: #f8fafc;">
+                            <input type="file" id="prodArchivoFoto" accept="image/*" onchange="comprimirYConvertirImagenUltraLiviana(this)" style="font-size: 0.85rem; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; flex: 1; background: #f8fafc;">
                             <input type="hidden" id="prodFoto" value="">
                         </div>
                         <div id="previewFotoContainer" style="margin-top: 8px; text-align: center;"></div>
@@ -90,18 +90,40 @@ async function renderizarModuloProductos(container) {
                     </div>
                 </form>
             </div>
-        </div>`;
+        `;
     await cargarListaProductos(false);
 }
 
-function convertirImagenLocalABase64(inputElement) {
+function comprimirYConvertirImagenUltraLiviana(inputElement) {
     const archivo = inputElement.files[0];
     if (!archivo) return;
     const lector = new FileReader();
     lector.onload = function(e) {
-        let base64String = e.target.result;
-        document.getElementById("prodFoto").value = base64String;
-        document.getElementById("previewFotoContainer").innerHTML = `<img src="${base64String}" style="max-height: 90px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #059669; display: block;">¡Imagen cargada correctamente!</span>`;
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            let width = img.width;
+            let height = img.height;
+            const maxSize = 300; // Máximo 300px para que pese kilobytes mínimos
+
+            if (width > height && width > maxSize) {
+                height *= maxSize / width;
+                width = maxSize;
+            } else if (height > maxSize) {
+                width *= maxSize / height;
+                height = maxSize;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            let compressedBase64 = canvas.toDataURL("image/jpeg", 0.5); // Calidad 50% ultra liviana
+            document.getElementById("prodFoto").value = compressedBase64;
+            document.getElementById("previewFotoContainer").innerHTML = `<img src="${compressedBase64}" style="max-height: 70px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #059669; display: block;">⚡ Foto ultra liviana optimizada!</span>`;
+        };
+        img.src = e.target.result;
     };
     lector.readAsDataURL(archivo);
 }
@@ -145,7 +167,7 @@ function abrirFormularioEditarProducto(jsonEncoded) {
     document.getElementById("prodArchivoFoto").value = "";
     
     if (fotoActual) {
-        document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoActual}" style="max-height: 90px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #64748b; display: block;">Foto actual cargada</span>`;
+        document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoActual}" style="max-height: 70px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #64748b; display: block;">Foto actual cargada</span>`;
     } else {
         document.getElementById("previewFotoContainer").innerHTML = "";
     }
