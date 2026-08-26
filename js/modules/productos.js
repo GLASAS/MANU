@@ -90,7 +90,7 @@ function abrirFormularioEditarProducto(jsonEncoded) {
     let p = JSON.parse(decodeURIComponent(jsonEncoded));
     document.getElementById("modalProductoTitulo").textContent = `✏️ Modificar Producto [${p.SKU}]`;
     document.getElementById("prodSku").value = p.SKU || "";
-    document.getElementById("prodSku").readOnly = true; // El SKU no se cambia
+    document.getElementById("prodSku").readOnly = true;
     document.getElementById("prodCodigoBarra").value = p.Codigo_Barra || p.codigo_barra || "";
     document.getElementById("prodNombre").value = p.Nombre || "";
     document.getElementById("prodCategoria").value = p.ID_Categoria || "ANILLOS";
@@ -430,7 +430,6 @@ function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorV
 function abrirZoomImagen(url) { document.getElementById("imgModalSrc").src = url; document.getElementById("imageModal").classList.add("active"); }
 function cerrarZoomImagen() { document.getElementById("imageModal").classList.remove("active"); }
 function cerrarModalQr() { document.getElementById("modalQrBarra").classList.remove("active"); }
-function imprimirSeccion(id) { window.print(); }
 
 function descargarQrPNG() {
     let img = document.getElementById("imgQrGenerado");
@@ -441,6 +440,30 @@ function descargarQrPNG() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+function descargarBarcodePNG() {
+    let svg = document.getElementById("barcodeElement");
+    if (!svg) return;
+    let svgData = new XMLSerializer().serializeToString(svg);
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+    let img = new Image();
+    img.onload = function() {
+        canvas.width = img.width || 300;
+        canvas.height = img.height || 100;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        let pngFile = canvas.toDataURL("image/png");
+        let downloadLink = document.createElement("a");
+        downloadLink.href = pngFile;
+        downloadLink.download = "codigo_barras_manu.png";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
 }
 
 async function eliminarProducto(sku) {
