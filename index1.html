@@ -1,0 +1,51 @@
+// Fragmento optimizado para la carga rápida con caché en index.html
+async function cargarListaProductos(forzarRed = false) {
+    const contenedor = document.getElementById("vistaProductosInterna");
+    
+    let productos = null;
+    const cacheGuardada = localStorage.getItem("cache_productos_manu");
+    const tiempoCache = localStorage.getItem("cache_productos_tiempo");
+    const ahora = new Date().getTime();
+
+    // Caché inteligente válida por 5 minutos para evitar llamadas lentas a la red
+    if (!forzarRed && cacheGuardada && tiempoCache && (ahora - tiempoCache < 300000)) {
+        try {
+            productos = JSON.parse(cacheGuardada);
+        } catch(e) { productos = null; }
+    }
+
+    if (!productos) {
+        const res = await API.llamar("obtenerProductos", {}, "GET");
+        if (res && res.status === "success") {
+            productos = res.data;
+            localStorage.setItem("cache_productos_manu", JSON.stringify(productos));
+            localStorage.setItem("cache_productos_tiempo", ahora);
+        } else {
+            contenedor.innerHTML = `<p style="color: #ef4444; text-align: center;">Error al cargar el inventario.</p>`;
+            return;
+        }
+    }
+
+    let skusVendidosSet = {};
+    try {
+        const resSalidas = await API.llamar("obtenerSalidas", {}, "GET");
+        if (resSalidas && resSalidas.status === "success" && resSalidas.data) {
+            resSalidas.data.forEach(s => {
+                let skuSalida = s.SKU || s.sku || "";
+                if (!skuSalida && s.Motivo && (s.Motivo.includes("AN") || s.Motivo.includes("JO"))) {
+                    skuSalida = s.Motivo;
+                }
+                if (skuSalida) skusVendidosSet[skuSalida.trim().toUpperCase()] = true;
+            });
+        }
+    } catch(e) {}
+
+    listaProductosCache = (productos || []).filter(p => {
+        let skuProd = String(p.SKU || p.sku || p.Ref || "").trim().toUpperCase();
+        return !skusVendidosSet[skuProd];
+    });
+
+    listaProductosFiltradosCache = listaProductosCache;
+    paginaActual = 1;
+    renderizarTablaProductosPaginada();
+}

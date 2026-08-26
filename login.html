@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MANU JOYEROS</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #d97706;
+            --bg-color: #0b0f19;
+            --white: #ffffff;
+            --text-color: #374151;
+            --error-color: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body.login-body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-card {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .login-header { margin-bottom: 1.5rem; }
+        .brand-logo-wrapper {
+            background-color: #ffffff;
+            padding: 6px;
+            border-radius: 8px;
+            display: inline-block;
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .brand-logo-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+        .form-group { margin-bottom: 1.25rem; text-align: left; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-color); font-weight: 600; font-size: 0.9rem; }
+        .password-container { position: relative; display: flex; align-items: center; }
+        .password-container input, .form-group input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .password-container input { padding-right: 45px; }
+        .form-group input:focus, .password-container input:focus { border-color: var(--accent); }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #64748b;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 0.5rem;
+        }
+        .btn-primary:hover { background-color: #1e293b; }
+        .error-msg { margin-top: 1rem; color: var(--error-color); font-size: 0.85rem; text-align: center; font-weight: 600; }
+        .login-footer-version { margin-top: 1.5rem; text-align: center; font-size: 0.75rem; color: #94a3b8; border-top: 1px solid #f3f4f6; padding-top: 0.75rem; }
+    </style>
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="brand-logo-wrapper">
+                <img src="manu_joyeros.jpg" alt="MANU JOYEROS Logo" class="brand-logo-img">
+            </div>
+        </div>
+        <form id="loginForm" onsubmit="intentarLogin(event)">
+            <div class="form-group">
+                <label for="usuario">Usuario</label>
+                <input type="text" id="usuario" required placeholder="Ingrese su usuario">
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <div class="password-container">
+                    <input type="password" id="password" required placeholder="••••••••">
+                    <button type="button" class="toggle-password" id="btnTogglePass" onclick="togglePasswordVisibility()" title="Mostrar contraseña">👁️</button>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" id="btnIngresar">Ingresar al Sistema</button>
+            <div id="mensajeError" class="error-msg"></div>
+        </form>
+        <div class="login-footer-version" id="versionLoginLabel">
+            Versión V1.1512 • MANU JOYEROS
+        </div>
+    </div>
+
+    <!-- Cargar configuración primero -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        if (typeof CONFIG !== 'undefined' && CONFIG.VERSION) {
+            document.getElementById("versionLoginLabel").textContent = `Versión ${CONFIG.VERSION} • ${CONFIG.NOMBRE_EMPRESA}`;
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const btnToggle = document.getElementById('btnTogglePass');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                btnToggle.textContent = '🔒';
+            } else {
+                passwordInput.type = 'password';
+                btnToggle.textContent = '👁️';
+            }
+        }
+
+        async function intentarLogin(event) {
+            event.preventDefault();
+            const usuario = document.getElementById('usuario').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('btnIngresar');
+            const errorDiv = document.getElementById('mensajeError');
+
+            btn.disabled = true;
+            btn.textContent = "Verificando credenciales...";
+            errorDiv.textContent = "";
+
+            try {
+                const res = await API.llamar("login", { usuario, password }, "POST");
+                if (res && res.status === "success") {
+                    localStorage.setItem("usuario_manu", JSON.stringify(res.usuario));
+                    window.location.href = "index.html"; 
+                } else {
+                    errorDiv.textContent = res ? res.message : "Error de respuesta del servidor.";
+                    btn.disabled = false;
+                    btn.textContent = "Ingresar al Sistema";
+                }
+            } catch (err) {
+                errorDiv.textContent = "Error de conexión con la API.";
+                btn.disabled = false;
+                btn.textContent = "Ingresar al Sistema";
+            }
+        }
+    </script>
+</body>
+</html>
