@@ -74,9 +74,12 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
+                    <!-- SECCIÓN DE ADJUNTO DE FOTO DESDE GALERÍA / CÁMARA -->
                     <div class="form-group">
-                        <label>URL de la Foto</label>
-                        <input type="text" id="prodFoto" placeholder="https://..." style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <label>Fotografía de la Joya (Galería o Cámara del Celular)</label>
+                        <input type="file" id="prodArchivoFoto" accept="image/*" onchange="comprimirFotoGaleria(this)" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
+                        <input type="hidden" id="prodFoto" value="">
+                        <div id="previewFotoContainer" style="margin-top: 8px; text-align: center;"></div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 1rem;">
@@ -87,6 +90,40 @@ async function renderizarModuloProductos(container) {
             </div>
         </div>`;
     await cargarListaProductos(false);
+}
+
+function comprimirFotoGaleria(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 250; // Redimensionar a máximo 250px para máxima ligereza
+
+            if (width > height && width > maxDim) {
+                height *= maxDim / width;
+                width = maxDim;
+            } else if (height > maxDim) {
+                width *= maxDim / height;
+                height = maxDim;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4); // Compresión al 40%
+            document.getElementById("prodFoto").value = compressedDataUrl;
+            document.getElementById("previewFotoContainer").innerHTML = `<img src="${compressedDataUrl}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #059669; display: block;">⚡ Foto optimizada y lista para guardar!</span>`;
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
 }
 
 function abrirFormularioCrearProducto() {
@@ -101,6 +138,8 @@ function abrirFormularioCrearProducto() {
     document.getElementById("prodMargen").value = "100";
     document.getElementById("prodDescuento").value = "0";
     document.getElementById("prodFoto").value = "";
+    document.getElementById("prodArchivoFoto").value = "";
+    document.getElementById("previewFotoContainer").innerHTML = "";
     document.getElementById("modalFormularioProducto").classList.add("active");
 }
 
@@ -120,7 +159,16 @@ function abrirFormularioEditarProducto(jsonEncoded) {
     document.getElementById("prodMargen").value = p.Porcentaje_Venta || 100;
     document.getElementById("prodDescuento").value = p.Tiene_Descuento || 0;
     document.getElementById("prodUbicacion").value = p.ID_Ubicacion || "CAJA FUERTE";
-    document.getElementById("prodFoto").value = p.Foto || "";
+    
+    let fotoActual = p.Foto || "";
+    document.getElementById("prodFoto").value = fotoActual;
+    document.getElementById("prodArchivoFoto").value = "";
+    
+    if (fotoActual) {
+        document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoActual}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #64748b; display: block;">Foto actual cargada</span>`;
+    } else {
+        document.getElementById("previewFotoContainer").innerHTML = "";
+    }
 
     document.getElementById("modalFormularioProducto").classList.add("active");
 }
