@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Configuración Global y Versión del Sistema
+ * MANU JOYEROS - Configuración Global y Enrutador (config.js)
  */
 const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw2dhdfkcK5j1ISFFb0vhMBuxz30CO4tECVTTeykg4be72WPeQoj_Oj6JerBfcQ9_C9/exec",
@@ -7,13 +7,14 @@ const CONFIG = {
   NOMBRE_EMPRESA: "MANU JOYEROS",
   NIT: "900.000.000-1",
   TELEFONO: "+57 (320) 8123125",
-  DIRECCION: "Ak 7 #115-60 Local 1521",
+  DIRECCION: "Ak 7 #115-60 Local 1415",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.1521"
+  VERSION: "V1.1415"
 };
 
-let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
+// 🔑 LLAVE UNIFICADA DE SESIÓN (coincide con el login)
+let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
 let listaProductosCache = [];
 let listaProductosFiltradosCache = [];
 let paginaActual = 1;
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function cerrarSesion() {
+    localStorage.removeItem("usuario_manu");
     localStorage.removeItem("usuario_manu_joyeros");
     window.location.href = "login.html";
 }
