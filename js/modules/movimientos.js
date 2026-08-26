@@ -12,21 +12,21 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
                 <h3 style="color: #0f172a; margin: 0;">${titulo}</h3>
                 ${tipoMovimiento === 'ENTRADAS' ? `<button class="btn-nuevo-producto" style="background:${color};" onclick="abrirFormularioMovimiento('${tipoMovimiento}')">+ Registrar Entrada</button>` : ''}
             </div>
-            <div id="tablaMovimientosContenedor">Cargando...</div>
+            <div id="tablaMovimientosContenedor">Cargando registros...</div>
         </div>`;
 
     const res = await API.llamar(tipoMovimiento === 'ENTRADAS' ? "obtenerEntradas" : "obtenerSalidas", {}, "GET");
     const contenedor = document.getElementById("tablaMovimientosContenedor");
 
     if (res && res.status === "success" && res.data && res.data.length > 0) {
-        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>ID</th><th>Fecha</th><th>SKU</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th><th>Observaciones</th>`;
+        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>ID</th><th>Fecha</th><th>SKU / Referencia</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th><th>Observaciones</th>`;
         if (tipoMovimiento === 'SALIDAS') html += `<th>Acciones</th>`;
         html += `</tr></thead><tbody>`;
 
         res.data.forEach(m => {
-            let idMov = m.ID_Movimiento || m.ID_Salida || '-';
-            let sku = m.SKU || '-';
-            html += `<tr><td><strong>${idMov}</strong></td><td>${m.Fecha || '-'}</td><td><strong style="color: #d97706;">${sku}</strong></td><td>${m.Cantidad || 1}</td><td>${m.Motivo || '-'}</td><td>${m.Usuario || '-'}</td><td>${m.Observaciones || '-'}</td>`;
+            let idMov = m.ID_Movimiento || m.ID_Salida || m.id_movimiento || m.id_salida || '-';
+            let sku = m.SKU || m.sku || '-';
+            html += `<tr><td><strong>${idMov}</strong></td><td>${m.Fecha || m.fecha || '-'}</td><td><strong style="color: #d97706;">${sku}</strong></td><td>${m.Cantidad || m.cantidad || 1}</td><td>${m.Motivo || m.motivo || '-'}</td><td>${m.Usuario || m.usuario || '-'}</td><td>${m.Observaciones || m.observaciones || '-'}</td>`;
             if (tipoMovimiento === 'SALIDAS') {
                 html += `<td><button class="btn-action btn-delete" onclick="reversarSalidaUnica('${idMov}')" title="Reversar Salida">↩️</button></td>`;
             }
@@ -35,7 +35,7 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
         html += `</tbody></table></div>`;
         contenedor.innerHTML = html;
     } else {
-        contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay registros.</p>`;
+        contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay registros de ${tipoMovimiento.toLowerCase()} en el sistema.</p>`;
     }
 }
 
@@ -55,23 +55,34 @@ async function renderizarModuloKardex(container) {
     container.innerHTML = `
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="color: #0f172a; margin: 0;">📑 Kardex de Movimientos</h3>
+                <h3 style="color: #0f172a; margin: 0;">📑 Kardex de Movimientos de Inventario</h3>
                 <button class="btn-nuevo-producto" onclick="renderizarModuloKardex(document.getElementById('contentBody'))">🔄 Actualizar</button>
             </div>
-            <div id="tablaKardexContenedor">Cargando Kardex...</div>
+            <div id="tablaKardexContenedor">Cargando Kardex y cruzando estados...</div>
         </div>`;
 
-    const [resE, resS] = await Promise.all([API.llamar("obtenerEntradas", {}, "GET"), API.llamar("obtenerSalidas", {}, "GET")]);
-    let movs = [];
-    if (resE && resE.data) resE.data.forEach(e => movs.push({ ...e, Tipo: 'ENTRADA' }));
-    if (resS && resS.data) resS.data.forEach(s => movs.push({ ...s, Tipo: 'SALIDA' }));
-    movs.sort((a, b) => new Date(b.Fecha || 0) - new Date(a.Fecha || 0));
+    try {
+        const [resE, resS] = await Promise.all([API.llamar("obtenerEntradas", {}, "GET"), API.llamar("obtenerSalidas", {}, "GET")]);
+        let movs = [];
+        if (resE && resE.status === "success" && resE.data) resE.data.forEach(e => movs.push({ ...e, Tipo: 'ENTRADA' }));
+        if (resS && resS.status === "success" && resS.data) resS.data.forEach(s => movs.push({ ...s, Tipo: 'SALIDA' }));
+        movs.sort((a, b) => new Date(b.Fecha || b.fecha || 0) - new Date(a.Fecha || a.fecha || 0));
 
-    const contenedor = document.getElementById("tablaKardexContenedor");
-    let html = `<div class="table-container"><table class="data-table"><thead><tr><th>Tipo</th><th>Fecha</th><th>SKU</th><th>Producto</th><th>Estado</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th></tr></thead><tbody>`;
-    movs.forEach(m => {
-        html += `<tr><td><span class="badge" style="background:${m.Tipo==='ENTRADA'?'#059669':'#dc2626'};">${m.Tipo}</span></td><td>${m.Fecha||'-'}</td><td><strong>${m.SKU||'-'}</strong></td><td>${m.Nombre_Producto||'-'}</td><td>${m.Estado_Actual||'DISPONIBLE'}</td><td>${m.Cantidad||1}</td><td>${m.Motivo||'-'}</td><td>${m.Usuario||'-'}</td></tr>`;
-    });
-    html += `</tbody></table></div>`;
-    contenedor.innerHTML = html;
+        const contenedor = document.getElementById("tablaKardexContenedor");
+        if (movs.length === 0) {
+            contenedor.innerHTML = `<p style="text-align: center; color: #64748b; padding: 2rem;">No hay movimientos registrados en el Kardex.</p>`;
+            return;
+        }
+
+        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>Tipo</th><th>Fecha</th><th>SKU / Barras</th><th>Producto</th><th>Estado</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th></tr></thead><tbody>`;
+        movs.forEach(m => {
+            let tipo = m.Tipo || 'MOV';
+            let bg = tipo === 'ENTRADA' ? '#059669' : '#dc2626';
+            html += `<tr><td><span class="badge" style="background:${bg};">${tipo}</span></td><td>${m.Fecha||m.fecha||'-'}</td><td><strong>${m.SKU||m.sku||'-'}</strong></td><td>${m.Nombre_Producto||'-'}</td><td>${m.Estado_Actual||'DISPONIBLE'}</td><td>${m.Cantidad||m.cantidad||1}</td><td>${m.Motivo||m.motivo||'-'}</td><td>${m.Usuario||m.usuario||'-'}</td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+        contenedor.innerHTML = html;
+    } catch (e) {
+        document.getElementById("tablaKardexContenedor").innerHTML = `<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar el Kardex.</p>`;
+    }
 }
