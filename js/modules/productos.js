@@ -2,6 +2,8 @@
  * MANU JOYEROS - Módulo de Productos (productos.js)
  */
 
+let fotoBase64Temporal = "";
+
 async function renderizarModuloProductos(container) {
     await cargarCategoriasDinamicas();
     await cargarMaterialesDinamicos();
@@ -74,11 +76,10 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
-                    <!-- SECCIÓN DE ADJUNTO DE FOTO DESDE GALERÍA / CÁMARA -->
+                    <!-- SECCIÓN DE FOTO CÁMARA O GALERÍA CON COMPRESIÓN -->
                     <div class="form-group">
-                        <label>Fotografía de la Joya (Galería o Cámara del Celular)</label>
-                        <input type="file" id="prodArchivoFoto" accept="image/*" onchange="comprimirFotoGaleria(this)" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
-                        <input type="hidden" id="prodFoto" value="">
+                        <label>Fotografía de la Joya (Cámara o Galería)</label>
+                        <input type="file" id="prodArchivoFoto" accept="image/*" capture="environment" onchange="procesarFotoCelular(event)" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
                         <div id="previewFotoContainer" style="margin-top: 8px; text-align: center;"></div>
                     </div>
 
@@ -92,18 +93,18 @@ async function renderizarModuloProductos(container) {
     await cargarListaProductos(false);
 }
 
-function comprimirFotoGaleria(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
+function procesarFotoCelular(event) {
+    const archivo = event.target.files[0];
+    if (!archivo) return;
+    const lector = new FileReader();
+    lector.onload = function(e) {
         const img = new Image();
         img.onload = function() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             let width = img.width;
             let height = img.height;
-            const maxDim = 250; // Redimensionar a máximo 250px para máxima ligereza
+            const maxDim = 300; // Máximo 300px para evitar saturar el POST
 
             if (width > height && width > maxDim) {
                 height *= maxDim / width;
@@ -117,16 +118,16 @@ function comprimirFotoGaleria(input) {
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
 
-            let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4); // Compresión al 40%
-            document.getElementById("prodFoto").value = compressedDataUrl;
-            document.getElementById("previewFotoContainer").innerHTML = `<img src="${compressedDataUrl}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #059669; display: block;">⚡ Foto optimizada y lista para guardar!</span>`;
+            fotoBase64Temporal = canvas.toDataURL('image/jpeg', 0.4); // Calidad 40% ultra liviana
+            document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoBase64Temporal}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #059669; display: block;">⚡ Foto optimizada y lista!</span>`;
         };
         img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    lector.readAsDataURL(archivo);
 }
 
 function abrirFormularioCrearProducto() {
+    fotoBase64Temporal = "";
     document.getElementById("modalProductoTitulo").textContent = "✨ Registrar Nuevo Producto";
     document.getElementById("prodSku").value = "";
     document.getElementById("prodSku").readOnly = false;
@@ -137,7 +138,6 @@ function abrirFormularioCrearProducto() {
     document.getElementById("prodValorPiedra").value = "0";
     document.getElementById("prodMargen").value = "100";
     document.getElementById("prodDescuento").value = "0";
-    document.getElementById("prodFoto").value = "";
     document.getElementById("prodArchivoFoto").value = "";
     document.getElementById("previewFotoContainer").innerHTML = "";
     document.getElementById("modalFormularioProducto").classList.add("active");
@@ -145,6 +145,7 @@ function abrirFormularioCrearProducto() {
 
 function abrirFormularioEditarProducto(jsonEncoded) {
     let p = JSON.parse(decodeURIComponent(jsonEncoded));
+    fotoBase64Temporal = p.Foto || "";
     document.getElementById("modalProductoTitulo").textContent = `✏️ Modificar Producto [${p.SKU}]`;
     document.getElementById("prodSku").value = p.SKU || "";
     document.getElementById("prodSku").readOnly = true;
@@ -159,13 +160,10 @@ function abrirFormularioEditarProducto(jsonEncoded) {
     document.getElementById("prodMargen").value = p.Porcentaje_Venta || 100;
     document.getElementById("prodDescuento").value = p.Tiene_Descuento || 0;
     document.getElementById("prodUbicacion").value = p.ID_Ubicacion || "CAJA FUERTE";
-    
-    let fotoActual = p.Foto || "";
-    document.getElementById("prodFoto").value = fotoActual;
     document.getElementById("prodArchivoFoto").value = "";
     
-    if (fotoActual) {
-        document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoActual}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #64748b; display: block;">Foto actual cargada</span>`;
+    if (fotoBase64Temporal) {
+        document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoBase64Temporal}" style="max-height: 80px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #64748b; display: block;">Foto actual cargada</span>`;
     } else {
         document.getElementById("previewFotoContainer").innerHTML = "";
     }
@@ -193,7 +191,7 @@ async function guardarProductoServidor(e) {
         porcentaje_venta: parseFloat(document.getElementById("prodMargen").value) || 100,
         tiene_descuento: parseFloat(document.getElementById("prodDescuento").value) || 0,
         ubicacion: document.getElementById("prodUbicacion").value.trim().toUpperCase(),
-        foto: document.getElementById("prodFoto").value.trim(),
+        foto: fotoBase64Temporal,
         estado: "DISPONIBLE"
     };
 
@@ -323,13 +321,6 @@ async function eliminarProductosSeleccionados() {
     } else {
         alert("Error al eliminar.");
     }
-}
-
-function expandirBuscador() {
-    const box = document.getElementById("searchExpandableBox");
-    if (box) box.classList.add("expanded");
-    const input = document.getElementById("inputBuscadorCatalogo");
-    if (input) input.focus();
 }
 
 async function forzarRecargaCatalogo() {
