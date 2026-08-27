@@ -13,7 +13,7 @@ async function renderizarModuloInventario(container) {
     container.innerHTML = `
         <div class="card">
             <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.1rem;">📦 Módulo de Auditoría — Arqueo e Inventario Físico en Línea</h3>
-            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.25rem;">Verifique existencias reales en vitrinas y caja fuerte escaneando o buscando por SKU, código de barras o nombre.</p>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.25rem;">Verifique existencias reales escaneando o buscando por SKU, código de barras o nombre.</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;">
                 <button class="btn-modern btn-success-action" onclick="exportarArqueoExcel()">📥 Descargar Formato Excel</button>
@@ -43,7 +43,6 @@ async function renderizarModuloInventario(container) {
                 </div>
             </div>
 
-            <!-- RESUMEN DE ARQUEO -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; text-align: center;">
                 <div style="background: #e0f2fe; padding: 12px; border-radius: 8px; border: 1px solid #bae6fd;">
                     <div style="font-size: 0.75rem; color: #0369a1; font-weight: bold;">TOTAL</div>
@@ -59,7 +58,6 @@ async function renderizarModuloInventario(container) {
                 </div>
             </div>
 
-            <!-- BUSCADOR UNIVERSAL INTELIGENTE DE ARQUEO -->
             <div style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
                 <div class="toolbar-search-box" style="flex: 1;">
                     <span>🔍</span>
@@ -99,7 +97,7 @@ async function cargarDatosInventarioArqueo() {
 
     listaInventarioCache = (productos || []).filter(p => String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase().includes("DISPONIBLE")).map(p => ({
         ...p,
-        auditado: false // Estado inicial para arqueo
+        auditado: false
     }));
 
     listaInventarioFiltradosCache = listaInventarioCache;
@@ -107,9 +105,6 @@ async function cargarDatosInventarioArqueo() {
     renderizarTablaArqueo();
 }
 
-/**
- * Buscador Universal de Arqueo Inteligente y Veloz con Debounce
- */
 function filtrarArqueoEnVivoOptimizado() {
     clearTimeout(timeoutArqueoBuscador);
     timeoutArqueoBuscador = setTimeout(() => {
@@ -125,7 +120,6 @@ function filtrarArqueoEnVivoOptimizado() {
             const color = String(p.Color || "").toLowerCase();
             const ubicacion = String(p.ID_Ubicacion || "").toLowerCase();
 
-            // Validación del texto de búsqueda
             let cumpleTexto = true;
             if (query) {
                 const terminos = query.split(/\s+/);
@@ -140,7 +134,6 @@ function filtrarArqueoEnVivoOptimizado() {
                 );
             }
 
-            // Validación del desplegable de estado (Todos, Presentes, Faltantes)
             let cumpleEstado = true;
             if (filtroEstado === "PRESENTES") cumpleEstado = p.auditado === true;
             if (filtroEstado === "FALTANTES") cumpleEstado = p.auditado === false;
@@ -179,7 +172,7 @@ function renderizarTablaArqueo() {
     }
 
     let html = `<div class="table-container"><table class="data-table"><thead><tr>
-        <th>Estado Físico</th><th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Categoría</th><th>Ubicación</th><th>Peso</th><th>Acción / Marcar</th>
+        <th>Estado Físico</th><th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Categoría</th><th>Ubicación</th><th>Acción / Marcar</th>
     </tr></thead><tbody>`;
 
     listaInventarioFiltradosCache.forEach(p => {
@@ -199,7 +192,6 @@ function renderizarTablaArqueo() {
             <td>${p.Nombre || ''}</td>
             <td>${p.ID_Categoria || ''}</td>
             <td>${p.ID_Ubicacion || ''}</td>
-            <td>${p.Peso || 0}g</td>
             <td>${btnAccion}</td>
         </tr>`;
     });
@@ -219,10 +211,10 @@ function limpiarArqueoFisico() {
 
 function exportarArqueoExcel() {
     if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos para exportar."); return; }
-    let csv = "SKU;Codigo_Barra;Nombre;Categoria;Ubicacion;Peso;Estado_Auditoria\n";
+    let csv = "SKU;Codigo_Barra;Nombre;Categoria;Ubicacion;Estado_Auditoria\n";
     listaInventarioCache.forEach(p => {
         let estado = p.auditado ? "PRESENTE" : "FALTANTE";
-        csv += [p.SKU, p.Codigo_Barra || "", `"${(p.Nombre || "").replace(/"/g, '""')}"`, p.ID_Categoria || "", p.ID_Ubicacion || "", p.Peso || 0, estado].join(";") + "\n";
+        csv += [p.SKU, p.Codigo_Barra || "", `"${(p.Nombre || "").replace(/"/g, '""')}"`, p.ID_Categoria || "", p.ID_Ubicacion || "", estado].join(";") + "\n";
     });
     let link = document.createElement("a");
     link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
