@@ -30,7 +30,12 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
 
                         <div>
                             <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Motivo / Referencia *</label>
-                            <input type="text" id="movMotivo" required placeholder="${esEntrada ? 'Compra a proveedor' : 'Venta mostrador'}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                            <input type="text" id="movMotivo" required placeholder="${esEntrada ? 'COMPRA O DEVOLUCION' : 'VENTA MOSTRADOR'}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Observaciones</label>
+                            <input type="text" id="movObservaciones" placeholder="Detalles adicionales" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
                         </div>
 
                     </div>
@@ -57,11 +62,13 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
                                 <th style="padding: 10px;">SKU</th>
                                 <th style="padding: 10px;">Cantidad</th>
                                 <th style="padding: 10px;">Motivo</th>
+                                <th style="padding: 10px;">Observaciones</th>
                                 <th style="padding: 10px;">Usuario</th>
+                                ${!esEntrada ? '<th style="padding: 10px; text-align: center;">Acción</th>' : ''}
                             </tr>
                         </thead>
                         <tbody id="tablaMovimientosBody">
-                            <tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">Cargando registros...</td></tr>
+                            <tr><td colspan="${esEntrada ? 6 : 7}" style="text-align: center; padding: 20px; color: #64748b;">Cargando registros...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -77,10 +84,11 @@ async function cargarHistorialMovimientos(tipo) {
     const tbody = document.getElementById("tablaMovimientosBody");
     if (!tbody) return;
     
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">Consultando registros...</td></tr>`;
+    const esEntrada = tipo === 'ENTRADAS';
+    tbody.innerHTML = `<tr><td colspan="${esEntrada ? 6 : 7}" style="text-align: center; padding: 20px; color: #64748b;">Consultando registros...</td></tr>`;
 
     try {
-        const accionObtener = tipo === 'ENTRADAS' ? 'obtenerEntradas' : 'obtenerSalidas';
+        const accionObtener = esEntrada ? 'obtenerEntradas' : 'obtenerSalidas';
         const res = await API.llamar(accionObtener, { action: accionObtener }, "GET");
         
         if (res && res.status === "success" && res.data && res.data.length > 0) {
@@ -88,9 +96,18 @@ async function cargarHistorialMovimientos(tipo) {
             res.data.forEach(m => {
                 let fecha = m.Fecha || m.fecha || '-';
                 let sku = m.SKU || m.sku || '-';
-                let cantidad = m.CANTIDAD || m.Cantidad || m.cantidad || 0;
-                let motivo = m.Motivo || m.motivo || m.Observaciones || '-';
+                let cantidad = m.Cantidad || m.cantidad || 1;
+                let motivo = m.Motivo || m.motivo || '-';
+                let observaciones = m.Observaciones || m.observaciones || '-';
                 let usuario = m.Usuario || m.usuario || '-';
+                let idSalida = m.ID_Salida || m.id_salida || '';
+
+                let accionReversarHtml = '';
+                if (!esEntrada && idSalida) {
+                    accionReversarHtml = `<td style="padding: 10px; text-align: center;"><button type="button" onclick="ejecutarReversarSalida('${idSalida}')" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">🔄 Reversar</button></td>`;
+                } else if (!esEntrada) {
+                    accionReversarHtml = `<td style="padding: 10px; text-align: center;">-</td>`;
+                }
 
                 html += `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
@@ -98,16 +115,18 @@ async function cargarHistorialMovimientos(tipo) {
                         <td style="padding: 10px; font-weight: bold; color: #0f172a;">${sku}</td>
                         <td style="padding: 10px;">${cantidad}</td>
                         <td style="padding: 10px;">${motivo}</td>
+                        <td style="padding: 10px; color: #64748b;">${observaciones}</td>
                         <td style="padding: 10px; color: #64748b;">${usuario}</td>
+                        ${accionReversarHtml}
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
         } else {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">No hay registros de ${tipo.toLowerCase()} disponibles.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${esEntrada ? 6 : 7}" style="text-align: center; padding: 20px; color: #64748b;">No hay registros de ${tipo.toLowerCase()} disponibles.</td></tr>`;
         }
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error al conectar con el servidor.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${esEntrada ? 6 : 7}" style="text-align: center; padding: 20px; color: #ef4444;">Error al conectar con el servidor.</td></tr>`;
     }
 }
 
@@ -116,24 +135,20 @@ async function procesarMovimientoInventario(event, tipo) {
     const sku = document.getElementById("movSku").value.trim();
     const cantidad = Number(document.getElementById("movCantidad").value);
     const motivo = document.getElementById("movMotivo").value.trim();
-    const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? (usuarioActual.usuario || usuarioActual.nombre) : 'Admin';
+    const observaciones = document.getElementById("movObservaciones").value.trim();
+    const usuarioObj = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual : JSON.parse(localStorage.getItem("usuario_manu") || "{}");
+    const usuarioNombre = usuarioObj.nombre || usuarioObj.usuario || 'ADMIN';
 
-    const accionRegistro = tipo === 'ENTRADAS' ? 'guardarEntrada' : 'guardarSalida';
+    // Acciones exactas que espera tu backend (.gs)
+    const accionRegistro = tipo === 'ENTRADAS' ? 'registrarEntrada' : 'registrarSalida';
 
-    const payload = tipo === 'ENTRADAS' ? {
-        action: accionRegistro,
-        sku: sku,
-        cantidad: cantidad,
-        factura: cantidad,
-        observaciones: motivo,
-        usuario: usuario
-    } : {
+    const payload = {
         action: accionRegistro,
         sku: sku,
         cantidad: cantidad,
         motivo: motivo,
-        observaciones: motivo,
-        usuario: usuario
+        observaciones: observaciones,
+        usuario: usuarioNombre
     };
 
     const res = await API.llamar(accionRegistro, payload, "POST");
@@ -144,6 +159,26 @@ async function procesarMovimientoInventario(event, tipo) {
         cargarHistorialMovimientos(tipo);
     } else {
         alert("Error: " + (res ? res.message : "No se pudo procesar el registro."));
+    }
+}
+
+async function ejecutarReversarSalida(idSalida) {
+    if (!confirm("¿Está seguro de anular/reversar esta salida? El producto volverá a estar disponible.")) return;
+
+    const usuarioObj = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual : JSON.parse(localStorage.getItem("usuario_manu") || "{}");
+    const usuarioNombre = usuarioObj.nombre || usuarioObj.usuario || 'ADMIN';
+
+    const res = await API.llamar("reversarSalida", {
+        action: "reversarSalida",
+        id_salida: idSalida,
+        usuario: usuarioNombre
+    }, "POST");
+
+    if (res && res.status === "success") {
+        alert(res.message);
+        cargarHistorialMovimientos('SALIDAS');
+    } else {
+        alert("Error al reversar: " + (res ? res.message : "Desconocido"));
     }
 }
 
@@ -163,11 +198,12 @@ async function renderizarModuloKardex(container) {
                             <th style="padding: 10px;">SKU</th>
                             <th style="padding: 10px;">Cantidad</th>
                             <th style="padding: 10px;">Motivo</th>
+                            <th style="padding: 10px;">Observaciones</th>
                             <th style="padding: 10px;">Usuario</th>
                         </tr>
                     </thead>
                     <tbody id="tablaKardexBody">
-                        <tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Cargando Kardex...</td></tr>
+                        <tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Cargando Kardex...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -180,15 +216,30 @@ async function cargarKardexCompleto() {
     const tbody = document.getElementById("tablaKardexBody");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Consultando transacciones...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">Consultando transacciones...</td></tr>`;
 
     try {
-        const res = await API.llamar("obtenerKardex", { action: "obtenerKardex" }, "GET");
-        if (res && res.status === "success" && res.data && res.data.length > 0) {
+        // Obtenemos entradas y salidas combinadas tal como lo maneja tu backend
+        const [resEntradas, resSalidas] = await Promise.all([
+            API.llamar("obtenerEntradas", { action: "obtenerEntradas" }, "GET"),
+            API.llamar("obtenerSalidas", { action: "obtenerSalidas" }, "GET")
+        ]);
+
+        let listaKardex = [];
+        if (resEntradas && resEntradas.status === "success" && resEntradas.data) {
+            resEntradas.data.forEach(e => { e.Tipo_Mov = "ENTRADA"; listaKardex.push(e); });
+        }
+        if (resSalidas && resSalidas.status === "success" && resSalidas.data) {
+            resSalidas.data.forEach(s => { s.Tipo_Mov = "SALIDA"; listaKardex.push(s); });
+        }
+
+        if (listaKardex.length > 0) {
+            // Ordenar por fecha descendente si es posible
+            listaKardex.sort((a, b) => new Date(b.Fecha || b.fecha || 0) - new Date(a.Fecha || a.fecha || 0));
+
             let html = "";
-            res.data.forEach(k => {
-                let tipoRaw = String(k.Tipo || k.tipo || "ENTRADA").trim().toUpperCase();
-                let esEntrada = tipoRaw.includes('ENTRADA');
+            listaKardex.forEach(k => {
+                let esEntrada = String(k.Tipo_Mov || "").toUpperCase() === "ENTRADA";
                 let tipoBadge = esEntrada 
                     ? `<span style="background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">ENTRADA</span>` 
                     : `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">SALIDA</span>`;
@@ -198,17 +249,18 @@ async function cargarKardexCompleto() {
                         <td style="padding: 10px;">${k.Fecha || k.fecha || '-'}</td>
                         <td style="padding: 10px;">${tipoBadge}</td>
                         <td style="padding: 10px; font-weight: bold; color: #0f172a;">${k.SKU || k.sku || '-'}</td>
-                        <td style="padding: 10px;">${k.CANTIDAD || k.Cantidad || k.cantidad || 0}</td>
-                        <td style="padding: 10px;">${k.Motivo || k.motivo || k.Observaciones || '-'}</td>
+                        <td style="padding: 10px;">${k.Cantidad || k.cantidad || 1}</td>
+                        <td style="padding: 10px;">${k.Motivo || k.motivo || '-'}</td>
+                        <td style="padding: 10px; color: #64748b;">${k.Observaciones || k.observaciones || '-'}</td>
                         <td style="padding: 10px; color: #64748b;">${k.Usuario || k.usuario || '-'}</td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
         } else {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">No hay registros en el Kardex.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">No hay registros en el Kardex.</td></tr>`;
         }
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error al conectar con el servidor.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Error al conectar con el servidor.</td></tr>`;
     }
 }
