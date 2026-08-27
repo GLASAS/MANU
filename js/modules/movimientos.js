@@ -8,9 +8,9 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
 
     container.innerHTML = `
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:10px;">
                 <h3 style="color: #0f172a; margin: 0;">${titulo}</h3>
-                ${tipoMovimiento === 'ENTRADAS' ? `<button class="btn-nuevo-producto" style="background:${color};" onclick="abrirFormularioMovimiento('${tipoMovimiento}')">+ Registrar Entrada</button>` : ''}
+                <button class="btn-nuevo-producto" style="background:${color};" onclick="abrirFormularioMovimiento('${tipoMovimiento}')">+ Registrar ${tipoMovimiento === 'ENTRADAS' ? 'Entrada' : 'Salida'}</button>
             </div>
             <div id="tablaMovimientosContenedor">Cargando registros...</div>
         </div>`;
@@ -28,7 +28,7 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
             let sku = m.SKU || m.sku || '-';
             html += `<tr><td><strong>${idMov}</strong></td><td>${m.Fecha || m.fecha || '-'}</td><td><strong style="color: #d97706;">${sku}</strong></td><td>${m.Cantidad || m.cantidad || 1}</td><td>${m.Motivo || m.motivo || '-'}</td><td>${m.Usuario || m.usuario || '-'}</td><td>${m.Observaciones || m.observaciones || '-'}</td>`;
             if (tipoMovimiento === 'SALIDAS') {
-                html += `<td><button class="btn-action btn-delete" onclick="reversarSalidaUnica('${idMov}')" title="Reversar Salida">↩️</button></td>`;
+                html += `<td><button class="btn-action btn-delete" onclick="reversarSalidaUnica('${idMov}')" title="Reversar Salida">↩️ Anular</button></td>`;
             }
             html += `</tr>`;
         });
@@ -39,9 +39,33 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
     }
 }
 
+function abrirFormularioMovimiento(tipo) {
+    let skuInput = prompt(`Ingrese el SKU de la joya para registrar la ${tipo}:`);
+    if (!skuInput) return;
+    let motivoInput = prompt("Ingrese el Motivo (Ej: Venta, Reparación, Ajuste, Producción):", tipo === 'ENTRADAS' ? 'Producción Taller' : 'Venta Cliente');
+    if (!motivoInput) return;
+    let obsInput = prompt("Observaciones adicionales (opcional):", "") || "";
+
+    registrarMovimientoServidor(tipo, skuInput.trim().toUpperCase(), motivoInput, obsInput);
+}
+
+async function registrarMovimientoServidor(tipo, sku, motivo, obs) {
+    let accion = tipo === 'ENTRADAS' ? 'registrarEntrada' : 'registrarSalida';
+    let payload = { action: accion, sku: sku, motivo: motivo, observaciones: obs, usuario: usuarioActual ? usuarioActual.usuario : 'ADMIN' };
+    
+    const res = await API.llamar(accion, payload, "POST");
+    if (res && res.status === "success") {
+        alert(res.message);
+        localStorage.removeItem("cache_productos_manu");
+        renderizarModuloEntradasSalidas(document.getElementById('contentBody'), tipo);
+    } else {
+        alert("Error al registrar: " + (res ? res.message : "Desconocido"));
+    }
+}
+
 async function reversarSalidaUnica(idSalida) {
     if (!confirm(`¿Está seguro de anular la salida [${idSalida}]? El producto volverá a estado DISPONIBLE.`)) return;
-    const res = await API.llamar("reversarSalida", { action: "reversarSalida", id_salida: idSalida, usuario: usuarioActual.usuario }, "POST");
+    const res = await API.llamar("reversarSalida", { action: "reversarSalida", id_salida: idSalida, usuario: usuarioActual ? usuarioActual.usuario : 'ADMIN' }, "POST");
     if (res && res.status === "success") {
         alert(res.message);
         localStorage.removeItem("cache_productos_manu");
@@ -54,11 +78,11 @@ async function reversarSalidaUnica(idSalida) {
 async function renderizarModuloKardex(container) {
     container.innerHTML = `
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:10px;">
                 <h3 style="color: #0f172a; margin: 0;">📑 Kardex de Movimientos de Inventario</h3>
                 <button class="btn-nuevo-producto" onclick="renderizarModuloKardex(document.getElementById('contentBody'))">🔄 Actualizar</button>
             </div>
-            <div id="tablaKardexContenedor">Cargando Kardex y cruzando estados...</div>
+            <div id="tablaKardexContenedor">Cargando Kardex...</div>
         </div>`;
 
     try {
@@ -74,7 +98,7 @@ async function renderizarModuloKardex(container) {
             return;
         }
 
-        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>Tipo</th><th>Fecha</th><th>SKU / Barras</th><th>Producto</th><th>Estado</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th></tr></thead><tbody>`;
+        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>Tipo</th><th>Fecha</th><th>SKU</th><th>Producto</th><th>Estado</th><th>Cantidad</th><th>Motivo</th><th>Usuario</th></tr></thead><tbody>`;
         movs.forEach(m => {
             let tipo = m.Tipo || 'MOV';
             let bg = tipo === 'ENTRADA' ? '#059669' : '#dc2626';
