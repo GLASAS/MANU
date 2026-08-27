@@ -3,6 +3,7 @@
  */
 
 let fotoBase64Temporal = "";
+let timeoutBuscador = null;
 
 async function renderizarModuloProductos(container) {
     await cargarCategoriasDinamicas();
@@ -24,7 +25,7 @@ async function renderizarModuloProductos(container) {
             <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
             <div class="toolbar-search-box">
                 <span>🔍</span>
-                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivoOptimizado()">
             </div>
         </div>
     ` : `
@@ -36,7 +37,7 @@ async function renderizarModuloProductos(container) {
             <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
             <div class="toolbar-search-box">
                 <span>🔍</span>
-                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivoOptimizado()">
             </div>
         </div>
     `;
@@ -44,13 +45,11 @@ async function renderizarModuloProductos(container) {
     container.innerHTML = `
         <div class="card">
             <h3 style="color: #0f172a; margin-bottom: 0.75rem; font-size: 1.1rem;">Catálogo de Productos y Joyas</h3>
-            <div class="catalog-toolbar">
-                ${botonesAccionHtml}
-            </div>
+            <div class="catalog-toolbar">${botonesAccionHtml}</div>
             <div id="vistaProductosInterna"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario...</p></div>
         </div>
 
-        <!-- MODAL DINÁMICO DE CREACIÓN / EDICIÓN DE PRODUCTO -->
+        <!-- MODAL FORMULARIO -->
         <div class="image-modal" id="modalFormularioProducto" onclick="cerrarModalProducto()">
             <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto; color: #0f172a;" onclick="event.stopPropagation()">
                 <h3 id="modalProductoTitulo" style="margin-bottom: 1rem; color: #0f172a;">✨ Registrar Nuevo Producto</h3>
@@ -59,7 +58,7 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>SKU *</label><input type="text" id="prodSku" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                         <div class="form-group"><label>Código de Barras</label><input type="text" id="prodCodigoBarra" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
-                    <div class="form-group"><label>Nombre / Descripción de la Joya *</label><input type="text" id="prodNombre" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                    <div class="form-group"><label>Nombre / Descripción *</label><input type="text" id="prodNombre" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
                         <div class="form-group"><label>Categoría</label><input type="text" id="prodCategoria" value="ANILLOS" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                         <div class="form-group"><label>Color</label><input type="text" id="prodColor" value="AMARILLO" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
@@ -76,20 +75,17 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
-                    <!-- SECCIÓN DE FOTO INTEGRADA CON COMPRESIÓN -->
                     <div class="form-group">
-                        <label>📸 Fotografía de la Joya (Cámara o Galería)</label>
-                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                            <input type="file" accept="image/*" capture="environment" id="prodArchivoFoto" onchange="procesarImagenModulo(event, 'previewProdModulo')" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
-                        </div>
+                        <label>📸 Fotografía de la Joya</label>
+                        <input type="file" accept="image/*" capture="environment" id="prodArchivoFoto" onchange="procesarImagenModulo(event, 'previewProdModulo')" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
                         <div style="margin-top: 10px; text-align: center;">
                             <img id="previewProdModulo" src="" style="max-width: 150px; max-height: 150px; display: none; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: cover; margin: 0 auto;">
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 1rem;">
-                        <button type="submit" style="flex: 1; background-color: #0f172a; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Guardar Producto</button>
-                        <button type="button" onclick="cerrarModalProducto()" style="flex: 1; background-color: #ef4444; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer;">Cancelar</button>
+                        <button type="submit" style="flex: 1; background-color: #0f172a; color: #ffffff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Guardar</button>
+                        <button type="button" onclick="cerrarModalProducto()" style="flex: 1; background-color: #ef4444; color: #ffffff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 500; cursor: pointer;">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -106,29 +102,15 @@ function procesarImagenModulo(event, previewId) {
         img.onload = function() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
-            const MAX_WIDTH = 400;
-            const MAX_HEIGHT = 400;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-            } else {
-                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
+            let width = img.width, height = img.height;
+            const MAX = 400;
+            if (width > height) { if (width > MAX) { height *= MAX / width; width = MAX; } }
+            else { if (height > MAX) { width *= MAX / height; height = MAX; } }
+            canvas.width = width; canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
-            
             fotoBase64Temporal = canvas.toDataURL('image/jpeg', 0.5);
-            
             const preview = document.getElementById(previewId);
-            if (preview) {
-                preview.src = fotoBase64Temporal;
-                preview.style.display = 'block';
-            }
+            if (preview) { preview.src = fotoBase64Temporal; preview.style.display = 'block'; }
         };
         img.src = e.target.result;
     };
@@ -149,13 +131,8 @@ function abrirFormularioCrearProducto() {
     document.getElementById("prodDescuento").value = "0";
     document.getElementById("prodUbicacion").value = "CAJA FUERTE";
     document.getElementById("prodArchivoFoto").value = "";
-    
     const preview = document.getElementById("previewProdModulo");
-    if (preview) {
-        preview.src = "";
-        preview.style.display = "none";
-    }
-
+    if (preview) { preview.src = ""; preview.style.display = "none"; }
     document.getElementById("modalFormularioProducto").classList.add("active");
 }
 
@@ -177,28 +154,18 @@ function abrirFormularioEditarProducto(jsonEncoded) {
     document.getElementById("prodDescuento").value = p.Tiene_Descuento || 0;
     document.getElementById("prodUbicacion").value = p.ID_Ubicacion || "CAJA FUERTE";
     document.getElementById("prodArchivoFoto").value = "";
-    
     const preview = document.getElementById("previewProdModulo");
     if (preview) {
-        if (fotoBase64Temporal) {
-            preview.src = fotoBase64Temporal;
-            preview.style.display = "block";
-        } else {
-            preview.src = "";
-            preview.style.display = "none";
-        }
+        if (fotoBase64Temporal) { preview.src = fotoBase64Temporal; preview.style.display = "block"; }
+        else { preview.src = ""; preview.style.display = "none"; }
     }
-
     document.getElementById("modalFormularioProducto").classList.add("active");
 }
 
-function cerrarModalProducto() {
-    document.getElementById("modalFormularioProducto").classList.remove("active");
-}
+function cerrarModalProducto() { document.getElementById("modalFormularioProducto").classList.remove("active"); }
 
 async function guardarProductoServidor(e) {
     e.preventDefault();
-    
     const esEdicion = document.getElementById("prodSku").readOnly;
     const accionServidor = esEdicion ? "editarProducto" : "crearProducto";
 
@@ -232,91 +199,37 @@ async function guardarProductoServidor(e) {
 }
 
 function exportarCatalogoCSV() {
-    if (!listaProductosFiltradosCache || listaProductosFiltradosCache.length === 0) {
-        alert("No hay datos para exportar.");
-        return;
-    }
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "SKU;Codigo_Barra;Nombre;Categoria;Color;Material;Peso;Valor_Oro;Valor_Piedra;Porcentaje_Venta;Tiene_Descuento;Ubicacion;Estado\n";
-
+    if (!listaProductosFiltradosCache || listaProductosFiltradosCache.length === 0) { alert("No hay datos."); return; }
+    let csv = "SKU;Codigo_Barra;Nombre;Categoria;Color;Material;Peso;Valor_Oro;Valor_Piedra;Porcentaje_Venta;Tiene_Descuento;Ubicacion;Estado\n";
     listaProductosFiltradosCache.forEach(p => {
-        let sku = p.SKU || "";
-        let codigoBarra = p.Codigo_Barra || "";
-        let nombre = `"${(p.Nombre || "").replace(/"/g, '""')}"`;
-        let cat = p.ID_Categoria || "";
-        let color = p.Color || p.ID_Subcategoria || "";
-        let mat = p.Material_Oro || p.Material || "";
-        let peso = p.Peso || "0";
-        let vOro = p.Valor_Oro || "0";
-        let vPiedra = p.Valor_Piedra || "0";
-        let margen = p.Porcentaje_Venta || "100";
-        let desc = p.Tiene_Descuento || "0";
-        let ubicacion = p.ID_Ubicacion || "";
-        let estadoItem = p.Estado || "DISPONIBLE";
-
-        csvContent += [sku, codigoBarra, nombre, cat, color, mat, peso, vOro, vPiedra, margen, desc, ubicacion, estadoItem].join(";") + "\n";
+        csv += [p.SKU, p.Codigo_Barra || "", `"${(p.Nombre || "").replace(/"/g, '""')}"`, p.ID_Categoria, p.Color || "", p.Material_Oro || "", p.Peso || 0, p.Valor_Oro || 0, p.Valor_Piedra || 0, p.Porcentaje_Venta || 100, p.Tiene_Descuento || 0, p.ID_Ubicacion || "", "DISPONIBLE"].join(";") + "\n";
     });
-
-    let encodedUri = encodeURI(csvContent);
     let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "catalogo_manu_exportado.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
+    link.download = "catalogo_manu.csv";
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
 function abrirModalImportarCSV() {
     let input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
+    input.type = 'file'; input.accept = '.csv';
     input.onchange = e => {
         let archivo = e.target.files[0];
         let lector = new FileReader();
         lector.onload = async function(event) {
-            let texto = event.target.result;
-            let lineas = texto.split(/\r\n|\n/);
-            let productosArray = [];
-
+            let lineas = event.target.result.split(/\r\n|\n/);
+            let arr = [];
             for (let i = 1; i < lineas.length; i++) {
-                let linea = lineas[i].trim();
-                if (!linea) continue;
-                let cols = linea.split(';');
-                if (cols.length >= 3) {
-                    productosArray.push({
-                        sku: cols[0] ? cols[0].trim() : '',
-                        codigo_barra: cols[1] ? cols[1].trim() : '',
-                        nombre: cols[2] ? cols[2].replace(/"/g, '').trim() : '',
-                        categoria: cols[3] ? cols[3].trim() : 'ANILLOS',
-                        color: cols[4] ? cols[4].trim() : 'AMARILLO',
-                        material: cols[5] ? cols[5].trim() : 'ORO',
-                        peso: cols[6] ? cols[6].trim() : '0',
-                        valor_oro: parseFloat(cols[7]) || 0,
-                        valor_piedra: parseFloat(cols[8]) || 0,
-                        porcentaje_venta: parseFloat(cols[9]) || 100,
-                        tiene_descuento: parseFloat(cols[10]) || 0,
-                        ubicacion: cols[11] ? cols[11].trim() : 'VITRINA 1',
-                        estado: 'DISPONIBLE'
-                    });
+                let l = lineas[i].trim();
+                if (!l) continue;
+                let c = l.split(';');
+                if (c.length >= 3) {
+                    arr.push({ sku: c[0], codigo_barra: c[1], nombre: c[2].replace(/"/g, ''), categoria: c[3], color: c[4], material: c[5], peso: c[6], valor_oro: c[7], valor_piedra: c[8], porcentaje_venta: c[9], tiene_descuento: c[10], ubicacion: c[11], estado: 'DISPONIBLE' });
                 }
             }
-
-            if (productosArray.length === 0) {
-                alert("El archivo CSV no contiene registros válidos.");
-                return;
-            }
-
-            if (confirm(`Se detectaron ${productosArray.length} productos. ¿Desea importarlos masivamente?`)) {
-                document.getElementById("vistaProductosInterna").innerHTML = `<div style="text-align: center; padding: 3rem;"><h3 style="color: #3b82f6;">⏳ Importando productos...</h3></div>`;
-                const res = await API.llamar("importarMasivoProductos", { action: "importarMasivoProductos", productos: productosArray }, "POST");
-                if (res && res.status === "success") {
-                    alert(res.message);
-                    localStorage.removeItem("cache_productos_manu");
-                    renderizarModuloProductos(document.getElementById('contentBody'));
-                } else {
-                    alert("Error en la importación.");
-                    renderizarModuloProductos(document.getElementById('contentBody'));
-                }
+            if (arr.length > 0 && confirm(`¿Importar ${arr.length} productos?`)) {
+                const res = await API.llamar("importarMasivoProductos", { action: "importarMasivoProductos", productos: arr }, "POST");
+                if (res && res.status === "success") { alert(res.message); localStorage.removeItem("cache_productos_manu"); renderizarModuloProductos(document.getElementById('contentBody')); }
             }
         };
         lector.readAsText(archivo, 'ISO-8859-1');
@@ -325,26 +238,16 @@ function abrirModalImportarCSV() {
 }
 
 function seleccionarTodosCheckboxes(source) {
-    const checkboxes = document.querySelectorAll('.sku-checkbox');
-    checkboxes.forEach(cb => cb.checked = source.checked);
+    document.querySelectorAll('.sku-checkbox').forEach(cb => cb.checked = source.checked);
 }
 
 async function eliminarProductosSeleccionados() {
-    const checkboxes = document.querySelectorAll('.sku-checkbox:checked');
-    if (checkboxes.length === 0) {
-        alert("Por favor seleccione al menos un producto.");
-        return;
-    }
-    if (!confirm(`¿Eliminar los ${checkboxes.length} productos seleccionados?`)) return;
-
-    let skus = Array.from(checkboxes).map(cb => cb.value);
-    const res = await API.llamar("eliminarMasivoProductos", { action: "eliminarMasivoProductos", skus: skus }, "POST");
-    if (res && res.status === "success") {
-        alert(res.message);
-        localStorage.removeItem("cache_productos_manu");
-        renderizarModuloProductos(document.getElementById('contentBody'));
-    } else {
-        alert("Error al eliminar.");
+    let checkboxes = document.querySelectorAll('.sku-checkbox:checked');
+    if (checkboxes.length === 0) { alert("Seleccione al menos uno."); return; }
+    if (confirm(`¿Eliminar ${checkboxes.length} productos?`)) {
+        let skus = Array.from(checkboxes).map(cb => cb.value);
+        const res = await API.llamar("eliminarMasivoProductos", { action: "eliminarMasivoProductos", skus: skus }, "POST");
+        if (res && res.status === "success") { alert(res.message); localStorage.removeItem("cache_productos_manu"); renderizarModuloProductos(document.getElementById('contentBody')); }
     }
 }
 
@@ -357,12 +260,12 @@ async function forzarRecargaCatalogo() {
 async function cargarListaProductos(forzarRed = false) {
     const contenedor = document.getElementById("vistaProductosInterna");
     let productos = null;
-    const cacheGuardada = localStorage.getItem("cache_productos_manu");
-    const tiempoCache = localStorage.getItem("cache_productos_tiempo");
-    const ahora = new Date().getTime();
+    let cache = localStorage.getItem("cache_productos_manu");
+    let tiempo = localStorage.getItem("cache_productos_tiempo");
+    let ahora = new Date().getTime();
 
-    if (!forzarRed && cacheGuardada && tiempoCache && (ahora - tiempoCache < 300000)) {
-        try { productos = JSON.parse(cacheGuardada); } catch(e) { productos = null; }
+    if (!forzarRed && cache && tiempo && (ahora - tiempo < 300000)) {
+        try { productos = JSON.parse(cache); } catch(e) {}
     }
 
     if (!productos) {
@@ -372,45 +275,43 @@ async function cargarListaProductos(forzarRed = false) {
             localStorage.setItem("cache_productos_manu", JSON.stringify(productos));
             localStorage.setItem("cache_productos_tiempo", ahora);
         } else {
-            contenedor.innerHTML = `<p style="color: #ef4444; text-align: center;">Error al cargar el inventario.</p>`;
+            contenedor.innerHTML = `<p style="color: #ef4444; text-align: center;">Error al cargar inventario.</p>`;
             return;
         }
     }
 
-    listaProductosCache = (productos || []).filter(p => {
-        let estadoProd = String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase();
-        return estadoProd.includes("DISPONIBLE");
-    });
-
+    listaProductosCache = (productos || []).filter(p => String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase().includes("DISPONIBLE"));
     listaProductosFiltradosCache = listaProductosCache;
     paginaActual = 1;
     renderizarTablaProductosPaginada();
 }
 
-function filtrarCatalogoEnVivo() {
-    const inputElem = document.getElementById("inputBuscadorCatalogo");
-    if (!inputElem) return;
-    const query = inputElem.value.toLowerCase().trim();
-    if (!query) {
-        listaProductosFiltradosCache = listaProductosCache;
+/**
+ * Búsqueda optimizada con debounce (elimina el desfase y la lentitud al escribir o escanear rápido)
+ */
+function filtrarCatalogoEnVivoOptimizado() {
+    clearTimeout(timeoutBuscador);
+    timeoutBuscador = setTimeout(() => {
+        const query = document.getElementById("inputBuscadorCatalogo").value.toLowerCase().trim();
+        if (!query) {
+            listaProductosFiltradosCache = listaProductosCache;
+        } else {
+            const terminos = query.split(/\s+/);
+            listaProductosFiltradosCache = listaProductosCache.filter(p => {
+                const sku = String(p.SKU || "").toLowerCase();
+                const nombre = String(p.Nombre || "").toLowerCase();
+                const codigoBarra = String(p.Codigo_Barra || "").toLowerCase();
+                const categoria = String(p.ID_Categoria || "").toLowerCase();
+                const material = String(p.Material_Oro || "").toLowerCase();
+                const color = String(p.Color || "").toLowerCase();
+                const ubicacion = String(p.ID_Ubicacion || "").toLowerCase();
+                
+                return terminos.every(t => sku.includes(t) || codigoBarra.includes(t) || nombre.includes(t) || categoria.includes(t) || material.includes(t) || color.includes(t) || ubicacion.includes(t));
+            });
+        }
         paginaActual = 1;
         renderizarTablaProductosPaginada();
-        return;
-    }
-    const terminos = query.split(/\s+/);
-    listaProductosFiltradosCache = listaProductosCache.filter(p => {
-        const sku = String(p.SKU || p.sku || "").toLowerCase();
-        const nombre = String(p.Nombre || p.nombre || "").toLowerCase();
-        const codigoBarra = String(p.Codigo_Barra || p.codigo_barra || "").toLowerCase();
-        const categoria = String(p.ID_Categoria || "").toLowerCase();
-        const material = String(p.Material_Oro || p.Material || "").toLowerCase();
-        const color = String(p.Color || "").toLowerCase();
-        const ubicacion = String(p.ID_Ubicacion || "").toLowerCase();
-        
-        return terminos.every(t => sku.includes(t) || codigoBarra.includes(t) || nombre.includes(t) || categoria.includes(t) || material.includes(t) || color.includes(t) || ubicacion.includes(t));
-    });
-    paginaActual = 1;
-    renderizarTablaProductosPaginada();
+    }, 150);
 }
 
 function cambiarPagina(delta) {
@@ -499,17 +400,9 @@ function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorV
     
     try {
         JsBarcode("#barcodeElement", codigoBarra && codigoBarra !== '-' ? codigoBarra : sku, {
-            format: "CODE128",
-            lineColor: "#0f172a",
-            width: 1.5,
-            height: 40,
-            displayValue: true,
-            fontSize: 12,
-            margin: 2
+            format: "CODE128", lineColor: "#0f172a", width: 1.5, height: 40, displayValue: true, fontSize: 12, margin: 2
         });
-    } catch(e) {
-        console.error("Error generando código de barras:", e);
-    }
+    } catch(e) {}
 
     document.getElementById("modalQrBarra").classList.add("active");
 }
@@ -521,12 +414,8 @@ function cerrarModalQr() { document.getElementById("modalQrBarra").classList.rem
 function descargarQrPNG() {
     let img = document.getElementById("imgQrGenerado");
     if (!img || !img.src) return;
-    let a = document.createElement('a');
-    a.href = img.src;
-    a.download = 'etiqueta_qr_manu.png';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    let a = document.createElement('a'); a.href = img.src; a.download = 'etiqueta_qr_manu.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
 function descargarBarcodePNG() {
@@ -537,18 +426,12 @@ function descargarBarcodePNG() {
     let ctx = canvas.getContext("2d");
     let img = new Image();
     img.onload = function() {
-        canvas.width = img.width || 300;
-        canvas.height = img.height || 100;
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        canvas.width = img.width || 300; canvas.height = img.height || 100;
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
-        let pngFile = canvas.toDataURL("image/png");
-        let downloadLink = document.createElement("a");
-        downloadLink.href = pngFile;
-        downloadLink.download = "codigo_barras_manu.png";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        let link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png"); link.download = "codigo_barras_manu.png";
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
     };
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
 }
