@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
- * Versión Íntegra y Completa con Diseño de Columnas Ajustado y Exportación a Excel
+ * Versión Restaurada e Íntegra (Exacta a tu diseño original con selector de usuario y dos botones de Excel)
  */
 
 let listaInventarioCache = [];
@@ -75,7 +75,7 @@ async function renderizarModuloInventario(container) {
                 </select>
             </div>
 
-            <div id="tablaInventarioContainer" style="width: 100%; overflow-x: auto;"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario para auditoría...</p></div>
+            <div id="tablaInventarioContainer"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario para auditoría...</p></div>
         </div>`;
 
     await cargarUsuariosResponsablesArqueo();
@@ -205,36 +205,26 @@ function renderizarTablaArqueo() {
         return;
     }
 
-    let html = `<div class="table-container"><table class="data-table" style="width: 100%; min-width: 950px;"><thead><tr>
-        <th style="width: 110px;">Estado Físico</th>
-        <th style="width: 90px;">SKU</th>
-        <th style="width: 130px;">Código de Barras</th>
-        <th style="width: auto;">Producto</th>
-        <th style="width: 110px;">Categoría</th>
-        <th style="width: 110px;">Ubicación</th>
-        <th style="width: 75px;">Peso</th>
-        <th style="width: 110px; text-align: center;">Acción / Marcar</th>
+    let html = `<div class="table-container"><table class="data-table"><thead><tr>
+        <th>Estado Físico</th><th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Acción / Marcar</th>
     </tr></thead><tbody>`;
 
     listaInventarioFiltradosCache.forEach(p => {
         let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '-';
         let badgeEstado = p.auditado 
-            ? `<span class="badge" style="background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block;">✔ PRESENTE</span>` 
-            : `<span class="badge" style="background-color: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block;">✖ FALTANTE</span>`;
+            ? `<span class="badge" style="background-color: #10b981; color: white;">✔ Presente</span>` 
+            : `<span class="badge" style="background-color: #ef4444; color: white;">✖ Faltante</span>`;
         
         let btnAccion = p.auditado
-            ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;">Desmarcar</button>`
-            : `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;">✔ Encontrado</button>`;
+            ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Desmarcar</button>`
+            : `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; padding: 4px 8px; border-radius: 4px; cursor: pointer;">✔ Encontrado</button>`;
 
         html += `<tr>
-            <td style="word-break: break-word;">${badgeEstado}</td>
-            <td style="word-break: break-word;"><strong>${p.SKU}</strong></td>
-            <td style="word-break: break-word;"><code>${codigoBarraVal}</code></td>
-            <td style="word-break: break-word; line-height: 1.3;">${p.Nombre || ''}</td>
-            <td style="word-break: break-word;">${p.ID_Categoria || ''}</td>
-            <td style="word-break: break-word;">${p.ID_Ubicacion || ''}</td>
-            <td style="word-break: break-word;">${p.Peso || 0}g</td>
-            <td style="word-break: break-word; text-align: center;">${btnAccion}</td>
+            <td>${badgeEstado}</td>
+            <td><strong>${p.SKU}</strong></td>
+            <td><code>${codigoBarraVal}</code></td>
+            <td>${p.Nombre || ''}</td>
+            <td>${btnAccion}</td>
         </tr>`;
     });
 
