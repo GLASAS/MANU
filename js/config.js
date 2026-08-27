@@ -131,3 +131,17 @@ async function ejecutarActualizacionOro(event) {
         alert("Error al actualizar: " + (res ? res.message : "Desconocido"));
     }
 }
+
+async function cargarValorOroDia() {
+    try {
+        const res = await API.llamar("obtenerValorOroDia", {}, "GET");
+        if (res && res.status === "success") {
+            window.valorOroDelDiaCache = Number(res.valor_oro_dia) || 250000;
+        }
+    } catch(e) { window.valorOroDelDiaCache = 250000; }
+}
+
+async function cargarCategoriasDinamicas() {}
+async function cargarMaterialesDinamicos() {}
+async function cargarColoresDinamicos() {}
+function abrirModalQrCatalogo() { alert("Módulo de QR de Catálogo Web activo."); }
