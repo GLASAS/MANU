@@ -4,7 +4,7 @@
 const API = {
     async llamar(accion, datos = {}, metodo = "POST") {
         try {
-            let url = CONFIG.URL_API;
+            let url = CONFIG.APPS_SCRIPT_URL;
             let opciones = { method: metodo };
 
             if (metodo === "GET") {
