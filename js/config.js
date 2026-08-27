@@ -5,9 +5,9 @@ const CONFIG = {
   APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw2dhdfkcK5j1ISFFb0vhMBuxz30CO4tECVTTeykg4be72WPeQoj_Oj6JerBfcQ9_C9/exec",
   URL_API: "https://script.google.com/macros/s/AKfycbw2dhdfkcK5j1ISFFb0vhMBuxz30CO4tECVTTeykg4be72WPeQoj_Oj6JerBfcQ9_C9/exec",
   NOMBRE_EMPRESA: "MANU JOYEROS",
-  NIT: "900.000.000-1",
-  TELEFONO: "+57 (320) 8123125",
-  DIRECCION: "Ak 7 #115-60 Local 1415",
+  NIT: "902.078.370-8",
+  TELEFONO: "+57 (311) 888 6137",
+  DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
   VERSION: "V1.1001"
@@ -52,7 +52,7 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle("active");
 }
 
-// 🌐 ENRUTADOR PRINCIPAL DE BLOQUES CORREGIDO
+// 🌐 ENRUTADOR PRINCIPAL DE BLOQUES
 async function cambiarVista(vista, event) {
     if (event) event.preventDefault();
     const contenedor = document.getElementById('contentBody');
@@ -72,7 +72,11 @@ async function cambiarVista(vista, event) {
             </div>`;
     } else if (vista === 'productos') {
         if (tituloVista) tituloVista.textContent = "Catálogo de Productos";
-        if (typeof renderizarModuloProductos === 'function') await renderizarModuloProductos(contenedor);
+        if (typeof renderizarModuloProductos === 'function') {
+            await renderizarModuloProductos(contenedor);
+        } else {
+            contenedor.innerHTML = `<p style="color:#64748b; text-align:center; padding:2rem;">Cargando catálogo de productos...</p>`;
+        }
     } else if (vista === 'inventario') {
         if (tituloVista) tituloVista.textContent = "Inventario y Arqueo";
         if (typeof renderizarModuloInventario === 'function') await renderizarModuloInventario(contenedor);
@@ -101,7 +105,7 @@ async function cambiarVista(vista, event) {
     }
 }
 
-// 🪙 Módulo de Actualización del Oro integrado para que no falle
+// 🪙 Módulo de Actualización del Oro integrado
 function renderizarModuloActualizacionOro(container) {
     container.innerHTML = `
         <div class="card" style="max-width: 550px; margin: 0 auto;">
