@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Completa e Íntegra
+ * Versión Completa, Íntegra y Definitiva
  */
 
 async function renderizarModuloProductos(container) {
