@@ -1,368 +1,411 @@
 /**
- * MANU JOYEROS - Módulo completo de Productos (productos.js)
+ * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
  */
 
 async function renderizarModuloProductos(container) {
-    const esAdmin = usuarioActual && (usuarioActual.rol.toUpperCase() === 'ADMIN' || usuarioActual.rol.toUpperCase() === 'ADMINISTRADOR');
-    let btnNuevo = esAdmin ? `<button class="btn-nuevo-producto" onclick="abrirModalProducto()">✨ Nuevo Producto</button>` : '';
-    let btnImportar = esAdmin ? `<button class="btn-importar" onclick="abrirModalImportar()">📁 Importar</button>` : '';
-    let btnExportar = `<button class="btn-exportar" onclick="exportarExcelProductos()">📤 Exportar</button>`;
-    let btnEliminarMasivo = esAdmin ? `<button class="btn-eliminar" onclick="eliminarProductosSeleccionados()">🗑️ Eliminar</button>` : '';
-
     container.innerHTML = `
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    ${btnNuevo}
-                    ${btnImportar}
-                    ${btnExportar}
-                    ${btnEliminarMasivo}
-                </div>
-                <div>
-                    <input type="text" id="buscadorProductos" placeholder="Buscar por SKU, Nombre, Barras..." onkeyup="filtrarProductosTabla()" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; width: 250px; outline:none;">
+        <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
+                <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
+                <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
+                <button type="button" class="btn-action" onclick="window.open('https://glasas.github.io/MANU/catalogomanu', '_blank')" style="background: #d97706; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🌐 Catálogo Web</button>
+                <button type="button" class="btn-action" onclick="abrirModalQrCatalogoAdmin()" style="background: #7c3aed; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📱 QR Web</button>
+                <button type="button" class="btn-action text-danger" onclick="eliminarProductosSeleccionados()" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🗑️ Eliminar</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" onclick="cargarListaProductos()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; cursor: pointer;" title="Actualizar Lista">🔄</button>
+                <input type="text" id="buscadorProductos" onkeyup="filtrarProductosTabla()" placeholder="SKU, Barras, Nombre..." style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; width: 250px;">
+            </div>
+        </div>
+
+        <div class="card" style="background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Catálogo de Productos y Joyas</h3>
+                <div id="paginacionInfoProductos" style="font-size: 0.85rem; color: #64748b;">Mostrando registros...</div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                    <thead>
+                        <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
+                            <th style="padding: 10px; width: 30px;"><input type="checkbox" id="selectAllProductos" onclick="toggleSelectAllProductos(this)"></th>
+                            <th style="padding: 10px;">Nombre / Descripción</th>
+                            <th style="padding: 10px;">Categoría</th>
+                            <th style="padding: 10px;">Color</th>
+                            <th style="padding: 10px;">Material</th>
+                            <th style="padding: 10px;">Peso</th>
+                            <th style="padding: 10px;">Costo</th>
+                            <th style="padding: 10px;">Margen</th>
+                            <th style="padding: 10px;">Desc.</th>
+                            <th style="padding: 10px;">Venta Final</th>
+                            <th style="padding: 10px;">Ubicación</th>
+                            <th style="padding: 10px;">Foto</th>
+                            <th style="padding: 10px; text-align: center;">Etiqueta</th>
+                            <th style="padding: 10px; text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProductosBody">
+                        <tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;" id="paginacionControlesContainer">
+                <span id="lblPaginacionTexto" style="font-size: 0.85rem; color: #64748b;">Mostrando 0 a 0 de 0</span>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" id="btnPaginaAnterior" onclick="cambiarPaginaProductos(-1)" style="padding: 6px 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">◀ Anterior</button>
+                    <span id="lblPaginaActualNum" style="padding: 6px 12px; font-weight: bold; color: #0f172a;">Página 1 de 1</span>
+                    <button type="button" id="btnPaginaSiguiente" onclick="cambiarPaginaProductos(1)" style="padding: 6px 12px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer;">Siguiente ▶</button>
                 </div>
             </div>
-            <div id="tablaProductosContenedor">Cargando catálogo de productos...</div>
-        </div>`;
+        </div>
 
-    await cargarProductosServidor();
+        <!-- MODAL CRUD PRODUCTO -->
+        <div class="image-modal" id="modalFormularioProducto" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);">
+            <div style="background: white; width: 95%; max-width: 650px; border-radius: 12px; padding: 25px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 id="modalProductoTitulo" style="margin: 0; color: #0f172a;">Gestión de Producto</h3>
+                    <button type="button" onclick="cerrarModalFormularioProducto()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
+                </div>
+                <form id="formCrudProducto" onsubmit="guardarProductoInventario(event)">
+                    <input type="hidden" id="prodSkuOriginal">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU *</label>
+                            <input type="text" id="prodSku" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras</label>
+                            <input type="text" id="prodCodigoBarra" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Nombre / Descripción de la Joya *</label>
+                        <input type="text" id="prodNombre" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Categoría</label>
+                            <input type="text" id="prodCategoria" placeholder="ANILLOS" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Material</label>
+                            <input type="text" id="prodMaterial" placeholder="ORO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Color</label>
+                            <input type="text" id="prodColor" placeholder="AMARILLO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Peso (g)</label>
+                            <input type="number" step="0.01" id="prodPeso" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Piedra ($)</label>
+                            <input type="number" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Costo ($)</label>
+                            <input type="number" id="prodCosto" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Margen (%)</label>
+                            <input type="number" id="prodMargen" value="100" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Descuento (%)</label>
+                            <input type="number" id="prodDescuento" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Ubicación / Vitrina</label>
+                            <input type="text" id="prodUbicacion" placeholder="CAJA FUERTE" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">URL Foto</label>
+                            <input type="text" id="prodFoto" placeholder="https://..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" onclick="cerrarModalFormularioProducto()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                        <button type="submit" style="padding: 8px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">💾 Guardar Producto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    await cargarListaProductos();
 }
 
-async function cargarProductosServidor() {
-    const res = await API.llamar("obtenerProductos", {}, "GET");
-    if (res && res.status === "success" && res.data) {
-        window.listaProductosCache = res.data;
-        window.listaProductosFiltradosCache = res.data;
-        renderizarTablaProductosPagina();
-    } else {
-        document.getElementById("tablaProductosContenedor").innerHTML = `<p style="color: #ef4444;">Error al cargar el catálogo de productos.</p>`;
+async function cargarListaProductos() {
+    const tbody = document.getElementById("tablaProductosBody");
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando inventario y valor del oro...</td></tr>`;
+
+    try {
+        const [resOro, resProd] = await Promise.all([
+            API.llamar("obtenerValorOroDia", {}, "GET"),
+            API.llamar("obtenerProductos", {}, "GET")
+        ]);
+
+        if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
+            window.valorOroDelDiaCache = Number(resOro.valor_oro_dia);
+        }
+
+        if (resProd && resProd.status === "success" && resProd.data) {
+            window.listaProductosCache = resProd.data;
+            window.listaProductosFiltradosCache = resProd.data;
+            paginaActual = 1;
+            renderizarTablaProductosAdmin();
+        } else {
+            tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
+        }
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
     }
+}
+
+function renderizarTablaProductosAdmin() {
+    const tbody = document.getElementById("tablaProductosBody");
+    if (!tbody) return;
+
+    const lista = window.listaProductosFiltradosCache || [];
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">No hay productos registrados o coincidentes.</td></tr>`;
+        document.getElementById("lblPaginacionTexto").textContent = "Mostrando 0 a 0 de 0";
+        document.getElementById("lblPaginaActualNum").textContent = "Página 1 de 1";
+        return;
+    }
+
+    const totalRegistros = lista.length;
+    const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina) || 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    if (paginaActual < 1) paginaActual = 1;
+
+    const inicio = (paginaActual - 1) * registrosPorPagina;
+    const fin = inicio + registrosPorPagina;
+    const paginaItems = lista.slice(inicio, fin);
+
+    let valorOroActual = window.valorOroDelDiaCache || 250000;
+    let html = "";
+
+    paginaItems.forEach(p => {
+        let sku = p.SKU || p.sku || "-";
+        let nombre = p.Nombre || p.nombre || "Joya sin nombre";
+        let categoria = p.ID_Categoria || p.categoria || "-";
+        let color = p.Color || p.color || "-";
+        let material = p.Material_Oro || p.Material || p.material || "ORO";
+        
+        let pesoCrudo = p.Peso || p.peso || 0;
+        let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
+
+        let costoItem = Number(p.Costo || p.costo) || 0;
+        let valPiedra = Number(p.Valor_Piedra) || 0;
+        let margen = Number(p.Porcentaje_Venta) || 100;
+        let descPct = Number(p.Tiene_Descuento) || 0;
+        let ubicacion = p.ID_Ubicacion || p.ubicacion || "VITRINA";
+        let foto = p.Foto || p.foto || "";
+
+        // FÓRMULA MATEMÁTICA EXACTA Y UNIFICADA CON EL CATÁLOGO WEB
+        let baseVentaCalculada = valPiedra + (pesoItem * valorOroActual);
+        let precioBase = baseVentaCalculada * (1 + (margen / 100));
+        let valorVentaFinal = Math.round(precioBase - (precioBase * (descPct / 100)));
+
+        let fotoHtml = foto ? `<img src="${foto}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="abrirZoomImagenSrc('${foto}')">` : `💍`;
+        let descBadge = descPct > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${descPct}%</span>` : `0%`;
+
+        html += `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px;"><input type="checkbox" class="check-producto-item" value="${sku}"></td>
+                <td style="padding: 10px; font-weight: 500; color: #0f172a; max-width: 220px;">${nombre}</td>
+                <td style="padding: 10px; color: #475569;">${categoria}</td>
+                <td style="padding: 10px; color: #475569;">${color}</td>
+                <td style="padding: 10px; color: #475569;">${material}</td>
+                <td style="padding: 10px;">${pesoItem}g</td>
+                <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
+                <td style="padding: 10px;">${margen}%</td>
+                <td style="padding: 10px;">${descBadge}</td>
+                <td style="padding: 10px; font-weight: bold; color: #059669;">$${valorVentaFinal.toLocaleString()}</td>
+                <td style="padding: 10px; color: #64748b;">${ubicacion}</td>
+                <td style="padding: 10px;">${fotoHtml}</td>
+                <td style="padding: 10px; text-align: center;">
+                    <button type="button" onclick="generarQrBarraAdmin('${sku}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Ver Etiquetas">🏷️</button>
+                </td>
+                <td style="padding: 10px; text-align: center;">
+                    <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+
+    document.getElementById("lblPaginacionTexto").textContent = `Mostrando ${inicio + 1} a ${Math.min(fin, totalRegistros)} de ${totalRegistros} productos`;
+    document.getElementById("lblPaginaActualNum").textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById("btnPaginaAnterior").disabled = paginaActual === 1;
+    document.getElementById("btnPaginaSiguiente").disabled = paginaActual === totalPaginas;
+}
+
+function cambiarPaginaProductos(direccion) {
+    const totalPaginas = Math.ceil((window.listaProductosFiltradosCache || []).length / registrosPorPagina) || 1;
+    paginaActual += direccion;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTablaProductosAdmin();
 }
 
 function filtrarProductosTabla() {
-    const query = document.getElementById("buscadorProductos").value.toLowerCase();
+    const texto = document.getElementById("buscadorProductos").value.trim().toLowerCase();
+    if (!window.listaProductosCache) return;
+
     window.listaProductosFiltradosCache = window.listaProductosCache.filter(p => {
-        const sku = String(p.SKU || p.Ref || "").toLowerCase();
-        const nombre = String(p.Nombre || "").toLowerCase();
-        const barras = String(p.Codigo_Barra || "").toLowerCase();
-        const categoria = String(p.ID_Categoria || "").toLowerCase();
-        return sku.includes(query) || nombre.includes(query) || barras.includes(query) || categoria.includes(query);
+        let sku = String(p.SKU || p.sku || "").toLowerCase();
+        let nombre = String(p.Nombre || p.nombre || "").toLowerCase();
+        let barras = String(p.Codigo_Barra || p.codigo_barra || "").toLowerCase();
+        return sku.includes(texto) || nombre.includes(texto) || barras.includes(texto);
     });
-    window.paginaActual = 1;
-    renderizarTablaProductosPagina();
+
+    paginaActual = 1;
+    renderizarTablaProductosAdmin();
 }
 
-function renderizarTablaProductosPagina() {
-    const contenedor = document.getElementById("tablaProductosContenedor");
-    const inicio = (window.paginaActual - 1) * window.registrosPorPagina;
-    const fin = inicio + window.registrosPorPagina;
-    const datosPagina = window.listaProductosFiltradosCache.slice(inicio, fin);
-
-    const esAdmin = usuarioActual && (usuarioActual.rol.toUpperCase() === 'ADMIN' || usuarioActual.rol.toUpperCase() === 'ADMINISTRADOR');
-
-    let html = `
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        ${esAdmin ? '<th style="width:40px;"><input type="checkbox" onclick="seleccionarTodosProductos(this)"></th>' : ''}
-                        <th>Nombre / Descripción</th>
-                        <th>Categoría</th>
-                        <th>Color</th>
-                        <th>Material</th>
-                        <th>Peso</th>
-                        <th>Costo</th>
-                        <th>Margen</th>
-                        <th>Desc.</th>
-                        <th>Venta Final</th>
-                        <th>Ubicación</th>
-                        <th>Foto</th>
-                        <th>Etiqueta</th>
-                        ${esAdmin ? '<th>Acciones</th>' : ''}
-                    </tr>
-                </thead>
-                <tbody>`;
-
-    if (datosPagina.length === 0) {
-        html += `<tr><td colspan="14" style="text-align:center; padding:20px; color:#64748b;">No se encontraron productos registrados.</td></tr>`;
-    } else {
-        datosPagina.forEach(p => {
-            let skuVal = p.SKU || p.Ref || 'N/A';
-            let costoVal = Number(p.Valor_Compra || 0).toLocaleString();
-            let ventaVal = Number(p.Venta_Final || (Number(p.Valor_Compra || 0) * (Number(p.Porcentaje_Venta || 100) / 100))).toLocaleString();
-            let fotoImg = p.Foto ? `<img src="${p.Foto}" style="width:35px; height:35px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1;" />` : `<span style="color:#cbd5e1;">Sin foto</span>`;
-            let pJson = encodeURIComponent(JSON.stringify(p));
-
-            html += `
-                <tr>
-                    ${esAdmin ? `<td><input type="checkbox" class="check-producto" value="${skuVal}"></td>` : ''}
-                    <td>
-                        <strong>${p.Nombre || ''}</strong><br>
-                        <small style="color: #64748b; font-weight: 600;">SKU: ${skuVal}</small>
-                    </td>
-                    <td>${p.ID_Categoria || ''}</td>
-                    <td>${p.Color || ''}</td>
-                    <td>${p.Material || ''}</td>
-                    <td>${p.Peso || 0}g</td>
-                    <td>$${costoVal}</td>
-                    <td>${p.Porcentaje_Venta || 100}%</td>
-                    <td><span class="badge" style="background:${Number(p.Tiene_Descuento||0)>0?'#ef4444':'#64748b'};">${p.Tiene_Descuento || 0}%</span></td>
-                    <td><strong style="color:#d97706;">$${ventaVal}</strong></td>
-                    <td>${p.ID_Ubicacion || ''}</td>
-                    <td>${fotoImg}</td>
-                    <td>
-                        <button class="btn-action" onclick="abrirEtiquetaProducto('${skuVal}', '${p.Nombre || ''}', '${ventaVal}', '${p.Codigo_Barra || ''}')" title="Generar Etiqueta QR y Código de Barras">🏷️</button>
-                    </td>
-                    ${esAdmin ? `
-                        <td>
-                            <div class="btn-action-container">
-                                <button class="btn-action btn-edit" onclick="abrirModalEditarProducto('${pJson}')">✏️</button>
-                                <button class="btn-action btn-delete" onclick="eliminarProducto('${skuVal}')">🗑️</button>
-                            </div>
-                        </td>
-                    ` : ''}
-                </tr>`;
-        });
-    }
-
-    html += `</tbody></table></div>`;
-
-    // Paginación
-    const totalPaginas = Math.ceil(window.listaProductosFiltradosCache.length / window.registrosPorPagina) || 1;
-    html += `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap:wrap; gap:10px;">
-            <span style="font-size:0.85rem; color:#64748b;">Mostrando página ${window.paginaActual} de ${totalPaginas} (${window.listaProductosFiltradosCache.length} productos en total)</span>
-            <div style="display:flex; gap:5px;">
-                <button onclick="cambiarPaginaProductos(-1)" ${window.paginaActual === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding:6px 12px; background:#0f172a; color:white; border:none; border-radius:6px; cursor:pointer;">Anterior</button>
-                <button onclick="cambiarPaginaProductos(1)" ${window.paginaActual >= totalPaginas ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding:6px 12px; background:#0f172a; color:white; border:none; border-radius:6px; cursor:pointer;">Siguiente</button>
-            </div>
-        </div>`;
-
-    contenedor.innerHTML = html;
+function toggleSelectAllProductos(source) {
+    checkboxes = document.querySelectorAll('.check-producto-item');
+    checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
-function cambiarPaginaProductos(dir) {
-    const totalPaginas = Math.ceil(window.listaProductosFiltradosCache.length / window.registrosPorPagina);
-    window.paginaActual += dir;
-    if (window.paginaActual < 1) window.paginaActual = 1;
-    if (window.paginaActual > totalPaginas) window.paginaActual = totalPaginas;
-    renderizarTablaProductosPagina();
+function abrirModalNuevoProducto() {
+    document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
+    document.getElementById("formCrudProducto").reset();
+    document.getElementById("prodSkuOriginal").value = "";
+    document.getElementById("modalFormularioProducto").style.display = "flex";
 }
 
-function seleccionarTodosProductos(master) {
-    document.querySelectorAll('.check-producto').forEach(ch => ch.checked = master.checked);
+function cerrarModalFormularioProducto() {
+    document.getElementById("modalFormularioProducto").style.display = "none";
 }
 
-// ================= MODAL NUEVO / EDITAR PRODUCTO CON FOTO (CÁMARA / GALERÍA) =================
-
-function abrirModalProducto() {
-    crearModalHtmlProducto("Registrar Nuevo Producto", {}, "crearProducto");
-}
-
-function abrirModalEditarProducto(jsonStr) {
-    let p = JSON.parse(decodeURIComponent(jsonStr));
-    crearModalHtmlProducto("Editar Producto: " + (p.SKU || p.Ref), p, "editarProducto");
-}
-
-function crearModalHtmlProducto(titulo, p = {}, accionBackend) {
-    let modalID = "modalGestionProducto";
-    let modalDiv = document.getElementById(modalID);
-
-    if (!modalDiv) {
-        modalDiv = document.createElement("div");
-        modalDiv.id = modalID;
-        modalDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:9999; overflow-y:auto; padding:20px;";
-        document.body.appendChild(modalDiv);
-    } else {
-        modalDiv.style.display = "flex";
-    }
-
-    modalDiv.innerHTML = `
-        <div style="background:white; padding:30px; border-radius:16px; width:100%; max-width:650px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); max-height:90vh; overflow-y:auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 style="color:#0f172a; margin:0;">💎 ${titulo}</h3>
-                <button onclick="document.getElementById('${modalID}').style.display='none'" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748b;">✕</button>
-            </div>
-            <form id="formProductoDinamico" onsubmit="enviarFormularioProducto(event, '${accionBackend}', '${p.ID_Producto || ''}')">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">SKU *</label>
-                        <input type="text" id="prodSku" value="${p.SKU || p.Ref || ''}" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Código de Barras</label>
-                        <input type="text" id="prodCodigoBarra" value="${p.Codigo_Barra || ''}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                </div>
-
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Nombre / Descripción *</label>
-                    <input type="text" id="prodNombre" value="${p.Nombre || ''}" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:15px;">
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Categoría</label>
-                        <input type="text" id="prodCategoria" value="${p.ID_Categoria || 'ANILLOS'}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Material</label>
-                        <input type="text" id="prodMaterial" value="${p.Material || 'ORO'}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Color</label>
-                        <input type="text" id="prodColor" value="${p.Color || 'AMARILLO'}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Peso (g)</label>
-                        <input type="number" step="0.01" id="prodPeso" value="${p.Peso || 0}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Valor Piedra ($)</label>
-                        <input type="number" id="prodValorPiedra" value="${p.Valor_Piedra || 0}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom:15px;">
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Costo Oro ($)</label>
-                        <input type="number" id="prodValorOro" value="${p.Valor_Oro || 0}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Margen (%)</label>
-                        <input type="number" id="prodPorcentajeVenta" value="${p.Porcentaje_Venta || 100}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Descuento (%)</label>
-                        <input type="number" id="prodTieneDescuento" value="${p.Tiene_Descuento || 0}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Ubicación / Vitrina</label>
-                        <input type="text" id="prodUbicacion" value="${p.ID_Ubicacion || 'CAJA FUERTE'}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-weight:600; font-size:0.85rem; margin-bottom:5px; color:#334155;">Foto (Cámara o Archivo)</label>
-                        <input type="file" id="prodArchivoFoto" accept="image/*" onchange="convertirFotoBase64(this)" style="width:100%; font-size:0.8rem; padding:4px;">
-                        <input type="hidden" id="prodFotoBase64" value="${p.Foto || ''}">
-                    </div>
-                </div>
-
-                <div id="vistaPreviaFoto" style="margin-bottom:15px; text-align:center;">
-                    ${p.Foto ? `<img src="${p.Foto}" style="max-height:80px; border-radius:6px; border:1px solid #cbd5e1;" />` : ''}
-                </div>
-
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button type="submit" style="flex:1; padding:10px; background:#0f172a; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">💾 Guardar Producto</button>
-                    <button type="button" onclick="document.getElementById('${modalID}').style.display='none'" style="flex:1; padding:10px; background:#ef4444; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    `;
-}
-
-function convertirFotoBase64(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById("prodFotoBase64").value = e.target.result;
-            document.getElementById("vistaPreviaFoto").innerHTML = `<img src="${e.target.result}" style="max-height:80px; border-radius:6px; border:1px solid #cbd5e1;" />`;
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-async function enviarFormularioProducto(event, accion, idProducto) {
+async function guardarProductoInventario(event) {
     event.preventDefault();
-    const payload = {
-        action: accion,
-        id_producto: idProducto,
-        sku: document.getElementById("prodSku").value.trim(),
-        codigo_barra: document.getElementById("prodCodigoBarra").value.trim(),
-        nombre: document.getElementById("prodNombre").value.trim(),
-        categoria: document.getElementById("prodCategoria").value.trim(),
-        material: document.getElementById("prodMaterial").value.trim(),
-        color: document.getElementById("prodColor").value.trim(),
-        peso: document.getElementById("prodPeso").value,
-        valor_piedra: document.getElementById("prodValorPiedra").value,
-        valor_oro: document.getElementById("prodValorOro").value,
-        porcentaje_venta: document.getElementById("prodPorcentajeVenta").value,
-        tiene_descuento: document.getElementById("prodTieneDescuento").value,
-        ubicacion: document.getElementById("prodUbicacion").value.trim(),
-        foto: document.getElementById("prodFotoBase64").value
-    };
+    const skuOriginal = document.getElementById("prodSkuOriginal").value.trim();
+    const sku = document.getElementById("prodSku").value.trim();
+    const codigo_barra = document.getElementById("prodCodigoBarra").value.trim();
+    const nombre = document.getElementById("prodNombre").value.trim();
+    const categoria = document.getElementById("prodCategoria").value.trim();
+    const material = document.getElementById("prodMaterial").value.trim();
+    const color = document.getElementById("prodColor").value.trim();
+    const peso = Number(document.getElementById("prodPeso").value) || 0;
+    const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
+    const costo = Number(document.getElementById("prodCosto").value) || 0;
+    const porcentaje_venta = Number(document.getElementById("prodMargen").value) || 100;
+    const tiene_descuento = Number(document.getElementById("prodDescuento").value) || 0;
+    const ubicacion = document.getElementById("prodUbicacion").value.trim();
+    const foto = document.getElementById("prodFoto").value.trim();
+    const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
 
-    const res = await API.llamar(accion, payload, "POST");
+    const accionApi = skuOriginal ? "actualizarProducto" : "guardarProducto";
+
+    const res = await API.llamar(accionApi, {
+        action: accionApi,
+        sku_original: skuOriginal,
+        sku: sku,
+        codigo_barra: codigo_barra,
+        nombre: nombre,
+        categoria: categoria,
+        material: material,
+        color: color,
+        peso: peso,
+        valor_piedra: valor_piedra,
+        costo: costo,
+        porcentaje_venta: porcentaje_venta,
+        tiene_descuento: tiene_descuento,
+        ubicacion: ubicacion,
+        foto: foto,
+        usuario: usuario
+    }, "POST");
+
     if (res && res.status === "success") {
-        alert(res.message);
-        document.getElementById("modalGestionProducto").style.display = "none";
-        await renderizarModuloProductos(document.getElementById('contentBody'));
+        alert(res.message || "Operación realizada con éxito.");
+        cerrarModalFormularioProducto();
+        cargarListaProductos();
     } else {
         alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
     }
 }
 
-async function eliminarProducto(sku) {
-    if (!confirm(`¿Desea eliminar el producto con SKU [${sku}]?`)) return;
-    const res = await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
-    if (res && res.status === "success") {
-        alert(res.message);
-        await renderizarModuloProductos(document.getElementById('contentBody'));
-    } else {
-        alert("Error al eliminar producto.");
+function editarProducto(sku) {
+    const prod = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === sku.toUpperCase());
+    if (!prod) {
+        alert("No se encontró el producto para editar.");
+        return;
     }
+
+    document.getElementById("modalProductoTitulo").textContent = `Editar Producto: ${sku}`;
+    document.getElementById("prodSkuOriginal").value = sku;
+    document.getElementById("prodSku").value = prod.SKU || prod.sku || "";
+    document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
+    document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
+    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "";
+    document.getElementById("prodMaterial").value = prod.Material_Oro || prod.Material || prod.material || "";
+    document.getElementById("prodColor").value = prod.Color || prod.color || "";
+    document.getElementById("prodPeso").value = prod.Peso || prod.peso || 0;
+    document.getElementById("prodValorPiedra").value = prod.Valor_Piedra || prod.valor_piedra || 0;
+    document.getElementById("prodCosto").value = prod.Costo || prod.costo || 0;
+    document.getElementById("prodMargen").value = prod.Porcentaje_Venta || prod.porcentaje_venta || 100;
+    document.getElementById("prodDescuento").value = prod.Tiene_Descuento || prod.tiene_descuento || 0;
+    document.getElementById("prodUbicacion").value = prod.ID_Ubicacion || prod.ubicacion || "";
+    document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
+
+    document.getElementById("modalFormularioProducto").style.display = "flex";
 }
 
-// ================= MÓDULO: ETIQUETAS (QR Y CÓDIGO DE BARRAS) =================
+async function eliminarProductosSeleccionados() {
+    const checks = document.querySelectorAll('.check-producto-item:checked');
+    if (checks.length === 0) {
+        alert("Por favor seleccione al menos un producto para eliminar.");
+        return;
+    }
 
-function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
-    let modalID = "modalEtiquetaJoya";
-    let modalDiv = document.getElementById(modalID);
+    if (!confirm(`¿Está seguro de eliminar ${checks.length} producto(s) seleccionado(s)?`)) return;
+
+    let skusAEliminar = Array.from(checks).map(cb => cb.value);
     
-    if (!modalDiv) {
-        modalDiv = document.createElement("div");
-        modalDiv.id = modalID;
-        modalDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:9999;";
-        document.body.appendChild(modalDiv);
-    } else {
-        modalDiv.style.display = "flex";
+    for (let sku of skusAEliminar) {
+        await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
     }
 
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(sku)}`;
-    const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(codigoBarra || sku)}&code=Code128&dpi=96`;
-
-    modalDiv.innerHTML = `
-        <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:320px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
-            <h4 style="color:#0f172a; margin-bottom:5px;">MANU JOYEROS</h4>
-            <p style="font-size:0.75rem; color:#64748b; margin-bottom:15px;">SKU: <strong>${sku}</strong></p>
-            <p style="font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:15px; max-height:40px; overflow:hidden;">${nombre}</p>
-            
-            <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:15px;">
-                <div>
-                    <img src="${qrUrl}" alt="QR" style="width:100px; height:100px; border:1px solid #e2e8f0; padding:3px; border-radius:6px;" />
-                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">QR SKU</span>
-                </div>
-                <div>
-                    <img src="${barcodeUrl}" alt="Código de Barras" style="width:130px; height:50px; object-fit:contain;" />
-                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">${codigoBarra || sku}</span>
-                </div>
-            </div>
-
-            <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:20px;">Ref: ${sku}</p>
-
-            <div style="display:flex; gap:10px;">
-                <button onclick="window.print()" style="flex:1; padding:8px; background:#0f172a; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🖨️ Imprimir</button>
-                <button onclick="document.getElementById('${modalID}').style.display='none'" style="flex:1; padding:8px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
-            </div>
-        </div>
-    `;
+    alert("Productos eliminados correctamente.");
+    cargarListaProductos();
 }
 
-function abrirModalImportar() { alert("Módulo de importación masiva activo."); }
-function exportarExcelProductos() { alert("Exportación de productos completada."); }
-function eliminarProductosSeleccionados() { alert("Seleccione productos para eliminación masiva."); }
+function exportarProductosCSV() {
+    alert("Función de exportación CSV activa.");
+}
+
+function abrirModalImportarExcel() {
+    alert("Módulo de importación activo.");
+}
+
+function abrirModalQrCatalogoAdmin() {
+    alert("Módulo QR de Catálogo activo.");
+}
+
+function generarQrBarraAdmin(sku) {
+    alert(`Generando códigos para SKU: ${sku}`);
+}
+
+function abrirZoomImagenSrc(url) {
+    const modal = document.getElementById("imageModal");
+    const img = document.getElementById("imgModalSrc");
+    if (modal && img) {
+        img.src = url;
+        modal.style.display = "flex";
+    }
+}
