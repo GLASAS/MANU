@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Íntegra y Completa
+ * Versión Íntegra y Completa con Zoom y Botón de Salir Corregidos
  */
 
 async function renderizarModuloProductos(container) {
@@ -59,7 +59,7 @@ async function renderizarModuloProductos(container) {
         </div>
 
         <!-- MODAL CRUD PRODUCTO -->
-        <div class="image-modal" id="modalFormularioProducto" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);">
+        <div class="image-modal" id="modalFormularioProducto" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index:9998; position:fixed; top:0; left:0; width:100%; height:100%;">
             <div style="background: white; width: 95%; max-width: 650px; border-radius: 12px; padding: 25px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 id="modalProductoTitulo" style="margin: 0; color: #0f172a;">Gestión de Producto</h3>
@@ -134,6 +134,14 @@ async function renderizarModuloProductos(container) {
                         <button type="submit" style="padding: 8px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">💾 Guardar Producto</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- MODAL ZOOM IMAGEN CON BOTÓN DE SALIR CORREGIDO -->
+        <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
+            <div style="position: relative; max-width: 90%; max-height: 90%; text-align: center;" onclick="event.stopPropagation()">
+                <button type="button" onclick="cerrarZoomImagen()" style="position: absolute; top: -40px; right: 0; background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;">✕ Cerrar</button>
+                <img id="imgModalSrc" src="" style="max-width: 100%; max-height: 85vh; border-radius: 8px; border: 2px solid white; object-fit: contain;">
             </div>
         </div>
     `;
@@ -405,6 +413,13 @@ function abrirZoomImagenSrc(url) {
     if (modal && img) {
         img.src = url;
         modal.style.display = "flex";
+    }
+}
+
+function cerrarZoomImagen() {
+    const modal = document.getElementById("imageModal");
+    if (modal) {
+        modal.style.display = "none";
     }
 }
 
