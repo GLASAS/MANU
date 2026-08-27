@@ -1,6 +1,5 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
- * Versión Íntegra y Completa con Selector de Responsable, Ajuste de Pantalla y Exportación a Excel
  */
 
 let listaInventarioCache = [];
@@ -11,71 +10,70 @@ async function renderizarModuloInventario(container) {
     let fechaHoy = new Date().toISOString().split('T')[0];
 
     container.innerHTML = `
-        <div class="card" style="background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
-                <div>
-                    <h3 style="margin: 0; color: #0f172a; font-size: 1.2rem;">📋 Módulo de Auditoría — Arqueo e Inventario Físico en Línea</h3>
-                    <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #64748b;">Verifique existencias reales en vitrinas y caja fuerte escaneando o buscando por SKU, código de barras o nombre.</p>
-                </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button type="button" onclick="exportarArqueoExcel()" style="background: #059669; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">📥 Guardar Arqueo (Excel)</button>
-                    <button type="button" onclick="limpiarArqueoFisico()" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">🧹 Limpiar</button>
-                </div>
+        <div class="card">
+            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.1rem;">📦 Módulo de Auditoría — Arqueo e Inventario Físico en Línea</h3>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.25rem;">Verifique existencias reales en vitrinas y caja fuerte escaneando o buscando por SKU, código de barras o nombre.</p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;">
+                <button class="btn-modern btn-success-action" onclick="exportarArqueoExcel()">📥 Descargar Formato Excel</button>
+                <button class="btn-modern btn-danger-action" onclick="limpiarArqueoFisico()">🧹 Limpiar</button>
             </div>
 
-            <!-- FILTROS Y RESPONSABLE -->
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                <div>
-                    <label style="display: block; font-size: 0.78rem; font-weight: bold; color: #475569; margin-bottom: 5px;">Fecha de Arqueo</label>
-                    <input type="date" id="arqFecha" value="${fechaHoy}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;" readonly>
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.78rem; font-weight: bold; color: #475569; margin-bottom: 5px;">Responsable del Arqueo</label>
-                    <select id="arqResponsableSelect" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-                        <option value="">Cargando usuarios...</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="display: block; font-size: 0.78rem; font-weight: bold; color: #475569; margin-bottom: 5px;">Área / Vitrina</label>
-                    <select id="arqArea" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-                        <option value="Inventario General / Vitrinas">Inventario General / Vitrinas</option>
-                        <option value="Caja Fuerte">Caja Fuerte</option>
-                        <option value="Vitrina 1">Vitrina 1</option>
-                        <option value="Vitrina 2">Vitrina 2</option>
-                    </select>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
+                <div style="font-weight: bold; color: #334155; margin-bottom: 8px;">📋 Responsables y Filtros</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                    <div>
+                        <label style="font-size: 0.8rem; color: #64748b;">Fecha</label>
+                        <input type="date" id="arqFecha" value="${fechaHoy}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: #64748b;">Responsable</label>
+                        <select id="arqResponsableSelect" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; background:white;">
+                            <option value="">Cargando usuarios...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: #64748b;">Área / Vitrina</label>
+                        <select id="arqArea" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;">
+                            <option value="Inventario General / Vitrinas">Inventario General / Vitrinas</option>
+                            <option value="Caja Fuerte">Caja Fuerte</option>
+                            <option value="Vitrina 1">Vitrina 1</option>
+                            <option value="Vitrina 2">Vitrina 2</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
             <!-- RESUMEN DE ARQUEO -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
-                <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0;">
-                    <span style="display: block; font-size: 0.75rem; font-weight: bold; color: #64748b; text-transform: uppercase;">Total Productos</span>
-                    <span id="lblTotalInventario" style="font-size: 1.5rem; font-weight: bold; color: #0f172a;">0</span>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; text-align: center;">
+                <div style="background: #e0f2fe; padding: 12px; border-radius: 8px; border: 1px solid #bae6fd;">
+                    <div style="font-size: 0.75rem; color: #0369a1; font-weight: bold;">TOTAL</div>
+                    <div id="lblTotalInventario" style="font-size: 1.25rem; font-weight: bold; color: #0369a1;">0</div>
                 </div>
-                <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #a7f3d0;">
-                    <span style="display: block; font-size: 0.75rem; font-weight: bold; color: #047857; text-transform: uppercase;">Presentes (Auditados)</span>
-                    <span id="lblPresentesInventario" style="font-size: 1.5rem; font-weight: bold; color: #059669;">0</span>
+                <div style="background: #dcfce7; padding: 12px; border-radius: 8px; border: 1px solid #bbf7d0;">
+                    <div style="font-size: 0.75rem; color: #15803d; font-weight: bold;">PRESENTES</div>
+                    <div id="lblPresentesInventario" style="font-size: 1.25rem; font-weight: bold; color: #15803d;">0</div>
                 </div>
-                <div style="background: #fef2f2; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #fecaca;">
-                    <span style="display: block; font-size: 0.75rem; font-weight: bold; color: #b91c1c; text-transform: uppercase;">Faltantes / Pendientes</span>
-                    <span id="lblFaltantesInventario" style="font-size: 1.5rem; font-weight: bold; color: #dc2626;">0</span>
+                <div style="background: #fee2e2; padding: 12px; border-radius: 8px; border: 1px solid #fecaca;">
+                    <div style="font-size: 0.75rem; color: #b91c1c; font-weight: bold;">FALTANTES</div>
+                    <div id="lblFaltantesInventario" style="font-size: 1.25rem; font-weight: bold; color: #b91c1c;">0</div>
                 </div>
             </div>
 
             <!-- BUSCADOR UNIVERSAL INTELIGENTE DE ARQUEO -->
-            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="inputBuscadorArqueo" placeholder="🔍 Buscar por SKU, código de barras, nombre, ubicación..." oninput="filtrarArqueoEnVivoOptimizado()" style="flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.9rem;">
-                <select id="filtroEstadoArqueo" onchange="filtrarArqueoEnVivoOptimizado()" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-size: 0.9rem;">
-                    <option value="TODOS">Todos los estados</option>
+            <div style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
+                <div class="toolbar-search-box" style="flex: 1;">
+                    <span>🔍</span>
+                    <input type="text" id="inputBuscadorArqueo" placeholder="Buscar por SKU, código de barras, nombre, ubicación..." oninput="filtrarArqueoEnVivoOptimizado()" style="width: 100%; padding: 8px 8px 8px 32px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <select id="filtroEstadoArqueo" onchange="filtrarArqueoEnVivoOptimizado()" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                    <option value="TODOS">Todos</option>
                     <option value="PRESENTES">Presentes</option>
                     <option value="FALTANTES">Faltantes</option>
                 </select>
             </div>
 
-            <!-- CONTENEDOR DE TABLA (AJUSTADO SIN SCROLL HORIZONTAL) -->
-            <div id="tablaInventarioContainer" style="width: 100%; overflow-x: hidden;">
-                <p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario para auditoría...</p>
-            </div>
+            <div id="tablaInventarioContainer" style="width: 100%; overflow-x: hidden;"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario para auditoría...</p></div>
         </div>`;
 
     await cargarUsuariosResponsablesArqueo();
@@ -96,7 +94,6 @@ async function cargarUsuariosResponsablesArqueo() {
             });
             select.innerHTML = html;
 
-            // Seleccionar usuario actual por defecto si existe en sesión
             if (typeof usuarioActual !== 'undefined' && usuarioActual && (usuarioActual.nombre || usuarioActual.usuario)) {
                 select.value = usuarioActual.nombre || usuarioActual.usuario;
             }
@@ -122,14 +119,14 @@ async function cargarDatosInventarioArqueo() {
             productos = res.data;
             localStorage.setItem("cache_productos_manu", JSON.stringify(productos));
         } else {
-            document.getElementById("tablaInventarioContainer").innerHTML = `<p style="color: #ef4444; text-align: center; padding: 2rem;">Error al cargar datos del servidor.</p>`;
+            document.getElementById("tablaInventarioContainer").innerHTML = `<p style="color: #ef4444; text-align: center;">Error al cargar datos.</p>`;
             return;
         }
     }
 
     listaInventarioCache = (productos || []).filter(p => String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase().includes("DISPONIBLE")).map(p => ({
         ...p,
-        auditado: false // Inician como no auditados (faltantes)
+        auditado: false
     }));
 
     listaInventarioFiltradosCache = listaInventarioCache;
@@ -194,9 +191,9 @@ function actualizarContadoresArqueo() {
     let presentes = listaInventarioCache.filter(p => p.auditado).length;
     let faltantes = total - presentes;
 
-    if (document.getElementById("lblTotalInventario")) document.getElementById("lblTotalInventario").textContent = total;
-    if (document.getElementById("lblPresentesInventario")) document.getElementById("lblPresentesInventario").textContent = presentes;
-    if (document.getElementById("lblFaltantesInventario")) document.getElementById("lblFaltantesInventario").textContent = faltantes;
+    document.getElementById("lblTotalInventario").textContent = total;
+    document.getElementById("lblPresentesInventario").textContent = presentes;
+    document.getElementById("lblFaltantesInventario").textContent = faltantes;
 }
 
 function renderizarTablaArqueo() {
@@ -206,81 +203,69 @@ function renderizarTablaArqueo() {
         return;
     }
 
-    let html = `
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; table-layout: fixed;">
-            <thead>
-                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
-                    <th style="padding: 10px; width: 110px;">Estado Físico</th>
-                    <th style="padding: 10px; width: 90px;">SKU</th>
-                    <th style="padding: 10px; width: 130px;">Código de Barras</th>
-                    <th style="padding: 10px; width: auto;">Producto / Descripción</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+    let html = `<div class="table-container"><table class="data-table" style="table-layout: fixed; width: 100%;"><thead><tr>
+        <th style="width: 110px;">Estado Físico</th>
+        <th style="width: 90px;">SKU</th>
+        <th style="width: 130px;">Código de Barras</th>
+        <th style="width: auto;">Producto</th>
+        <th style="width: 100px;">Categoría</th>
+        <th style="width: 100px;">Ubicación</th>
+        <th style="width: 70px;">Peso</th>
+        <th style="width: 110px;">Acción / Marcar</th>
+    </tr></thead><tbody>`;
 
     listaInventarioFiltradosCache.forEach(p => {
         let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '-';
+        let badgeEstado = p.auditado 
+            ? `<span class="badge" style="background-color: #10b981; color: white;">✔ Presente</span>` 
+            : `<span class="badge" style="background-color: #ef4444; color: white;">✖ Faltante</span>`;
+        
         let btnAccion = p.auditado
-            ? `<button type="button" onclick="marcarItemAuditado('${p.SKU}')" style="background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.78rem; width: 100%; box-shadow: 0 2px 4px rgba(5,150,105,0.2);">✔ PRESENTE</button>`
-            : `<button type="button" onclick="marcarItemAuditado('${p.SKU}')" style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.78rem; width: 100%; box-shadow: 0 2px 4px rgba(220,38,38,0.2);">✖ FALTANTE</button>`;
+            ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer; width: 100%;">Desmarcar</button>`
+            : `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; padding: 4px 8px; border-radius: 4px; cursor: pointer; width: 100%;">✔ Encontrado</button>`;
 
-        html += `
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px; vertical-align: middle;">${btnAccion}</td>
-                <td style="padding: 10px; font-weight: bold; color: #0f172a; vertical-align: middle; word-break: break-word;">${p.SKU}</td>
-                <td style="padding: 10px; color: #475569; vertical-align: middle; word-break: break-word;">${codigoBarraVal}</td>
-                <td style="padding: 10px; color: #1e293b; vertical-align: middle; word-break: break-word; line-height: 1.3;">${p.Nombre || ''}</td>
-            </tr>
-        `;
+        html += `<tr>
+            <td style="word-break: break-word;">${badgeEstado}</td>
+            <td style="word-break: break-word;"><strong>${p.SKU}</strong></td>
+            <td style="word-break: break-word;"><code>${codigoBarraVal}</code></td>
+            <td style="word-break: break-word; line-height: 1.3;">${p.Nombre || ''}</td>
+            <td style="word-break: break-word;">${p.ID_Categoria || ''}</td>
+            <td style="word-break: break-word;">${p.ID_Ubicacion || ''}</td>
+            <td style="word-break: break-word;">${p.Peso || 0}g</td>
+            <td style="word-break: break-word;">${btnAccion}</td>
+        </tr>`;
     });
 
-    html += `</tbody></table>`;
+    html += `</tbody></table></div>`;
     contenedor.innerHTML = html;
 }
 
 function limpiarArqueoFisico() {
-    if (confirm("¿Desea reiniciar el arqueo y marcar todos los ítems como faltantes?")) {
-        listaInventarioCache.forEach(p => p.auditado = false);
-        if (document.getElementById("inputBuscadorArqueo")) document.getElementById("inputBuscadorArqueo").value = "";
-        if (document.getElementById("filtroEstadoArqueo")) document.getElementById("filtroEstadoArqueo").value = "TODOS";
-        listaInventarioFiltradosCache = listaInventarioCache;
-        actualizarContadoresArqueo();
-        renderizarTablaArqueo();
-    }
+    listaInventarioCache.forEach(p => p.auditado = false);
+    document.getElementById("inputBuscadorArqueo").value = "";
+    document.getElementById("filtroEstadoArqueo").value = "TODOS";
+    listaInventarioFiltradosCache = listaInventarioCache;
+    actualizarContadoresArqueo();
+    renderizarTablaArqueo();
 }
 
 function exportarArqueoExcel() {
-    if (!listaInventarioCache || listaInventarioCache.length === 0) { 
-        alert("No hay datos para exportar."); 
-        return; 
-    }
+    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos para exportar."); return; }
+    
+    let responsable = document.getElementById("arqResponsableSelect")?.value || "No asignado";
+    let fecha = document.getElementById("arqFecha")?.value || new Date().toISOString().split('T')[0];
+    let area = document.getElementById("arqArea")?.value || "Inventario General";
 
-    const responsable = document.getElementById("arqResponsableSelect")?.value || "No asignado";
-    const fecha = document.getElementById("arqFecha")?.value || new Date().toISOString().split('T')[0];
-    const area = document.getElementById("arqArea")?.value || "Inventario General";
-
-    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-    csvContent += `REPORTE DE ARQUEO E INVENTARIO FISICO\n`;
-    csvContent += `Fecha:,${fecha}\n`;
-    csvContent += `Responsable:,${responsable}\n`;
-    csvContent += `Área / Vitrina:,${area}\n\n`;
-    csvContent += `Estado Físico,SKU,Código de Barras,Producto / Descripción,Ubicación\n`;
-
+    let csv = `REPORTE DE ARQUEO E INVENTARIO FISICO\nFecha:;${fecha}\nResponsable:;${responsable}\nArea:;${area}\n\n`;
+    csv += "SKU;Codigo_Barra;Nombre;Categoria;Ubicacion;Peso;Estado_Auditoria\n";
+    
     listaInventarioCache.forEach(p => {
         let estado = p.auditado ? "PRESENTE" : "FALTANTE";
-        let nombreLimpio = `"${(p.Nombre || "").replace(/"/g, '""')}"`;
-        let ubicacion = p.ID_Ubicacion || p.ubicacion || "-";
-        csvContent += `${estado},${p.SKU},${p.Codigo_Barra || ""},${nombreLimpio},${ubicacion}\n`;
+        csv += [p.SKU, p.Codigo_Barra || "", `"${(p.Nombre || "").replace(/"/g, '""')}"`, p.ID_Categoria || "", p.ID_Ubicacion || "", p.Peso || 0, estado].join(";") + "\n";
     });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Arqueo_Inventario_${fecha}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    alert("¡Arqueo guardado y exportado exitosamente a Excel!");
+    
+    let link = document.createElement("a");
+    link.href = encodeURI("data:text/csv;charset=utf-8,\uFEFF" + csv);
+    link.download = `arqueo_inventario_${fecha}.csv`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
