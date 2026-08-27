@@ -1,22 +1,24 @@
-// Asegúrate de que el método POST en tu js/api.js envíe siempre el parámetro action:
-async llamar(accion, datos = {}, metodo = "POST") {
-    const url = CONFIG.APPS_SCRIPT_URL; // o CONFIG.URL_API
-    
-    if (metodo.toUpperCase() === "GET") {
-        // ... tu lógica GET existente ...
-    } else {
-        // Aseguramos que 'action' viaje siempre dentro del objeto datos para Apps Script
-        datos.action = datos.action || accion;
-
+/**
+ * MANU JOYEROS - Conector API (api.js)
+ */
+const API = {
+    async llamar(accion, datos = {}, metodo = "POST") {
         try {
-            const respuesta = await fetch(url, {
-                method: "POST",
-                body: JSON.stringify(datos)
-            });
-            return await respuesta.json();
-        } catch (e) {
-            console.error("Error en API:", e);
-            return { status: "error", message: "Error de conexión POST" };
+            let url = CONFIG.APPS_SCRIPT_URL;
+            let opciones = { method: metodo };
+
+            if (metodo === "GET") {
+                url += "?action=" + encodeURIComponent(accion);
+            } else {
+                opciones.body = JSON.stringify({ action: accion, ...datos });
+            }
+
+            const respuesta = await fetch(url, opciones);
+            const resultado = await respuesta.json();
+            return resultado;
+        } catch (error) {
+            console.error("Error en llamada API:", error);
+            return { status: "error", message: "Error de conexión con el servidor." };
         }
     }
-}
+};
