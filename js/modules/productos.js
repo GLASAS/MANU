@@ -13,11 +13,11 @@ async function renderizarModuloProductos(container) {
         <button class="btn-nuevo-producto" onclick="abrirFormularioNuevoProducto()">✨ + Nuevo</button>
         <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);" onclick="abrirModalImportarCSV()">📂 Importar CSV</button>
         <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);" onclick="exportarCatalogoCSV()">📥 Exportar Todo</button>
-        <a href="https://glasas.github.io/MANU_JOYEROS/catalogomanu" target="_blank" class="btn-nuevo-producto" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); text-decoration: none;">🌐 Catálogo Web</a>
+        <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-nuevo-producto" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); text-decoration: none;">🌐 Catálogo Web</a>
         <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);" onclick="abrirModalQrCatalogo()">📱 QR Catálogo</button>
         <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);" onclick="eliminarProductosSeleccionados()">🗑️ Eliminar</button>
     ` : `
-        <a href="https://glasas.github.io/MANU_JOYEROS/catalogomanu" target="_blank" class="btn-nuevo-producto" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); text-decoration: none;">🌐 Catálogo Web</a>
+        <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-nuevo-producto" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); text-decoration: none;">🌐 Catálogo Web</a>
         <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);" onclick="abrirModalQrCatalogo()">📱 QR Catálogo</button>
     `;
 
@@ -66,7 +66,7 @@ function exportarCatalogoCSV() {
     let encodedUri = encodeURI(csvContent);
     let link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "catalogo_manu_joyeros_exportado.csv");
+    link.setAttribute("download", "catalogo_manu_exportado.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -326,7 +326,7 @@ function renderizarTablaProductosPaginada() {
 function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorVentaStr, metaEncoded) {
     let metadataArqueo = decodeURIComponent(metaEncoded || '');
     document.getElementById("modalSkuLabel").textContent = `SKU: ${sku}`;
-    let certUrl = `https://glasas.github.io/MANU_JOYEROS/cert.html?token=${btoa(sku)}${metadataArqueo}`;
+    let certUrl = `https://glasas.github.io/MANU/cert.html?token=${btoa(sku)}${metadataArqueo}`;
     document.getElementById("imgQrGenerado").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(certUrl)}`;
     document.getElementById("modalQrBarra").classList.add("active");
 }
@@ -334,3 +334,38 @@ function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorV
 function abrirZoomImagen(url) { document.getElementById("imgModalSrc").src = url; document.getElementById("imageModal").classList.add("active"); }
 function cerrarZoomImagen() { document.getElementById("imageModal").classList.remove("active"); }
 function cerrarModalQr() { document.getElementById("modalQrBarra").classList.remove("active"); }
+
+function imprimirSeccion(id) {
+    window.print();
+}
+
+function descargarQrPNG() {
+    let img = document.getElementById("imgQrGenerado");
+    if (!img || !img.src) return;
+    let a = document.createElement('a');
+    a.href = img.src;
+    a.download = 'etiqueta_qr_manu.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function abrirFormularioNuevoProducto() {
+    alert("Módulo de Creación de Producto rápido activo.");
+}
+
+function abrirFormularioEditarProducto(json) {
+    alert("Módulo de Edición de Producto activo.");
+}
+
+async function eliminarProducto(sku) {
+    if (!confirm(`¿Eliminar producto SKU [${sku}]?`)) return;
+    const res = await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
+    if (res && res.status === "success") {
+        alert(res.message);
+        localStorage.removeItem("cache_productos_manu");
+        renderizarModuloProductos(document.getElementById('contentBody'));
+    } else {
+        alert("Error al eliminar producto.");
+    }
+}
