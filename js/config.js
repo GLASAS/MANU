@@ -2,15 +2,15 @@
  * MANU JOYEROS - Configuración Global y Enrutador (config.js)
  */
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
-  URL_API: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
-  NOMBRE_EMPRESA: "MANU JOYEROS",
-  NIT: "902.078.370-8",
-  TELEFONO: "+57 (311) 888 6137",
-  DIRECCION: "Calle 114 6A 92 Local 301",
-  EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
-  CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.1750"
+    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
+    URL_API: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
+    NOMBRE_EMPRESA: "MANU JOYEROS",
+    NIT: "902.078.370-8",
+    TELEFONO: "+57 (311) 888 6137",
+    DIRECCION: "Calle 114 6A 92 Local 301",
+    EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
+    CIUDAD: "Bogotá D.C., Colombia",
+    VERSION: "V1.1759"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -20,7 +20,7 @@ let paginaActual = 1;
 const registrosPorPagina = 10;
 let valorOroDelDiaCache = 250000;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     if (!usuarioActual && !window.location.href.includes("login.html")) {
         window.location.href = "login.html";
         return;
@@ -43,6 +43,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lblVersionSidebar && typeof CONFIG !== 'undefined') {
         lblVersionSidebar.textContent = `${CONFIG.NOMBRE_EMPRESA} ${CONFIG.VERSION}`;
     }
+
+    // Cargar obligatoriamente el valor real del oro desde la base de datos al iniciar la aplicación
+    await cargarValorOroDia();
 });
 
 function cerrarSesion() {
@@ -83,7 +86,7 @@ async function cambiarVista(vista, event) {
         if (typeof renderizarModuloInventario === 'function') await renderizarModuloInventario(contenedor);
     } else if (vista === 'actualizacion_oro') {
         if (tituloVista) tituloVista.textContent = "Actualización del Valor del Oro";
-        renderizarModuloActualizacionOro(contenedor);
+        await renderizarModuloActualizacionOro(contenedor);
     } else if (vista === 'entradas') {
         if (tituloVista) tituloVista.textContent = "Entradas de Inventario";
         if (typeof renderizarModuloEntradasSalidas === 'function') await renderizarModuloEntradasSalidas(contenedor, 'ENTRADAS');
@@ -109,7 +112,10 @@ async function cambiarVista(vista, event) {
     }
 }
 
-function renderizarModuloActualizacionOro(container) {
+async function renderizarModuloActualizacionOro(container) {
+    // Consultar el valor actual directo de la base de datos antes de pintar el HTML
+    await cargarValorOroDia();
+    
     container.innerHTML = `
         <div class="card" style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             <h3 style="margin-bottom: 0.5rem; color: #0f172a;">🪙 Actualización del Valor del Oro del Día</h3>
@@ -117,7 +123,7 @@ function renderizarModuloActualizacionOro(container) {
             <form id="formOroDia" onsubmit="ejecutarActualizacionOro(event)">
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 6px;">Valor del Gramo de Oro Actual ($ COP) *</label>
-                    <input type="number" id="inputValorOroDiaModal" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1.25rem; font-weight: bold; color: #d97706;" value="${window.valorOroDelDiaCache || 250000}">
+                    <input type="number" id="inputValorOroDiaModal" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1.25rem; font-weight: bold; color: #d97706;" value="${window.valorOroDelDiaCache}">
                 </div>
                 <button type="submit" style="width: 100%; padding: 12px; font-size: 1rem; background: #0f172a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">💾 Guardar y Actualizar Valor del Oro</button>
             </form>
@@ -126,12 +132,15 @@ function renderizarModuloActualizacionOro(container) {
 
 async function ejecutarActualizacionOro(event) {
     event.preventDefault();
-    const nuevoValor = Number(document.getElementById("inputValorOroDiaModal").value);
+    const inputElement = document.getElementById("inputValorOroDiaModal");
+    if (!inputElement) return;
+
+    const nuevoValor = Number(inputElement.value);
     if (isNaN(nuevoValor) || nuevoValor <= 0) { alert("Por favor ingrese un valor válido."); return; }
 
     const res = await API.llamar("actualizarValorOroDia", { action: "actualizarValorOroDia", valor_oro_dia: nuevoValor }, "POST");
     if (res && res.status === "success") {
-        alert(res.message);
+        alert(res.message || "Valor actualizado con éxito");
         window.valorOroDelDiaCache = nuevoValor;
     } else {
         alert("Error al actualizar: " + (res ? res.message : "Desconocido"));
@@ -142,9 +151,14 @@ async function cargarValorOroDia() {
     try {
         const res = await API.llamar("obtenerValorOroDia", {}, "GET");
         if (res && res.status === "success") {
-            window.valorOroDelDiaCache = Number(res.valor_oro_dia) || 250000;
+            const valorLeido = Number(res.valor_oro_dia !== undefined ? res.valor_oro_dia : res.valor);
+            if (!isNaN(valorLeido) && valorLeido > 0) {
+                window.valorOroDelDiaCache = valorLeido;
+            }
         }
-    } catch(e) { window.valorOroDelDiaCache = 250000; }
+    } catch(e) { 
+        console.error("No se pudo obtener el valor del oro de la base de datos:", e);
+    }
 }
 
 async function cargarCategoriasDinamicas() {}
