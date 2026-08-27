@@ -16,7 +16,6 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
                 <button class="btn-nuevo-producto" style="background:${color};" onclick="abrirModalFormularioMovimiento('${tipoMovimiento}')">+ Registrar ${tipoMovimiento === 'ENTRADAS' ? 'Entrada' : 'Salida'}</button>
             </div>
             
-            <!-- Buscador para filtrar Entradas / Salidas -->
             <div class="catalog-toolbar" style="margin-bottom: 1rem;">
                 <input type="text" id="filtroMovimientoInput" placeholder="🔍 Buscar por SKU, Código de Barras, Motivo..." style="max-width: 400px; padding: 8px; border:1px solid #cbd5e1; border-radius:6px; width:100%;" oninput="filtrarTablaMovimientos()">
             </div>
@@ -67,7 +66,6 @@ function filtrarTablaMovimientos() {
         let obs = String(m.Observaciones || m.observaciones || "").toLowerCase();
         return sku.includes(q) || motivo.includes(q) || obs.includes(q);
     });
-    // Detectar tipo actual por el título
     let esEntrada = document.getElementById("viewTitle").textContent.includes("Entradas");
     renderizarTablaMovimientosFiltrada(filtrados, esEntrada ? 'ENTRADAS' : 'SALIDAS');
 }
