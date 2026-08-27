@@ -104,7 +104,6 @@
             }
 
             try {
-                // Decodificamos el SKU que viene cifrado en Base64 por el QR
                 const skuBuscado = atob(token).trim();
 
                 const res = await API.llamar("obtenerProductos", {}, "GET");
