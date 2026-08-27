@@ -444,8 +444,7 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     
     // Enlace al certificado usando cert.html con el token/SKU codificado
     const skuToken = encodeURIComponent(sku);
-    const certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
-    
+    const certLink = `https://glasas.github.io/MANU/cert.html?sku=${skuToken}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(certLink)}`;
     const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(valorBarras)}&scale=3&height=12&includetext=true`;
 
