@@ -24,7 +24,7 @@ async function renderizarModuloProductos(container) {
             <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
             <div class="toolbar-search-box">
                 <span>🔍</span>
-                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre, Color..." oninput="filtrarCatalogoEnVivo()">
             </div>
         </div>
     ` : `
@@ -36,7 +36,7 @@ async function renderizarModuloProductos(container) {
             <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
             <div class="toolbar-search-box">
                 <span>🔍</span>
-                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre, Color..." oninput="filtrarCatalogoEnVivo()">
             </div>
         </div>
     `;
@@ -387,28 +387,42 @@ async function cargarListaProductos(forzarRed = false) {
     renderizarTablaProductosPaginada();
 }
 
+/**
+ * Buscador Universal Inteligente: Tolera múltiples términos, busca en SKU, Código de Barras, Nombre, Categoría, Color, Material y Ubicación.
+ */
 function filtrarCatalogoEnVivo() {
     const inputElem = document.getElementById("inputBuscadorCatalogo");
     if (!inputElem) return;
     const query = inputElem.value.toLowerCase().trim();
+    
     if (!query) {
         listaProductosFiltradosCache = listaProductosCache;
         paginaActual = 1;
         renderizarTablaProductosPaginada();
         return;
     }
+
     const terminos = query.split(/\s+/);
     listaProductosFiltradosCache = listaProductosCache.filter(p => {
         const sku = String(p.SKU || p.sku || "").toLowerCase();
         const nombre = String(p.Nombre || p.nombre || "").toLowerCase();
         const codigoBarra = String(p.Codigo_Barra || p.codigo_barra || "").toLowerCase();
-        const categoria = String(p.ID_Categoria || "").toLowerCase();
-        const material = String(p.Material_Oro || p.Material || "").toLowerCase();
-        const color = String(p.Color || "").toLowerCase();
-        const ubicacion = String(p.ID_Ubicacion || "").toLowerCase();
+        const categoria = String(p.ID_Categoria || p.categoria || "").toLowerCase();
+        const material = String(p.Material_Oro || p.Material || p.material || "").toLowerCase();
+        const color = String(p.Color || p.ID_Subcategoria || p.color || "").toLowerCase();
+        const ubicacion = String(p.ID_Ubicacion || p.ubicacion || "").toLowerCase();
         
-        return terminos.every(t => sku.includes(t) || codigoBarra.includes(t) || nombre.includes(t) || categoria.includes(t) || material.includes(t) || color.includes(t) || ubicacion.includes(t));
+        return terminos.every(t => 
+            sku.includes(t) || 
+            codigoBarra.includes(t) || 
+            nombre.includes(t) || 
+            categoria.includes(t) || 
+            material.includes(t) || 
+            color.includes(t) || 
+            ubicacion.includes(t)
+        );
     });
+    
     paginaActual = 1;
     renderizarTablaProductosPaginada();
 }
