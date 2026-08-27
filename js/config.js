@@ -1,11 +1,64 @@
+/**
+ * MANU JOYEROS - Configuración Global y Versión del Sistema
+ */
+const CONFIG = {
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw2dhdfkcK5j1ISFFb0vhMBuxz30CO4tECVTTeykg4be72WPeQoj_Oj6JerBfcQ9_C9/exec",
+  URL_API: "https://script.google.com/macros/s/AKfycbw2dhdfkcK5j1ISFFb0vhMBuxz30CO4tECVTTeykg4be72WPeQoj_Oj6JerBfcQ9_C9/exec",
+  NOMBRE_EMPRESA: "MANU JOYEROS",
+  NIT: "900.000.000-1",
+  TELEFONO: "+57 (320) 8123125",
+  DIRECCION: "Ak 7 #115-60 Local 1415",
+  EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
+  CIUDAD: "Bogotá D.C., Colombia",
+  VERSION: "V1.1000"
+};
+
+let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
+let listaProductosCache = [];
+let listaProductosFiltradosCache = [];
+let paginaActual = 1;
+const registrosPorPagina = 10;
+let valorOroDelDiaCache = 250000;
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (!usuarioActual && !window.location.href.includes("login.html")) {
+        window.location.href = "login.html";
+        return;
+    }
+    if (usuarioActual) {
+        const lblNombre = document.getElementById("userNameLabel");
+        const lblBanner = document.getElementById("userNameBanner");
+        const lblRol = document.getElementById("userRoleBadge");
+        if (lblNombre) lblNombre.textContent = usuarioActual.nombre;
+        if (lblBanner) lblBanner.textContent = usuarioActual.nombre;
+        if (lblRol) lblRol.textContent = usuarioActual.rol;
+    }
+    
+    if (usuarioActual && usuarioActual.rol && usuarioActual.rol.toUpperCase() !== 'ADMIN' && usuarioActual.rol.toUpperCase() !== 'ADMINISTRADOR') {
+        document.querySelectorAll('.nav-admin-only').forEach(el => el.style.display = 'none');
+    }
+});
+
+function cerrarSesion() {
+    localStorage.removeItem("usuario_manu_joyeros");
+    window.location.href = "login.html";
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    if (sidebar) sidebar.classList.toggle("active");
+    if (overlay) overlay.classList.toggle("active");
+}
+
+// 🌐 ENRUTADOR PRINCIPAL DE BLOQUES
 async function cambiarVista(vista, event) {
     if (event) event.preventDefault();
     const contenedor = document.getElementById('contentBody');
     const tituloVista = document.getElementById('viewTitle');
 
-    // Manejar enlaces activos del menú
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
-    if (event && event.target) event.target.classList.add('active');
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
 
     if (vista === 'dashboard') {
         if (tituloVista) tituloVista.textContent = "Dashboard General";
@@ -21,7 +74,7 @@ async function cambiarVista(vista, event) {
         if (typeof renderizarModuloProductos === 'function') {
             await renderizarModuloProductos(contenedor);
         } else {
-            contenedor.innerHTML = `<p style="color:red;">Error: Módulo de productos no cargado correctamente.</p>`;
+            contenedor.innerHTML = `<p style="color:#64748b; text-align:center; padding:2rem;">Cargando catálogo de productos...</p>`;
         }
     } else if (vista === 'inventario') {
         if (tituloVista) tituloVista.textContent = "Inventario y Arqueo";
@@ -43,13 +96,11 @@ async function cambiarVista(vista, event) {
         if (typeof renderizarModuloUsuarios === 'function') await renderizarModuloUsuarios(contenedor);
     }
 
-    // Cerrar menú en dispositivos móviles al hacer clic
     if (window.innerWidth <= 768) {
         toggleSidebar();
     }
 }
 
-// Funciones auxiliares globales de carga de oro y categorías para evitar errores
 async function cargarValorOroDia() {
     try {
         const res = await API.llamar("obtenerValorOroDia", {}, "GET");
@@ -62,3 +113,4 @@ async function cargarValorOroDia() {
 async function cargarCategoriasDinamicas() {}
 async function cargarMaterialesDinamicos() {}
 async function cargarColoresDinamicos() {}
+function abrirModalQrCatalogo() { alert("Módulo de QR de Catálogo Web activo."); }
