@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Íntegra y Completa con Enlace de Certificado Sincronizado
+ * Versión Íntegra y Completa con Ruta de Certificado Sincronizada (MANU_JOYEROS)
  */
 
 async function renderizarModuloProductos(container) {
@@ -442,9 +442,9 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
 
     const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
     
-    // Enlace al certificado usando el SKU codificado en Base64 (token)
+    // Enlace exacto sincronizado con la ruta del catálogo web (MANU_JOYEROS)
     const skuToken = btoa(sku);
-    const certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
+    const certLink = `https://glasas.github.io/MANU_JOYEROS/cert.html?token=${skuToken}`;
     
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(certLink)}`;
     const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(valorBarras)}&scale=3&height=12&includetext=true`;
