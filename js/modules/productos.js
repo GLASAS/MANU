@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Íntegra y Completa con Zoom y Botón de Salir Corregidos
+ * Versión Íntegra y Completa con Código de Barras Corregido
  */
 
 async function renderizarModuloProductos(container) {
@@ -137,7 +137,7 @@ async function renderizarModuloProductos(container) {
             </div>
         </div>
 
-        <!-- MODAL ZOOM IMAGEN CON BOTÓN DE SALIR CORREGIDO -->
+        <!-- MODAL ZOOM IMAGEN -->
         <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
             <div style="position: relative; max-width: 90%; max-height: 90%; text-align: center;" onclick="event.stopPropagation()">
                 <button type="button" onclick="cerrarZoomImagen()" style="position: absolute; top: -40px; right: 0; background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;">✕ Cerrar</button>
@@ -438,8 +438,9 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
         modalDiv.style.display = "flex";
     }
 
+    const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(sku)}`;
-    const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(codigoBarra || sku)}&code=Code128&dpi=96`;
+    const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(valorBarras)}&scale=3&height=12&includetext=true`;
 
     modalDiv.innerHTML = `
         <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:340px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
@@ -454,7 +455,7 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
                 </div>
                 <div>
                     <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:140px; height:60px; object-fit:contain;" />
-                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">${codigoBarra || sku}</span>
+                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">${valorBarras}</span>
                 </div>
             </div>
 
