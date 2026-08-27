@@ -9,8 +9,6 @@ async function renderizarModuloProductos(container) {
                 <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
                 <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
                 <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
-                <button type="button" class="btn-action" onclick="window.open('https://glasas.github.io/MANU/catalogomanu', '_blank')" style="background: #d97706; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🌐 Catálogo Web</button>
-                <button type="button" class="btn-action" onclick="abrirModalQrCatalogoAdmin()" style="background: #7c3aed; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📱 QR Web</button>
                 <button type="button" class="btn-action text-danger" onclick="eliminarProductosSeleccionados()" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🗑️ Eliminar</button>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -198,6 +196,7 @@ function renderizarTablaProductosAdmin() {
 
     paginaItems.forEach(p => {
         let sku = p.SKU || p.sku || "-";
+        let codigoBarra = p.Codigo_Barra || p.codigo_barra || sku;
         let nombre = p.Nombre || p.nombre || "Joya sin nombre";
         let categoria = p.ID_Categoria || p.categoria || "-";
         let color = p.Color || p.color || "-";
@@ -213,7 +212,6 @@ function renderizarTablaProductosAdmin() {
         let ubicacion = p.ID_Ubicacion || p.ubicacion || "VITRINA";
         let foto = p.Foto || p.foto || "";
 
-        // FÓRMULA MATEMÁTICA EXACTA Y UNIFICADA CON EL CATÁLOGO WEB
         let baseVentaCalculada = valPiedra + (pesoItem * valorOroActual);
         let precioBase = baseVentaCalculada * (1 + (margen / 100));
         let valorVentaFinal = Math.round(precioBase - (precioBase * (descPct / 100)));
@@ -224,7 +222,10 @@ function renderizarTablaProductosAdmin() {
         html += `
             <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 10px;"><input type="checkbox" class="check-producto-item" value="${sku}"></td>
-                <td style="padding: 10px; font-weight: 500; color: #0f172a; max-width: 220px;">${nombre}</td>
+                <td style="padding: 10px; max-width: 220px;">
+                    <div style="font-weight: 500; color: #0f172a;">${nombre}</div>
+                    <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-top: 2px;">SKU: ${sku}</div>
+                </td>
                 <td style="padding: 10px; color: #475569;">${categoria}</td>
                 <td style="padding: 10px; color: #475569;">${color}</td>
                 <td style="padding: 10px; color: #475569;">${material}</td>
@@ -236,7 +237,7 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #64748b;">${ubicacion}</td>
                 <td style="padding: 10px;">${fotoHtml}</td>
                 <td style="padding: 10px; text-align: center;">
-                    <button type="button" onclick="generarQrBarraAdmin('${sku}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Ver Etiquetas">🏷️</button>
+                    <button type="button" onclick="abrirEtiquetaProducto('${sku}', '${nombre.replace(/'/g, "\\'")}', '${valorVentaFinal.toLocaleString()}', '${codigoBarra}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Generar Etiqueta QR y Código de Barras">🏷️</button>
                 </td>
                 <td style="padding: 10px; text-align: center;">
                     <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️</button>
@@ -393,19 +394,68 @@ function abrirModalImportarExcel() {
     alert("Módulo de importación activo.");
 }
 
-function abrirModalQrCatalogoAdmin() {
-    alert("Módulo QR de Catálogo activo.");
-}
-
-function generarQrBarraAdmin(sku) {
-    alert(`Generando códigos para SKU: ${sku}`);
-}
-
 function abrirZoomImagenSrc(url) {
     const modal = document.getElementById("imageModal");
     const img = document.getElementById("imgModalSrc");
     if (modal && img) {
         img.src = url;
         modal.style.display = "flex";
+    }
+}
+
+// ================= MÓDULO: ETIQUETAS (QR Y CÓDIGO DE BARRAS) =================
+
+function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
+    let modalID = "modalEtiquetaJoya";
+    let modalDiv = document.getElementById(modalID);
+    
+    if (!modalDiv) {
+        modalDiv = document.createElement("div");
+        modalDiv.id = modalID;
+        modalDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:9999;";
+        document.body.appendChild(modalDiv);
+    } else {
+        modalDiv.style.display = "flex";
+    }
+
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(sku)}`;
+    const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(codigoBarra || sku)}&code=Code128&dpi=96`;
+
+    modalDiv.innerHTML = `
+        <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:320px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+            <h4 style="color:#0f172a; margin-bottom:5px;">MANU JOYEROS</h4>
+            <p style="font-size:0.75rem; color:#64748b; margin-bottom:15px;">SKU: <strong>${sku}</strong></p>
+            <p style="font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:15px; max-height:40px; overflow:hidden;">${nombre}</p>
+            
+            <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:15px;">
+                <div>
+                    <img src="${qrUrl}" alt="QR" style="width:100px; height:100px; border:1px solid #e2e8f0; padding:3px; border-radius:6px;" />
+                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">QR SKU</span>
+                </div>
+                <div>
+                    <img src="${barcodeUrl}" alt="Código de Barras" style="width:130px; height:50px; object-fit:contain;" />
+                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">${codigoBarra || sku}</span>
+                </div>
+            </div>
+
+            <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:20px;">Ref: ${sku}</p>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="window.print()" style="flex:1; padding:8px; background:#0f172a; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🖨️ Imprimir</button>
+                <button onclick="document.getElementById('${modalID}').style.display='none'" style="flex:1; padding:8px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
+            </div>
+        </div>
+    `;
+}
+
+function generarQrBarraAdmin(sku) {
+    const prod = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === sku.toUpperCase());
+    if (prod) {
+        let nombre = prod.Nombre || prod.nombre || "";
+        let codigoBarra = prod.Codigo_Barra || prod.codigo_barra || sku;
+        let costo = Number(prod.Costo || prod.costo) || 0;
+        abrirEtiquetaProducto(sku, nombre, costo.toLocaleString(), codigoBarra);
+    } else {
+        abrirEtiquetaProducto(sku, "Joya MANU JOYEROS", "0", sku);
     }
 }
