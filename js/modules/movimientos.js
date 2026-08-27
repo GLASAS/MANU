@@ -20,7 +20,7 @@ async function renderizarModuloSalidas(container) {
             <div id="tablaSalidasContainer"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando registros de salidas...</p></div>
         </div>
 
-        <!-- MODAL PROFESIONAL (Sin usar prompt) -->
+        <!-- MODAL PROFESIONAL PARA REGISTRAR SALIDA -->
         <div class="image-modal" id="modalFormSalida" onclick="cerrarModalSalidaCustom()">
             <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 480px; width: 95%; color: #0f172a; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
                 <h3 style="margin-bottom: 1rem; color: #0f172a; font-size: 1.2rem;">📤 Registrar Salida de Inventario</h3>
