@@ -63,7 +63,6 @@
         
         .sku-tag { position: absolute; top: 10px; left: 10px; background: rgba(15, 23, 42, 0.85); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; backdrop-filter: blur(4px); z-index: 2; }
 
-        /* Insignia de descuento grande y profesional */
         .discount-badge-pro {
             position: absolute;
             top: 12px;
@@ -81,32 +80,9 @@
             text-align: center;
             min-width: 65px;
         }
-        .discount-top-text {
-            background: #dc2626;
-            color: #ffffff;
-            font-size: 0.55rem;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            padding: 1px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-        }
-        .discount-main-num {
-            color: #dc2626;
-            font-size: 1.25rem;
-            font-weight: 900;
-            line-height: 1;
-            letter-spacing: -0.5px;
-        }
-        .discount-bottom-text {
-            color: #dc2626;
-            font-size: 0.65rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-top: 1px;
-        }
+        .discount-top-text { background: #dc2626; color: #ffffff; font-size: 0.55rem; font-weight: 800; letter-spacing: 1.5px; padding: 1px 6px; border-radius: 4px; text-transform: uppercase; margin-bottom: 2px; }
+        .discount-main-num { color: #dc2626; font-size: 1.25rem; font-weight: 900; line-height: 1; letter-spacing: -0.5px; }
+        .discount-bottom-text { color: #dc2626; font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
 
         .product-info { padding: 18px; display: flex; flex-direction: column; flex: 1; }
         .product-title { font-size: 1rem; font-weight: bold; color: #0f172a; margin-bottom: 6px; line-height: 1.4; }
@@ -116,11 +92,9 @@
         .price-label-cat { font-size: 0.68rem; text-transform: uppercase; color: #94a3b8; font-weight: bold; display: block; }
         .price-val-cat { font-size: 1.2rem; font-weight: bold; color: #10b981; }
         
-        /* Estilos para precios con descuento */
         .price-old { font-size: 0.85rem; color: #94a3b8; text-decoration: line-through; margin-right: 6px; font-weight: 600; }
         .price-val-discount { font-size: 1.2rem; font-weight: bold; color: #dc2626; }
 
-        /* Insignia SOLD inferior con el mismo formato imponente y llamativo */
         .sold-badge-pro {
             background: #ffffff;
             border: 2px solid #0f172a;
@@ -133,19 +107,11 @@
             box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
             text-align: center;
         }
-        .sold-main-text {
-            color: #0f172a;
-            font-size: 1.1rem;
-            font-weight: 900;
-            line-height: 1.1;
-            letter-spacing: 3px;
-        }
+        .sold-main-text { color: #0f172a; font-size: 1.1rem; font-weight: 900; line-height: 1.1; letter-spacing: 3px; }
 
-        /* Botón de Certificado para productos disponibles */
         .btn-cert-link { background: #0f172a; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: background 0.2s; }
         .btn-cert-link:hover { background: #1e293b; }
 
-        /* Botón de WhatsApp "Quiero uno igual" en verde oficial */
         .btn-whatsapp-link { background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: background 0.2s; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.2); }
         .btn-whatsapp-link:hover { background: #20ba5a; }
 
@@ -193,7 +159,6 @@
         let valorOroDiaGlobal = 250000;
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // Sincronización automática absoluta y directa desde CONFIG global
             let empresaNombre = "MANU JOYEROS";
             let empresaNit = "900.000.000-1";
             let empresaTel = "+57 (300) 8123125";
@@ -287,7 +252,6 @@
                 let foto = p.Foto || p.foto || "";
                 let fotoHtml = foto ? `<img src="${foto}" alt="${nombre}" loading="lazy">` : `<span style="font-size: 3.5rem;">💍</span>`;
 
-                // Validar si el producto tiene descuento
                 let tieneDescuento = descPct > 0;
                 let discountTagHtml = tieneDescuento ? `
                     <div class="discount-badge-pro">
@@ -297,18 +261,15 @@
                     </div>
                 ` : '';
 
-                // Validar si el producto está vendido o no disponible
                 let estadoItem = String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase();
                 let esVendido = (estadoItem !== "DISPONIBLE" && estadoItem !== "" && estadoItem !== "-");
 
                 let skuToken = btoa(sku);
                 let certLink = `https://glasas.github.io/MANU_JOYEROS/cert.html?token=${skuToken}`;
                 
-                // Enlace de WhatsApp directo con el mensaje "Quiero uno igual"
-                let textoWp = encodeURIComponent(`Hola MANU JOYEROS, vi esta joya en el catálogo digital (marcada como SOLD) y quiero uno igual:\n\n*SKU:* ${sku}\n*Modelo:* ${nombre}\n*Material:* ${material} ${color ? '• ' + color : ''} ${pesoItem > 0 ? '• ' + pesoItem + 'g' : ''}\n*(Nota: Adjunto la foto de la joya de referencia).*`);
+                let textoWp = encodeURIComponent(`Hola MANU JOYEROS, vi esta joya en el catálogo digital y quiero más información:\n\n*SKU:* ${sku}\n*Modelo:* ${nombre}\n*Material:* ${material} ${color ? '• ' + color : ''}\n*(Nota: Adjunto la foto de la joya de referencia).*`);
                 let whatsappLink = `https://wa.me/573208123125?text=${textoWp}`;
 
-                // Renderizado dinámico de la sección inferior
                 let seccionInferiorHtml = '';
                 if (esVendido) {
                     seccionInferiorHtml = `
@@ -341,6 +302,12 @@
                     `;
                 }
 
+                // Detalles visibles sin mostrar el peso
+                let detallesVisualesTexto = material;
+                if (color) {
+                    detallesVisualesTexto += ` • ${color}`;
+                }
+
                 html += `
                     <div class="product-card">
                         <div class="product-img-box">
@@ -351,7 +318,7 @@
                         <div class="product-info">
                             <div class="product-title">${nombre}</div>
                             <div class="product-details">
-                                Material: ${material} ${color ? '• ' + color : ''} ${pesoItem > 0 ? '• ' + pesoItem + 'g' : ''}
+                                Material: ${detallesVisualesTexto}
                             </div>
                             <div class="product-price-row">
                                 ${seccionInferiorHtml}
