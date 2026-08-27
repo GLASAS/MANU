@@ -10,7 +10,7 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.1100"
+  VERSION: "V1.1543"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -105,15 +105,15 @@ async function cambiarVista(vista, event) {
 
 function renderizarModuloActualizacionOro(container) {
     container.innerHTML = `
-        <div class="card" style="max-width: 550px; margin: 0 auto;">
+        <div class="card" style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             <h3 style="margin-bottom: 0.5rem; color: #0f172a;">🪙 Actualización del Valor del Oro del Día</h3>
             <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Este valor se utilizará como base para multiplicar automáticamente por los gramos de cada pieza.</p>
             <form id="formOroDia" onsubmit="ejecutarActualizacionOro(event)">
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label style="font-weight: 600; color: #1e293b; display: block; margin-bottom: 6px;">Valor del Gramo de Oro Actual ($ COP) *</label>
-                    <input type="number" id="inputValorOroDiaModal" required style="font-size: 1.25rem; font-weight: bold; color: #d97706;" value="${window.valorOroDelDiaCache || 250000}">
+                    <input type="number" id="inputValorOroDiaModal" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1.25rem; font-weight: bold; color: #d97706;" value="${window.valorOroDelDiaCache || 250000}">
                 </div>
-                <button type="submit" class="btn-form-save" style="width: 100%; padding: 12px; font-size: 1rem; background: #0f172a; color: white; border: none; border-radius: 8px; cursor: pointer;">💾 Guardar y Actualizar Valor del Oro</button>
+                <button type="submit" style="width: 100%; padding: 12px; font-size: 1rem; background: #0f172a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">💾 Guardar y Actualizar Valor del Oro</button>
             </form>
         </div>`;
 }
@@ -131,17 +131,3 @@ async function ejecutarActualizacionOro(event) {
         alert("Error al actualizar: " + (res ? res.message : "Desconocido"));
     }
 }
-
-async function cargarValorOroDia() {
-    try {
-        const res = await API.llamar("obtenerValorOroDia", {}, "GET");
-        if (res && res.status === "success") {
-            window.valorOroDelDiaCache = Number(res.valor_oro_dia) || 250000;
-        }
-    } catch(e) { window.valorOroDelDiaCache = 250000; }
-}
-
-async function cargarCategoriasDinamicas() {}
-async function cargarMaterialesDinamicos() {}
-async function cargarColoresDinamicos() {}
-function abrirModalQrCatalogo() { alert("Módulo de QR de Catálogo Web activo."); }
