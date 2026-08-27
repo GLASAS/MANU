@@ -29,8 +29,8 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
                         </div>
 
                         <div>
-                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Observaciones / Motivo *</label>
-                            <input type="text" id="movObservaciones" required placeholder="${esEntrada ? 'Compra a proveedor / Ajuste' : 'Venta directa / Salida'}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Motivo / Referencia *</label>
+                            <input type="text" id="movMotivo" required placeholder="${esEntrada ? 'Compra a proveedor' : 'Venta mostrador'}" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
                         </div>
 
                     </div>
@@ -54,9 +54,9 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
                         <thead>
                             <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
                                 <th style="padding: 10px;">Fecha</th>
-                                <th style="padding: 10px;">SKU / Documento</th>
+                                <th style="padding: 10px;">SKU</th>
                                 <th style="padding: 10px;">Cantidad</th>
-                                <th style="padding: 10px;">Observaciones</th>
+                                <th style="padding: 10px;">Motivo</th>
                                 <th style="padding: 10px;">Usuario</th>
                             </tr>
                         </thead>
@@ -81,24 +81,24 @@ async function cargarHistorialMovimientos(tipo) {
 
     try {
         const accionObtener = tipo === 'ENTRADAS' ? 'obtenerEntradas' : 'obtenerSalidas';
-        const res = await API.llamar(accionObtener, { action: tipo === 'ENTRADAS' ? 'obtenerEntradas' : 'obtenerSalidas' }, "GET");
+        const res = await API.llamar(accionObtener, { action: accionObtener }, "GET");
         
         if (res && res.status === "success" && res.data && res.data.length > 0) {
             let html = "";
             res.data.forEach(m => {
                 let fecha = m.Fecha || m.fecha || '-';
-                let doc = m.Num_Document_Factura || m.num_document_factura || m.SKU || m.sku || '-';
-                let cant = m.Cantidad || m.cantidad || m.Factura || 1;
-                let obs = m.Observaciones || m.observaciones || '-';
-                let usr = m.Usuario || m.usuario || '-';
+                let sku = m.SKU || m.sku || '-';
+                let cantidad = m.CANTIDAD || m.Cantidad || m.cantidad || 0;
+                let motivo = m.Motivo || m.motivo || m.Observaciones || '-';
+                let usuario = m.Usuario || m.usuario || '-';
 
                 html += `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
                         <td style="padding: 10px;">${fecha}</td>
-                        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${doc}</td>
-                        <td style="padding: 10px;">${cant}</td>
-                        <td style="padding: 10px;">${obs}</td>
-                        <td style="padding: 10px; color: #64748b;">${usr}</td>
+                        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${sku}</td>
+                        <td style="padding: 10px;">${cantidad}</td>
+                        <td style="padding: 10px;">${motivo}</td>
+                        <td style="padding: 10px; color: #64748b;">${usuario}</td>
                     </tr>
                 `;
             });
@@ -115,19 +115,28 @@ async function procesarMovimientoInventario(event, tipo) {
     event.preventDefault();
     const sku = document.getElementById("movSku").value.trim();
     const cantidad = Number(document.getElementById("movCantidad").value);
-    const observaciones = document.getElementById("movObservaciones").value.trim();
+    const motivo = document.getElementById("movMotivo").value.trim();
     const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? (usuarioActual.usuario || usuarioActual.nombre) : 'Admin';
 
     const accionRegistro = tipo === 'ENTRADAS' ? 'guardarEntrada' : 'guardarSalida';
 
-    const res = await API.llamar(accionRegistro, {
+    const payload = tipo === 'ENTRADAS' ? {
         action: accionRegistro,
         sku: sku,
         cantidad: cantidad,
         factura: cantidad,
-        observaciones: observaciones,
+        observaciones: motivo,
         usuario: usuario
-    }, "POST");
+    } : {
+        action: accionRegistro,
+        sku: sku,
+        cantidad: cantidad,
+        motivo: motivo,
+        observaciones: motivo,
+        usuario: usuario
+    };
+
+    const res = await API.llamar(accionRegistro, payload, "POST");
 
     if (res && res.status === "success") {
         alert(res.message || "Registro guardado correctamente.");
@@ -151,9 +160,9 @@ async function renderizarModuloKardex(container) {
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
                             <th style="padding: 10px;">Fecha</th>
                             <th style="padding: 10px;">Tipo</th>
-                            <th style="padding: 10px;">Referencia / SKU</th>
+                            <th style="padding: 10px;">SKU</th>
                             <th style="padding: 10px;">Cantidad</th>
-                            <th style="padding: 10px;">Observaciones</th>
+                            <th style="padding: 10px;">Motivo</th>
                             <th style="padding: 10px;">Usuario</th>
                         </tr>
                     </thead>
@@ -188,9 +197,9 @@ async function cargarKardexCompleto() {
                     <tr style="border-bottom: 1px solid #f1f5f9;">
                         <td style="padding: 10px;">${k.Fecha || k.fecha || '-'}</td>
                         <td style="padding: 10px;">${tipoBadge}</td>
-                        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${k.SKU || k.sku || k.Num_Document_Factura || '-'}</td>
-                        <td style="padding: 10px;">${k.Cantidad || k.cantidad || k.Factura || 0}</td>
-                        <td style="padding: 10px;">${k.Observaciones || k.observaciones || '-'}</td>
+                        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${k.SKU || k.sku || '-'}</td>
+                        <td style="padding: 10px;">${k.CANTIDAD || k.Cantidad || k.cantidad || 0}</td>
+                        <td style="padding: 10px;">${k.Motivo || k.motivo || k.Observaciones || '-'}</td>
                         <td style="padding: 10px; color: #64748b;">${k.Usuario || k.usuario || '-'}</td>
                     </tr>
                 `;
