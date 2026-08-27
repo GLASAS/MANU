@@ -10,7 +10,7 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.1440"
+  VERSION: "V1.1400"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -150,4 +150,49 @@ async function cargarValorOroDia() {
 async function cargarCategoriasDinamicas() {}
 async function cargarMaterialesDinamicos() {}
 async function cargarColoresDinamicos() {}
-function abrirModalQrCatalogo() { alert("Módulo de QR de Catálogo Web activo."); }
+
+// Módulo de Generación de Código QR Catálogo Web
+function abrirModalQrCatalogo() {
+    const urlCatalogo = window.location.origin + window.location.pathname.replace("index.html", "catalogomanu.html");
+    
+    let modalID = "modalQrDinamico";
+    let modalDiv = document.getElementById(modalID);
+    
+    if (!modalDiv) {
+        modalDiv = document.createElement("div");
+        modalDiv.id = modalID;
+        modalDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:9999;";
+        modalDiv.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:16px; text-align:center; max-width:350px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+                <h3 style="color:#0f172a; margin-bottom:10px;">📱 QR Catálogo Web</h3>
+                <p style="color:#64748b; font-size:0.85rem; margin-bottom:20px;">Escanee este código para ver el catálogo en su dispositivo móvil.</p>
+                <div id="contenedorQrImagen" style="margin:0 auto 20px auto; display:flex; justify-content:center;"></div>
+                <input type="text" id="inputUrlQr" value="${urlCatalogo}" readonly style="width:100%; padding:8px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:15px; background:#f8fafc; text-align:center;" />
+                <div style="display:flex; gap:10px;">
+                    <button onclick="copiarUrlQr()" style="flex:1; padding:10px; background:#0f172a; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">📋 Copiar Link</button>
+                    <button onclick="cerrarModalQr()" style="flex:1; padding:10px; background:#ef4444; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Cerrar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+    } else {
+        modalDiv.style.display = "flex";
+    }
+
+    const contenedorImg = document.getElementById("contenedorQrImagen");
+    const apiQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(urlCatalogo)}`;
+    contenedorImg.innerHTML = `<img src="${apiQrUrl}" alt="Código QR Catálogo" style="border-radius:8px; border:1px solid #e2e8f0; padding:5px;" />`;
+}
+
+function cerrarModalQr() {
+    const modalDiv = document.getElementById("modalQrDinamico");
+    if (modalDiv) modalDiv.style.display = "none";
+}
+
+function copiarUrlQr() {
+    const input = document.getElementById("inputUrlQr");
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value);
+    alert("¡Enlace del catálogo copiado al portapapeles!");
+}
