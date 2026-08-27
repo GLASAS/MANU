@@ -2,8 +2,8 @@
  * MANU JOYEROS - Configuración Global y Enrutador (config.js)
  */
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwg3UI8VZBXivgk9MS3lnqyz2ZAKH0YEsfcrceLhf2BL_6qoXqvZ1-ARNmyUZjnXxi3/exec",
-  URL_API: "https://script.google.com/macros/s/AKfycbwg3UI8VZBXivgk9MS3lnqyz2ZAKH0YEsfcrceLhf2BL_6qoXqvZ1-ARNmyUZjnXxi3/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzpK-ZjIhU41R-0zJCzxqY0GPGoSpsyJT_g4Y8D8iACK4HWxd8sh4KGoUnCswjVv1QQ/exec",
+  URL_API: "https://script.google.com/macros/s/AKfycbzpK-ZjIhU41R-0zJCzxqY0GPGoSpsyJT_g4Y8D8iACK4HWxd8sh4KGoUnCswjVv1QQ/exec",
   NOMBRE_EMPRESA: "MANU JOYEROS",
   NIT: "902.078.370-8",
   TELEFONO: "+57 (311) 888 6137",
