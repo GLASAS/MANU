@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Completa, Íntegra y Definitiva
+ * Versión Íntegra y Completa
  */
 
 async function renderizarModuloProductos(container) {
@@ -408,7 +408,7 @@ function abrirZoomImagenSrc(url) {
     }
 }
 
-// ================= MÓDULO: ETIQUETAS (QR Y CÓDIGO DE BARRAS) =================
+// ================= MÓDULO: ETIQUETAS (DESCARGA PNG SEPARADA DE QR Y BARRAS) =================
 
 function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     let modalID = "modalEtiquetaJoya";
@@ -423,34 +423,58 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
         modalDiv.style.display = "flex";
     }
 
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(sku)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(sku)}`;
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(codigoBarra || sku)}&code=Code128&dpi=96`;
 
     modalDiv.innerHTML = `
-        <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:320px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+        <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:340px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
             <h4 style="color:#0f172a; margin-bottom:5px;">MANU JOYEROS</h4>
-            <p style="font-size:0.75rem; color:#64748b; margin-bottom:15px;">SKU: <strong>${sku}</strong></p>
+            <p style="font-size:0.75rem; color:#64748b; margin-bottom:15px;">SKU: <strong id="lblSkuEtiqueta">${sku}</strong></p>
             <p style="font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:15px; max-height:40px; overflow:hidden;">${nombre}</p>
             
             <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:15px;">
                 <div>
-                    <img src="${qrUrl}" alt="QR" style="width:100px; height:100px; border:1px solid #e2e8f0; padding:3px; border-radius:6px;" />
+                    <img id="imgQrCanvas" src="${qrUrl}" crossorigin="anonymous" alt="QR" style="width:110px; height:110px; border:1px solid #e2e8f0; padding:3px; border-radius:6px;" />
                     <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">QR SKU</span>
                 </div>
                 <div>
-                    <img src="${barcodeUrl}" alt="Código de Barras" style="width:130px; height:50px; object-fit:contain;" />
+                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:140px; height:60px; object-fit:contain;" />
                     <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">${codigoBarra || sku}</span>
                 </div>
             </div>
 
-            <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:20px;">Ref: ${sku}</p>
+            <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:15px;">Ref: ${sku}</p>
 
-            <div style="display:flex; gap:10px;">
-                <button onclick="window.print()" style="flex:1; padding:8px; background:#0f172a; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">🖨️ Imprimir</button>
-                <button onclick="document.getElementById('${modalID}').style.display='none'" style="flex:1; padding:8px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; gap:8px;">
+                    <button onclick="descargarImagenPng('imgQrCanvas', 'QR_${sku}.png')" style="flex:1; padding:8px; background:#0284c7; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📥 Descargar QR</button>
+                    <button onclick="descargarImagenPng('imgBarcodeCanvas', 'Barras_${sku}.png')" style="flex:1; padding:8px; background:#0d9488; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📥 Descargar Barras</button>
+                </div>
+                <button onclick="document.getElementById('${modalID}').style.display='none'" style="width:100%; padding:8px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
             </div>
         </div>
     `;
+}
+
+function descargarImagenPng(imgId, nombreArchivo) {
+    const img = document.getElementById(imgId);
+    if (!img) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || 300;
+    canvas.height = img.naturalHeight || 150;
+    const ctx = canvas.getContext("2d");
+
+    const imageObj = new Image();
+    imageObj.crossOrigin = "anonymous";
+    imageObj.onload = function() {
+        ctx.drawImage(imageObj, 0, 0);
+        const link = document.createElement("a");
+        link.download = nombreArchivo;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    };
+    imageObj.src = img.src;
 }
 
 function generarQrBarraAdmin(sku) {
