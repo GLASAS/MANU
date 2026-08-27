@@ -10,7 +10,7 @@ async function renderizarModuloProductos(container) {
 
     const esAdmin = usuarioActual && (usuarioActual.rol.toUpperCase() === 'ADMIN' || usuarioActual.rol.toUpperCase() === 'ADMINISTRADOR');
     let botonesAccionHtml = esAdmin ? `
-        <button class="btn-nuevo-producto" onclick="abrirFormularioNuevoProducto()">✨ + Nuevo</button>
+        <button class="btn-nuevo-producto" onclick="abrirFormularioCrearProducto()">✨ + Nuevo</button>
         <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);" onclick="abrirModalImportarCSV()">📂 Importar CSV</button>
         <button class="btn-nuevo-producto" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);" onclick="exportarCatalogoCSV()">📥 Exportar Todo</button>
         <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-nuevo-producto" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); text-decoration: none;">🌐 Catálogo Web</a>
@@ -33,8 +33,112 @@ async function renderizarModuloProductos(container) {
                 </div>
             </div>
             <div id="vistaProductosInterna"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario...</p></div>
+        </div>
+
+        <!-- MODAL DINÁMICO DE CREACIÓN / EDICIÓN DE PRODUCTO -->
+        <div class="image-modal" id="modalFormularioProducto" onclick="cerrarModalProducto()">
+            <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto; color: #0f172a;" onclick="event.stopPropagation()">
+                <h3 id="modalProductoTitulo" style="margin-bottom: 1rem; color: #0f172a;">✨ Registrar Nuevo Producto</h3>
+                <form id="formProductoReal" onsubmit="guardarProductoServidor(event)">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+                        <div class="form-group"><label>SKU *</label><input type="text" id="prodSku" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                        <div class="form-group"><label>Código de Barras</label><input type="text" id="prodCodigoBarra" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                    </div>
+                    <div class="form-group"><label>Nombre / Descripción de la Joya *</label><input type="text" id="prodNombre" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        <div class="form-group"><label>Categoría</label><input type="text" id="prodCategoria" value="ANILLOS" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                        <div class="form-group"><label>Color</label><input type="text" id="prodColor" value="AMARILLO" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                        <div class="form-group"><label>Material</label><input type="text" id="prodMaterial" value="ORO" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                        <div class="form-group"><label>Peso (g)</label><input type="number" step="0.01" id="prodPeso" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                        <div class="form-group"><label>Valor Oro ($)</label><input type="number" id="prodValorOro" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                        <div class="form-group"><label>Valor Piedra ($)</label><input type="number" id="prodValorPiedra" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        <div class="form-group"><label>Margen Venta (%)</label><input type="number" id="prodMargen" value="100" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                        <div class="form-group"><label>Descuento (%)</label><input type="number" id="prodDescuento" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                        <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                    </div>
+                    <div class="form-group"><label>URL de la Foto</label><input type="text" id="prodFoto" placeholder="https://..." style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
+                    <div style="display: flex; gap: 10px; margin-top: 1rem;">
+                        <button type="submit" class="btn-nuevo-producto" style="flex: 1; background: #0f172a; justify-content: center;">💾 Guardar Producto</button>
+                        <button type="button" class="btn-action" onclick="cerrarModalProducto()" style="flex: 1; background: #ef4444; color: white; border: none; font-weight: bold;">Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>`;
     await cargarListaProductos(false);
+}
+
+function abrirFormularioCrearProducto() {
+    document.getElementById("modalProductoTitulo").textContent = "✨ Registrar Nuevo Producto";
+    document.getElementById("prodSku").value = "";
+    document.getElementById("prodSku").readOnly = false;
+    document.getElementById("prodCodigoBarra").value = "";
+    document.getElementById("prodNombre").value = "";
+    document.getElementById("prodPeso").value = "0";
+    document.getElementById("prodValorOro").value = "0";
+    document.getElementById("prodValorPiedra").value = "0";
+    document.getElementById("prodMargen").value = "100";
+    document.getElementById("prodDescuento").value = "0";
+    document.getElementById("prodFoto").value = "";
+    document.getElementById("modalFormularioProducto").classList.add("active");
+}
+
+function abrirFormularioEditarProducto(jsonEncoded) {
+    let p = JSON.parse(decodeURIComponent(jsonEncoded));
+    document.getElementById("modalProductoTitulo").textContent = `✏️ Modificar Producto [${p.SKU}]`;
+    document.getElementById("prodSku").value = p.SKU || "";
+    document.getElementById("prodSku").readOnly = true; // El SKU no se cambia
+    document.getElementById("prodCodigoBarra").value = p.Codigo_Barra || p.codigo_barra || "";
+    document.getElementById("prodNombre").value = p.Nombre || "";
+    document.getElementById("prodCategoria").value = p.ID_Categoria || "ANILLOS";
+    document.getElementById("prodColor").value = p.Color || p.ID_Subcategoria || "AMARILLO";
+    document.getElementById("prodMaterial").value = p.Material_Oro || p.Material || "ORO";
+    document.getElementById("prodPeso").value = p.Peso || 0;
+    document.getElementById("prodValorOro").value = p.Valor_Oro || 0;
+    document.getElementById("prodValorPiedra").value = p.Valor_Piedra || 0;
+    document.getElementById("prodMargen").value = p.Porcentaje_Venta || 100;
+    document.getElementById("prodDescuento").value = p.Tiene_Descuento || 0;
+    document.getElementById("prodUbicacion").value = p.ID_Ubicacion || "CAJA FUERTE";
+    document.getElementById("prodFoto").value = p.Foto || "";
+    document.getElementById("modalFormularioProducto").classList.add("active");
+}
+
+function cerrarModalProducto() {
+    document.getElementById("modalFormularioProducto").classList.remove("active");
+}
+
+async function guardarProductoServidor(e) {
+    e.preventDefault();
+    let payload = {
+        action: "guardarProducto",
+        sku: document.getElementById("prodSku").value.trim().toUpperCase(),
+        codigo_barra: document.getElementById("prodCodigoBarra").value.trim(),
+        nombre: document.getElementById("prodNombre").value.trim(),
+        categoria: document.getElementById("prodCategoria").value.trim().toUpperCase(),
+        color: document.getElementById("prodColor").value.trim().toUpperCase(),
+        material: document.getElementById("prodMaterial").value.trim().toUpperCase(),
+        peso: parseFloat(document.getElementById("prodPeso").value) || 0,
+        valor_oro: parseFloat(document.getElementById("prodValorOro").value) || 0,
+        valor_piedra: parseFloat(document.getElementById("prodValorPiedra").value) || 0,
+        porcentaje_venta: parseFloat(document.getElementById("prodMargen").value) || 100,
+        tiene_descuento: parseFloat(document.getElementById("prodDescuento").value) || 0,
+        ubicacion: document.getElementById("prodUbicacion").value.trim().toUpperCase(),
+        foto: document.getElementById("prodFoto").value.trim(),
+        estado: "DISPONIBLE"
+    };
+
+    const res = await API.llamar("guardarProducto", payload, "POST");
+    if (res && res.status === "success") {
+        alert(res.message);
+        cerrarModalProducto();
+        localStorage.removeItem("cache_productos_manu");
+        renderizarModuloProductos(document.getElementById('contentBody'));
+    } else {
+        alert("Error al guardar: " + (res ? res.message : "Desconocido"));
+    }
 }
 
 function exportarCatalogoCSV() {
@@ -338,9 +442,6 @@ function descargarQrPNG() {
     a.click();
     document.body.removeChild(a);
 }
-
-function abrirFormularioNuevoProducto() { alert("Módulo de Creación de Producto rápido activo."); }
-function abrirFormularioEditarProducto(json) { alert("Módulo de Edición de Producto activo."); }
 
 async function eliminarProducto(sku) {
     if (!confirm(`¿Eliminar producto SKU [${sku}]?`)) return;
