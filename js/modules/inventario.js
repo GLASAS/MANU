@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
- * Versión Íntegra y Completa con Selector de Responsable y Dos Botones de Excel
+ * Versión Íntegra y Completa con Diseño Ajustado y Dos Botones de Excel
  */
 
 let listaInventarioCache = [];
@@ -205,26 +205,30 @@ function renderizarTablaArqueo() {
         return;
     }
 
-    let html = `<div class="table-container"><table class="data-table"><thead><tr>
-        <th>Estado Físico</th><th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Acción / Marcar</th>
+    let html = `<div class="table-container"><table class="data-table" style="table-layout: fixed; width: 100%;"><thead><tr>
+        <th style="width: 120px;">Estado Físico</th>
+        <th style="width: 100px;">SKU</th>
+        <th style="width: 160px;">Código de Barras</th>
+        <th style="width: auto;">Producto</th>
+        <th style="width: 140px; text-align: right;">Acción / Marcar</th>
     </tr></thead><tbody>`;
 
     listaInventarioFiltradosCache.forEach(p => {
         let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '-';
         let badgeEstado = p.auditado 
-            ? `<span class="badge" style="background-color: #10b981; color: white;">✔ Presente</span>` 
-            : `<span class="badge" style="background-color: #ef4444; color: white;">✖ Faltante</span>`;
+            ? `<span class="badge" style="background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">✔ Encontrado</span>` 
+            : `<span class="badge" style="background-color: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">✖ FALTANTE</span>`;
         
         let btnAccion = p.auditado
-            ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Desmarcar</button>`
-            : `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; padding: 4px 8px; border-radius: 4px; cursor: pointer;">✔ Encontrado</button>`;
+            ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Desmarcar</button>`
+            : `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">✔ Encontrado</button>`;
 
         html += `<tr>
-            <td>${badgeEstado}</td>
-            <td><strong>${p.SKU}</strong></td>
-            <td><code>${codigoBarraVal}</code></td>
-            <td>${p.Nombre || ''}</td>
-            <td>${btnAccion}</td>
+            <td style="word-break: break-word; vertical-align: middle;">${badgeEstado}</td>
+            <td style="word-break: break-word; vertical-align: middle;"><strong>${p.SKU}</strong></td>
+            <td style="word-break: break-word; vertical-align: middle;"><code>${codigoBarraVal}</code></td>
+            <td style="word-break: break-word; vertical-align: middle; line-height: 1.4;">${p.Nombre || ''}</td>
+            <td style="word-break: break-word; vertical-align: middle; text-align: right;">${btnAccion}</td>
         </tr>`;
     });
 
