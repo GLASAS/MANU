@@ -268,7 +268,10 @@
                 let certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
                 
                 let textoWp = encodeURIComponent(`Hola MANU JOYEROS, vi esta joya en el catálogo digital y quiero más información:\n\n*SKU:* ${sku}\n*Modelo:* ${nombre}\n*Material:* ${material} ${color ? '• ' + color : ''}\n*(Nota: Adjunto la foto de la joya de referencia).*`);
-                let whatsappLink = `https://wa.me/573208123125?text=${textoWp}`;
+                // Limpiamos el teléfono de CONFIG para dejar solo los números requeridos por la API de WhatsApp
+                let telefonoLimpio = CONFIG.TELEFONO.replace(/\D/g, ''); 
+
+                let whatsappLink = `https://wa.me/${telefonoLimpio}?text=${textoWp}`;
 
                 let seccionInferiorHtml = '';
                 if (esVendido) {
