@@ -19,8 +19,8 @@
     <!-- MODAL DE QR Y CÓDIGO DE BARRAS -->
     <div class="image-modal" id="modalQrBarra" onclick="cerrarModalQr()">
         <div style="background: white; padding: 18px; border-radius: 12px; text-align: center; max-width: 380px; width: 90%; color: #0f172a;" onclick="event.stopPropagation()">
-            <div style="font-size: 0.75rem; font-weight: bold; color: #64748b; letter-spacing: 1px; margin-bottom: 2px;" id="lblModalEmpresaTitle">MANU JOYEROS</div>
-            <div id="printSectionQr" style="background: #fff; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 8px; margin-bottom: 12px;">
+            <div style="font-size: 0.75rem; font-weight: bold; color: #64748b; letter-spacing: 1px; margin-bottom: 2px;">MANU JOYEROS</div>
+            <div style="background: #fff; padding: 10px; border: 1.5px dashed #cbd5e1; border-radius: 8px; margin-bottom: 12px;">
                 <div id="modalSkuLabel" style="font-size: 0.95rem; font-weight: bold; color: #0f172a; margin-bottom: 6px;">SKU</div>
                 
                 <div style="display: inline-block; background: #f8fafc; padding: 4px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 6px;">
@@ -31,7 +31,7 @@
                     <svg id="barcodeElement" style="max-width: 100%; height: 50px; display: block; margin: 0 auto;"></svg>
                 </div>
 
-                <div id="modalDescLabel" style="font-size: 0.72rem; color: #475569; margin-top: 4px;">Certificado Digital y Trazabilidad</div>
+                <div style="font-size: 0.72rem; color: #475569; margin-top: 4px;">Certificado Digital y Trazabilidad</div>
                 
                 <div class="no-print" style="margin-top: 8px; display: flex; gap: 8px; justify-content: center;">
                     <button type="button" class="btn-action" onclick="descargarQrPNG()" style="background: #0f172a; color: white;">📥 Descargar QR</button>
@@ -98,7 +98,7 @@
     <script>
         function renderizarModuloCambiarPassword(container) {
             container.innerHTML = `
-                <div class="card" style="max-width: 450px; margin: 2rem auto; padding: 2.5rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                <div class="card" style="max-width: 450px; margin: 2rem auto; padding: 2.5rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem;">
                         <span style="font-size: 1.5rem;">🔑</span>
                         <h3 style="margin: 0; color: #0f172a; font-size: 1.25rem; font-weight: 600;">Cambiar Contraseña</h3>
@@ -118,7 +118,7 @@
                             <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 0.5rem;">Confirmar Nueva Contraseña *</label>
                             <input type="password" id="passConfirmar" required placeholder="••••••••" style="width: 100%; padding: 0.65rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
                         </div>
-                        <button type="submit" style="width: 100%; background-color: #0f172a; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
+                        <button type="submit" style="width: 100%; background-color: #0f172a; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             💾 Actualizar Contraseña
                         </button>
                     </form>
@@ -132,7 +132,7 @@
             const passwordConfirmar = document.getElementById("passConfirmar").value.trim();
 
             if (passwordNueva !== passwordConfirmar) { 
-                alert("⚠️ Las nuevas contraseñas no coinciden. Por favor verifique."); 
+                alert("⚠️ Las nuevas contraseñas no coinciden."); 
                 return; 
             }
 
