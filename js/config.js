@@ -2,15 +2,15 @@
  * MANU JOYEROS - Configuración Global y Enrutador (config.js)
  */
 const CONFIG = {
-  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxDj_wKVIff4qjJvNZ4yNpkn7xHRhqtmcyMGQRAHlpndgJyLR_N3ZZFNld847jhPcwN/exec",
-  URL_API: "https://script.google.com/macros/s/AKfycbxDj_wKVIff4qjJvNZ4yNpkn7xHRhqtmcyMGQRAHlpndgJyLR_N3ZZFNld847jhPcwN/exec",
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbw5Rtm0gngGIgp-VuizI-ZyAuPdjrMXC_I6drP5wtpqYvuNH9GBmBN6GPFNqSnEcrrn/exec",
+  URL_API: "https://script.google.com/macros/s/AKfycbw5Rtm0gngGIgp-VuizI-ZyAuPdjrMXC_I6drP5wtpqYvuNH9GBmBN6GPFNqSnEcrrn/exec",
   NOMBRE_EMPRESA: "MANU JOYEROS",
   NIT: "902.078.370-8",
   TELEFONO: "+57 (311) 888 6137",
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.150"
+  VERSION: "V1.1530"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
