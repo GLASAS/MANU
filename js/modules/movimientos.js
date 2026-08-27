@@ -10,7 +10,7 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
     container.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 20px; max-width: 1200px; margin: 0 auto;">
             
-            <!-- FORMULARIO DIRECTO INTEGRADO -->
+            <!-- FORMULARIO DIRECTO INTEGRADO (SIN MODALES) -->
             <div class="card" style="background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
                 <h3 style="margin-bottom: 15px; color: #0f172a; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
                     <span>${esEntrada ? '📥' : '📤'}</span> ${tituloSeccion}
@@ -43,7 +43,7 @@ async function renderizarModuloEntradasSalidas(container, tipoMovimiento) {
                 </form>
             </div>
 
-            <!-- TABLA DE LISTADO INTEGRADO -->
+            <!-- SECCIÓN DE LISTADO COMPLETO INTEGRADO CON BOTONES -->
             <div class="card" style="background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Historial de ${esEntrada ? 'Entradas' : 'Salidas'}</h3>
