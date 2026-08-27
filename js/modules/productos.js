@@ -2,6 +2,8 @@
  * MANU JOYEROS - Módulo de Productos (productos.js)
  */
 
+let fotoBase64Temporal = "";
+
 async function renderizarModuloProductos(container) {
     await cargarCategoriasDinamicas();
     await cargarMaterialesDinamicos();
@@ -74,14 +76,15 @@ async function renderizarModuloProductos(container) {
                         <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
                     </div>
                     
-                    <!-- SECCIÓN DE FOTO ULTRA LIVIANA -->
+                    <!-- SECCIÓN DE FOTO INTEGRADA CON COMPRESIÓN -->
                     <div class="form-group">
-                        <label>Fotografía de la Joya (Cámara o Galería - Ultra Liviana)</label>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <input type="file" id="prodArchivoFoto" accept="image/*" onchange="comprimirYConvertirImagenUltraLiviana(this)" style="font-size: 0.85rem; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; flex: 1; background: #f8fafc;">
-                            <input type="hidden" id="prodFoto" value="">
+                        <label>📸 Fotografía de la Joya (Cámara o Galería)</label>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                            <input type="file" accept="image/*" capture="environment" id="prodArchivoFoto" onchange="procesarImagenModulo(event, 'previewProdModulo')" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
                         </div>
-                        <div id="previewFotoContainer" style="margin-top: 8px; text-align: center;"></div>
+                        <div style="margin-top: 10px; text-align: center;">
+                            <img id="previewProdModulo" src="" style="max-width: 150px; max-height: 150px; display: none; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: cover; margin: 0 auto;">
+                        </div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 1rem;">
@@ -90,38 +93,42 @@ async function renderizarModuloProductos(container) {
                     </div>
                 </form>
             </div>
-        `;
+        </div>`;
     await cargarListaProductos(false);
 }
 
-function comprimirYConvertirImagenUltraLiviana(inputElement) {
-    const archivo = inputElement.files[0];
+function procesarImagenModulo(event, previewId) {
+    const archivo = event.target.files[0];
     if (!archivo) return;
     const lector = new FileReader();
     lector.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const MAX_WIDTH = 400;
+            const MAX_HEIGHT = 400;
             let width = img.width;
             let height = img.height;
-            const maxSize = 300; // Máximo 300px para que pese kilobytes mínimos
 
-            if (width > height && width > maxSize) {
-                height *= maxSize / width;
-                width = maxSize;
-            } else if (height > maxSize) {
-                width *= maxSize / height;
-                height = maxSize;
+            if (width > height) {
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            } else {
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
             }
 
             canvas.width = width;
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
-
-            let compressedBase64 = canvas.toDataURL("image/jpeg", 0.5); // Calidad 50% ultra liviana
-            document.getElementById("prodFoto").value = compressedBase64;
-            document.getElementById("previewFotoContainer").innerHTML = `<img src="${compressedBase64}" style="max-height: 70px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #059669; display: block;">⚡ Foto ultra liviana optimizada!</span>`;
+            
+            fotoBase64Temporal = canvas.toDataURL('image/jpeg', 0.5);
+            
+            const preview = document.getElementById(previewId);
+            if (preview) {
+                preview.src = fotoBase64Temporal;
+                preview.style.display = 'block';
+            }
         };
         img.src = e.target.result;
     };
@@ -129,6 +136,7 @@ function comprimirYConvertirImagenUltraLiviana(inputElement) {
 }
 
 function abrirFormularioCrearProducto() {
+    fotoBase64Temporal = "";
     document.getElementById("modalProductoTitulo").textContent = "✨ Registrar Nuevo Producto";
     document.getElementById("prodSku").value = "";
     document.getElementById("prodSku").readOnly = false;
@@ -139,14 +147,21 @@ function abrirFormularioCrearProducto() {
     document.getElementById("prodValorPiedra").value = "0";
     document.getElementById("prodMargen").value = "100";
     document.getElementById("prodDescuento").value = "0";
-    document.getElementById("prodFoto").value = "";
+    document.getElementById("prodUbicacion").value = "CAJA FUERTE";
     document.getElementById("prodArchivoFoto").value = "";
-    document.getElementById("previewFotoContainer").innerHTML = "";
+    
+    const preview = document.getElementById("previewProdModulo");
+    if (preview) {
+        preview.src = "";
+        preview.style.display = "none";
+    }
+
     document.getElementById("modalFormularioProducto").classList.add("active");
 }
 
 function abrirFormularioEditarProducto(jsonEncoded) {
     let p = JSON.parse(decodeURIComponent(jsonEncoded));
+    fotoBase64Temporal = p.Foto || "";
     document.getElementById("modalProductoTitulo").textContent = `✏️ Modificar Producto [${p.SKU}]`;
     document.getElementById("prodSku").value = p.SKU || "";
     document.getElementById("prodSku").readOnly = true;
@@ -161,15 +176,17 @@ function abrirFormularioEditarProducto(jsonEncoded) {
     document.getElementById("prodMargen").value = p.Porcentaje_Venta || 100;
     document.getElementById("prodDescuento").value = p.Tiene_Descuento || 0;
     document.getElementById("prodUbicacion").value = p.ID_Ubicacion || "CAJA FUERTE";
-    
-    let fotoActual = p.Foto || "";
-    document.getElementById("prodFoto").value = fotoActual;
     document.getElementById("prodArchivoFoto").value = "";
     
-    if (fotoActual) {
-        document.getElementById("previewFotoContainer").innerHTML = `<img src="${fotoActual}" style="max-height: 70px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-block;"> <span style="font-size: 0.75rem; color: #64748b; display: block;">Foto actual cargada</span>`;
-    } else {
-        document.getElementById("previewFotoContainer").innerHTML = "";
+    const preview = document.getElementById("previewProdModulo");
+    if (preview) {
+        if (fotoBase64Temporal) {
+            preview.src = fotoBase64Temporal;
+            preview.style.display = "block";
+        } else {
+            preview.src = "";
+            preview.style.display = "none";
+        }
     }
 
     document.getElementById("modalFormularioProducto").classList.add("active");
@@ -181,8 +198,13 @@ function cerrarModalProducto() {
 
 async function guardarProductoServidor(e) {
     e.preventDefault();
+    
+    // Detectamos automáticamente si estamos editando (SKU readonly) o creando (SKU editable)
+    const esEdicion = document.getElementById("prodSku").readOnly;
+    const accionServidor = esEdicion ? "editarProducto" : "crearProducto";
+
     let payload = {
-        action: "guardarProducto",
+        action: accionServidor,
         sku: document.getElementById("prodSku").value.trim().toUpperCase(),
         codigo_barra: document.getElementById("prodCodigoBarra").value.trim(),
         nombre: document.getElementById("prodNombre").value.trim(),
@@ -195,11 +217,11 @@ async function guardarProductoServidor(e) {
         porcentaje_venta: parseFloat(document.getElementById("prodMargen").value) || 100,
         tiene_descuento: parseFloat(document.getElementById("prodDescuento").value) || 0,
         ubicacion: document.getElementById("prodUbicacion").value.trim().toUpperCase(),
-        foto: document.getElementById("prodFoto").value.trim(),
+        foto: fotoBase64Temporal || "",
         estado: "DISPONIBLE"
     };
 
-    const res = await API.llamar("guardarProducto", payload, "POST");
+    const res = await API.llamar(accionServidor, payload, "POST");
     if (res && res.status === "success") {
         alert(res.message);
         cerrarModalProducto();
@@ -325,13 +347,6 @@ async function eliminarProductosSeleccionados() {
     } else {
         alert("Error al eliminar.");
     }
-}
-
-function expandirBuscador() {
-    const box = document.getElementById("searchExpandableBox");
-    if (box) box.classList.add("expanded");
-    const input = document.getElementById("inputBuscadorCatalogo");
-    if (input) input.focus();
 }
 
 async function forzarRecargaCatalogo() {
@@ -480,7 +495,7 @@ function renderizarTablaProductosPaginada() {
 function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorVentaStr, metaEncoded) {
     let metadataArqueo = decodeURIComponent(metaEncoded || '');
     document.getElementById("modalSkuLabel").textContent = `SKU: ${sku} | Barras: ${codigoBarra}`;
-    let certUrl = `https://glasas.github.io/MANU/cert.html?token=${btoa(sku)}${metadataArqueo}`;
+    let certUrl = `https://glasas.github.io/MANU/catalogomanu?token=${btoa(sku)}${metadataArqueo}`;
     document.getElementById("imgQrGenerado").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(certUrl)}`;
     
     try {
