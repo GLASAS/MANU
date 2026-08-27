@@ -88,8 +88,8 @@ async function renderizarModuloProductos(container) {
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 1rem;">
-                        <button type="submit" class="btn-modern btn-primary-action" style="flex: 1; justify-content: center;">💾 Guardar Producto</button>
-                        <button type="button" class="btn-modern btn-danger-action" onclick="cerrarModalProducto()" style="flex: 1; justify-content: center;">Cancelar</button>
+                        <button type="submit" style="flex: 1; background-color: #0f172a; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Guardar Producto</button>
+                        <button type="button" onclick="cerrarModalProducto()" style="flex: 1; background-color: #ef4444; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer;">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -199,7 +199,6 @@ function cerrarModalProducto() {
 async function guardarProductoServidor(e) {
     e.preventDefault();
     
-    // Detectamos automáticamente si estamos editando (SKU readonly) o creando (SKU editable)
     const esEdicion = document.getElementById("prodSku").readOnly;
     const accionServidor = esEdicion ? "editarProducto" : "crearProducto";
 
