@@ -1,119 +1,191 @@
 /**
- * MANU JOYEROS - Módulo de Usuarios (usuarios.js)
+ * MANU JOYEROS - Módulo de Gestión de Usuarios (usuarios.js)
  */
 
 async function renderizarModuloUsuarios(container) {
-    const esAdmin = usuarioActual && (usuarioActual.rol.toUpperCase() === 'ADMIN' || usuarioActual.rol.toUpperCase() === 'ADMINISTRADOR');
-    let btnNuevo = esAdmin ? `<button class="btn-nuevo-producto" onclick="abrirFormularioNuevoUsuario()">👤 + Nuevo Usuario</button>` : '';
-
     container.innerHTML = `
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap:wrap; gap:10px;">
-                <h3 style="color: #0f172a; margin: 0;">👤 Gestión de Usuarios y Accesos</h3>
-                ${btnNuevo}
+        <div style="display: flex; flex-direction: column; gap: 20px; max-width: 1200px; margin: 0 auto;">
+            
+            <!-- CONTENEDOR DINÁMICO DE FORMULARIO (OCULTO POR DEFECTO) -->
+            <div id="contenedorFormularioUsuario" style="display: none; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <h3 id="tituloFormUsuario" style="margin-top: 0; margin-bottom: 20px; color: #0f172a; font-size: 1.15rem;">✨ Nuevo Usuario</h3>
+                <form id="formUsuarioCrud" onsubmit="guardarUsuarioSistema(event)">
+                    <input type="hidden" id="usrModoEdicion" value="0">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Usuario (Login) *</label>
+                            <input type="text" id="usrUsuario" required placeholder="Ej. JPEREZ" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Nombre Completo *</label>
+                            <input type="text" id="usrNombre" required placeholder="Ej. Juan Pérez" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Rol *</label>
+                            <select id="usrRol" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; background: white; outline: none;">
+                                <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                                <option value="VENDEDOR">VENDEDOR</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Contraseña *</label>
+                            <input type="password" id="usrPassword" required placeholder="••••••••" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" onclick="cerrarFormularioUsuarioInline()" style="background: #e2e8f0; color: #334155; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem;">Cancelar</button>
+                        <button type="submit" style="background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem;">💾 Guardar Usuario</button>
+                    </div>
+                </form>
             </div>
-            <div id="vistaUsuariosInterna">Cargando usuarios...</div>
-        </div>`;
 
-    const res = await API.llamar("obtenerUsuarios", {}, "GET");
-    const contenedor = document.getElementById("vistaUsuariosInterna");
-    if (res && res.status === "success" && res.data) {
-        let html = `<div class="table-container"><table class="data-table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Vencimiento</th><th>Estado</th>`;
-        if (esAdmin) html += `<th>Acciones</th>`;
-        html += `</tr></thead><tbody>`;
+            <!-- BARRA DE ACCIONES Y TABLA -->
+            <div class="card" style="background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin: 0; color: #0f172a; font-size: 1.15rem;">👥 Gestión de Usuarios y Accesos</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="abrirFormularioNuevoUsuario()" style="background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">+ Nuevo Usuario</button>
+                        <button type="button" onclick="cargarListaUsuarios()" style="background: #475569; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">🔄 Actualizar</button>
+                    </div>
+                </div>
 
-        res.data.forEach(u => {
-            let uJson = encodeURIComponent(JSON.stringify(u));
-            html += `<tr><td><strong>${u.Usuario}</strong></td><td>${u.Nombre}</td><td>${u.Rol}</td><td>${String(u.Fecha_Vencimiento||'').split('T')[0]}</td><td><span class="badge" style="background:${u.Estado==='ACTIVO'?'#10b981':'#ef4444'};">${u.Estado}</span></td>`;
-            if (esAdmin) {
-                html += `<td><div class="btn-action-container"><button class="btn-action btn-edit" onclick="abrirFormularioEditarUsuario('${uJson}')">✏️</button><button class="btn-action btn-delete" onclick="eliminarUsuario('${u.Usuario}')">🗑️</button></div></td>`;
-            }
-            html += `</tr>`;
-        });
-        html += `</tbody></table></div>`;
-        contenedor.innerHTML = html;
-    } else {
-        contenedor.innerHTML = `<p style="color: #ef4444;">Error al cargar usuarios.</p>`;
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
+                                <th style="padding: 12px;">Usuario</th>
+                                <th style="padding: 12px;">Nombre Completo</th>
+                                <th style="padding: 12px;">Rol</th>
+                                <th style="padding: 12px;">Vencimiento</th>
+                                <th style="padding: 12px;">Estado</th>
+                                <th style="padding: 12px; text-align: center;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaUsuariosBody">
+                            <tr><td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">Cargando usuarios...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    `;
+
+    await cargarListaUsuarios();
+}
+
+async function cargarListaUsuarios() {
+    const tbody = document.getElementById("tablaUsuariosBody");
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando usuarios...</td></tr>`;
+
+    try {
+        const res = await API.llamar("obtenerUsuarios", { action: "obtenerUsuarios" }, "GET");
+        if (res && res.status === "success" && res.data) {
+            window.listaUsuariosCache = res.data;
+            let html = "";
+            res.data.forEach(u => {
+                let userLogin = u.Usuario || u.usuario || "-";
+                let nombreComp = u.Nombre || u.nombre || "-";
+                let rolUsr = u.Rol || u.rol || "VENDEDOR";
+                let venc = u.Vencimiento || u.vencimiento || "-";
+                let estado = u.Estado || u.estado || "ACTIVO";
+
+                let estadoBadge = estado.toUpperCase() === 'ACTIVO' 
+                    ? `<span style="background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">ACTIVO</span>`
+                    : `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">INACTIVO</span>`;
+
+                html += `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 12px; font-weight: bold; color: #0f172a;">${userLogin}</td>
+                        <td style="padding: 12px;">${nombreComp}</td>
+                        <td style="padding: 12px; color: #475569;">${rolUsr}</td>
+                        <td style="padding: 12px; color: #64748b;">${venc}</td>
+                        <td style="padding: 12px;">${estadoBadge}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button type="button" onclick="prepararEdicionUsuario('${userLogin}')" style="background: #0f172a; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️ Editar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los usuarios.</td></tr>`;
+        }
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #ef4444;">Error al conectar con el servidor.</td></tr>`;
     }
 }
 
 function abrirFormularioNuevoUsuario() {
-    let usu = prompt("Nombre de Usuario (Login):");
-    if (!usu) return;
-    let nom = prompt("Nombre Completo:");
-    if (!nom) return;
-    let pass = prompt("Contraseña:");
-    if (!pass) return;
-    let rol = prompt("Rol (ADMINISTRADOR / VENDEDOR):", "VENDEDOR").toUpperCase();
-    let venc = prompt("Fecha de Vencimiento (YYYY-MM-DD):", "2100-12-31");
-
-    guardarUsuarioServidor({ action: "guardarUsuario", usuario: usu.trim().toUpperCase(), nombre: nom, password: pass, rol: rol, fecha_vencimiento: venc, estado: "ACTIVO" });
-}
-
-function abrirFormularioEditarUsuario(jsonStr) {
-    let u = JSON.parse(decodeURIComponent(jsonStr));
-    let nom = prompt("Editar Nombre Completo:", u.Nombre);
-    if (!nom) return;
-    let pass = prompt("Nueva Contraseña (dejar en blanco para no cambiar):", "") || "";
-    let rol = prompt("Editar Rol (ADMINISTRADOR / VENDEDOR):", u.Rol).toUpperCase();
-    let estado = prompt("Estado (ACTIVO / INACTIVO):", u.Estado || "ACTIVO").toUpperCase();
-
-    let payload = { action: "guardarUsuario", usuario: u.Usuario, nombre: nom, rol: rol, estado: estado, fecha_vencimiento: u.Fecha_Vencimiento || "2100-12-31" };
-    if (pass) payload.password = pass;
-
-    guardarUsuarioServidor(payload);
-}
-
-async function guardarUsuarioServidor(data) {
-    const res = await API.llamar("guardarUsuario", data, "POST");
-    if (res && res.status === "success") {
-        alert(res.message);
-        renderizarModuloUsuarios(document.getElementById('contentBody'));
-    } else {
-        alert("Error al guardar usuario: " + (res ? res.message : ""));
+    const contenedor = document.getElementById("contenedorFormularioUsuario");
+    const titulo = document.getElementById("tituloFormUsuario");
+    const form = document.getElementById("formUsuarioCrud");
+    
+    if (contenedor && titulo && form) {
+        form.reset();
+        document.getElementById("usrModoEdicion").value = "0";
+        document.getElementById("usrUsuario").disabled = false;
+        titulo.textContent = "✨ Registrar Nuevo Usuario";
+        contenedor.style.display = "block";
+        contenedor.scrollIntoView({ behavior: 'smooth' });
     }
 }
 
-async function eliminarUsuario(usu) {
-    if (usu.toLowerCase() === usuarioActual.usuario.toLowerCase()) { alert("No puedes eliminar tu propio usuario activo."); return; }
-    if (!confirm(`¿Eliminar usuario [${usu}]?`)) return;
-    const res = await API.llamar("eliminarUsuario", { action: "eliminarUsuario", usuario: usu }, "POST");
-    if (res && res.status === "success") { alert(res.message); renderizarModuloUsuarios(document.getElementById('contentBody')); }
-    else { alert("Error al eliminar."); }
+function cerrarFormularioUsuarioInline() {
+    const contenedor = document.getElementById("contenedorFormularioUsuario");
+    if (contenedor) contenedor.style.display = "none";
 }
 
-// Módulo Cambiar Contraseña autónomo
-async function renderizarModuloCambiarPassword(container) {
-    container.innerHTML = `
-        <div class="card" style="max-width: 480px; margin: 0 auto;">
-            <h3 style="margin-bottom: 0.5rem; color: #0f172a;">🔑 Cambiar Contraseña</h3>
-            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem;">Actualice su contraseña de acceso al sistema.</p>
-            <form onsubmit="ejecutarCambioPassword(event)">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label style="font-weight:600; color:#334155; display:block; margin-bottom:5px;">Contraseña Actual *</label>
-                    <input type="password" id="passActual" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
-                </div>
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label style="font-weight:600; color:#334155; display:block; margin-bottom:5px;">Nueva Contraseña *</label>
-                    <input type="password" id="passNueva" required style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
-                </div>
-                <button type="submit" style="width:100%; padding:12px; background:#0f172a; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">💾 Actualizar Contraseña</button>
-            </form>
-        </div>`;
+function prepararEdicionUsuario(login) {
+    const usuarios = window.listaUsuariosCache || [];
+    const usr = usuarios.find(u => String(u.Usuario || u.usuario || "").trim().toUpperCase() === login.toUpperCase());
+    
+    if (!usr) {
+        alert("Usuario no encontrado.");
+        return;
+    }
+
+    const contenedor = document.getElementById("contenedorFormularioUsuario");
+    const titulo = document.getElementById("tituloFormUsuario");
+
+    if (contenedor && titulo) {
+        document.getElementById("usrModoEdicion").value = "1";
+        document.getElementById("usrUsuario").value = usr.Usuario || usr.usuario || "";
+        document.getElementById("usrUsuario").disabled = true; // No se cambia el login principal
+        document.getElementById("usrNombre").value = usr.Nombre || usr.nombre || "";
+        document.getElementById("usrRol").value = usr.Rol || usr.rol || "VENDEDOR";
+        document.getElementById("usrPassword").value = usr.Password || usr.password || "";
+
+        titulo.textContent = `✏️ Editando Usuario: ${login}`;
+        contenedor.style.display = "block";
+        contenedor.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
-async function ejecutarCambioPassword(e) {
-    e.preventDefault();
-    let actual = document.getElementById("passActual").value;
-    let nueva = document.getElementById("passNueva").value;
-    if (!actual || !nueva) { alert("Complete todos los campos."); return; }
+async function guardarUsuarioSistema(event) {
+    event.preventDefault();
+    const login = document.getElementById("usrUsuario").value.trim();
+    const nombre = document.getElementById("usrNombre").value.trim();
+    const rol = document.getElementById("usrRol").value;
+    const password = document.getElementById("usrPassword").value.trim();
+    const esEdicion = document.getElementById("usrModoEdicion").value === "1";
 
-    const res = await API.llamar("cambiarPassword", { action: "cambiarPassword", usuario: usuarioActual.usuario, password_actual: actual, password_nueva: nueva }, "POST");
+    const accionApi = esEdicion ? "actualizarUsuario" : "guardarUsuario";
+
+    const res = await API.llamar(accionApi, {
+        action: accionApi,
+        usuario: login,
+        nombre: nombre,
+        rol: rol,
+        password: password
+    }, "POST");
+
     if (res && res.status === "success") {
-        alert(res.message);
-        document.getElementById("passActual").value = "";
-        document.getElementById("passNueva").value = "";
+        cerrarFormularioUsuarioInline();
+        cargarListaUsuarios();
     } else {
-        alert("Error: " + (res ? res.message : "No se pudo cambiar la contraseña"));
+        alert("Error al guardar el usuario: " + (res ? res.message : "Desconocido"));
     }
 }
