@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
- * Versión Restaurada e Íntegra (Exacta a tu diseño original con selector de usuario y dos botones de Excel)
+ * Versión Íntegra y Completa con Selector de Responsable y Dos Botones de Excel
  */
 
 let listaInventarioCache = [];
