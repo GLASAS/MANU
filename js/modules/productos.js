@@ -1,566 +1,411 @@
 /**
- * MANU JOYEROS - Módulo de Productos (productos.js)
+ * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
  */
 
-let fotoBase64Temporal = "";
-
 async function renderizarModuloProductos(container) {
-    await cargarCategoriasDinamicas();
-    await cargarMaterialesDinamicos();
-    await cargarColoresDinamicos();
-    await cargarValorOroDia();
-
-    const esAdmin = usuarioActual && (usuarioActual.rol.toUpperCase() === 'ADMIN' || usuarioActual.rol.toUpperCase() === 'ADMINISTRADOR');
-    let botonesAccionHtml = esAdmin ? `
-        <div class="toolbar-group-actions">
-            <button class="btn-modern btn-primary-action" onclick="abrirFormularioCrearProducto()">✨ Nuevo</button>
-            <button class="btn-modern btn-success-action" onclick="abrirModalImportarCSV()">📂 Importar</button>
-            <button class="btn-modern btn-info-action" onclick="exportarCatalogoCSV()">📥 Exportar</button>
-            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
-            <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
-            <button class="btn-modern btn-danger-action" onclick="eliminarProductosSeleccionados()">🗑️ Eliminar</button>
-        </div>
-        <div class="toolbar-group-actions">
-            <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
-            <div class="toolbar-search-box">
-                <span>🔍</span>
-                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+    container.innerHTML = `
+        <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
+                <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
+                <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
+                <button type="button" class="btn-action" onclick="window.open('https://glasas.github.io/MANU/catalogomanu', '_blank')" style="background: #d97706; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🌐 Catálogo Web</button>
+                <button type="button" class="btn-action" onclick="abrirModalQrCatalogoAdmin()" style="background: #7c3aed; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📱 QR Web</button>
+                <button type="button" class="btn-action text-danger" onclick="eliminarProductosSeleccionados()" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🗑️ Eliminar</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" onclick="cargarListaProductos()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; cursor: pointer;" title="Actualizar Lista">🔄</button>
+                <input type="text" id="buscadorProductos" onkeyup="filtrarProductosTabla()" placeholder="SKU, Barras, Nombre..." style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; width: 250px;">
             </div>
         </div>
-    ` : `
-        <div class="toolbar-group-actions">
-            <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="btn-modern btn-warning-action">🌐 Catálogo Web</a>
-            <button class="btn-modern btn-purple-action" onclick="abrirModalQrCatalogo()">📱 QR Web</button>
+
+        <div class="card" style="background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Catálogo de Productos y Joyas</h3>
+                <div id="paginacionInfoProductos" style="font-size: 0.85rem; color: #64748b;">Mostrando registros...</div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                    <thead>
+                        <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
+                            <th style="padding: 10px; width: 30px;"><input type="checkbox" id="selectAllProductos" onclick="toggleSelectAllProductos(this)"></th>
+                            <th style="padding: 10px;">Nombre / Descripción</th>
+                            <th style="padding: 10px;">Categoría</th>
+                            <th style="padding: 10px;">Color</th>
+                            <th style="padding: 10px;">Material</th>
+                            <th style="padding: 10px;">Peso</th>
+                            <th style="padding: 10px;">Costo</th>
+                            <th style="padding: 10px;">Margen</th>
+                            <th style="padding: 10px;">Desc.</th>
+                            <th style="padding: 10px;">Venta Final</th>
+                            <th style="padding: 10px;">Ubicación</th>
+                            <th style="padding: 10px;">Foto</th>
+                            <th style="padding: 10px; text-align: center;">Etiqueta</th>
+                            <th style="padding: 10px; text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProductosBody">
+                        <tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;" id="paginacionControlesContainer">
+                <span id="lblPaginacionTexto" style="font-size: 0.85rem; color: #64748b;">Mostrando 0 a 0 de 0</span>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" id="btnPaginaAnterior" onclick="cambiarPaginaProductos(-1)" style="padding: 6px 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">◀ Anterior</button>
+                    <span id="lblPaginaActualNum" style="padding: 6px 12px; font-weight: bold; color: #0f172a;">Página 1 de 1</span>
+                    <button type="button" id="btnPaginaSiguiente" onclick="cambiarPaginaProductos(1)" style="padding: 6px 12px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer;">Siguiente ▶</button>
+                </div>
+            </div>
         </div>
-        <div class="toolbar-group-actions">
-            <button class="btn-modern btn-refresh-action" onclick="forzarRecargaCatalogo()" title="Actualizar Datos">🔄</button>
-            <div class="toolbar-search-box">
-                <span>🔍</span>
-                <input type="text" id="inputBuscadorCatalogo" placeholder="SKU, Barras, Nombre..." oninput="filtrarCatalogoEnVivo()">
+
+        <!-- MODAL CRUD PRODUCTO -->
+        <div class="image-modal" id="modalFormularioProducto" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6);">
+            <div style="background: white; width: 95%; max-width: 650px; border-radius: 12px; padding: 25px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 id="modalProductoTitulo" style="margin: 0; color: #0f172a;">Gestión de Producto</h3>
+                    <button type="button" onclick="cerrarModalFormularioProducto()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
+                </div>
+                <form id="formCrudProducto" onsubmit="guardarProductoInventario(event)">
+                    <input type="hidden" id="prodSkuOriginal">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU *</label>
+                            <input type="text" id="prodSku" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras</label>
+                            <input type="text" id="prodCodigoBarra" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Nombre / Descripción de la Joya *</label>
+                        <input type="text" id="prodNombre" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Categoría</label>
+                            <input type="text" id="prodCategoria" placeholder="ANILLOS" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Material</label>
+                            <input type="text" id="prodMaterial" placeholder="ORO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Color</label>
+                            <input type="text" id="prodColor" placeholder="AMARILLO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Peso (g)</label>
+                            <input type="number" step="0.01" id="prodPeso" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Piedra ($)</label>
+                            <input type="number" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Costo ($)</label>
+                            <input type="number" id="prodCosto" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Margen (%)</label>
+                            <input type="number" id="prodMargen" value="100" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Descuento (%)</label>
+                            <input type="number" id="prodDescuento" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Ubicación / Vitrina</label>
+                            <input type="text" id="prodUbicacion" placeholder="CAJA FUERTE" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">URL Foto</label>
+                            <input type="text" id="prodFoto" placeholder="https://..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" onclick="cerrarModalFormularioProducto()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                        <button type="submit" style="padding: 8px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">💾 Guardar Producto</button>
+                    </div>
+                </form>
             </div>
         </div>
     `;
 
-    container.innerHTML = `
-        <div class="card">
-            <h3 style="color: #0f172a; margin-bottom: 0.75rem; font-size: 1.1rem;">Catálogo de Productos y Joyas</h3>
-            <div class="catalog-toolbar">
-                ${botonesAccionHtml}
-            </div>
-            <div id="vistaProductosInterna"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario...</p></div>
-        </div>
-
-        <!-- MODAL DINÁMICO DE CREACIÓN / EDICIÓN DE PRODUCTO -->
-        <div class="image-modal" id="modalFormularioProducto" onclick="cerrarModalProducto()">
-            <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto; color: #0f172a;" onclick="event.stopPropagation()">
-                <h3 id="modalProductoTitulo" style="margin-bottom: 1rem; color: #0f172a;">✨ Registrar Nuevo Producto</h3>
-                <form id="formProductoReal" onsubmit="guardarProductoServidor(event)">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
-                        <div class="form-group"><label>SKU *</label><input type="text" id="prodSku" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                        <div class="form-group"><label>Código de Barras</label><input type="text" id="prodCodigoBarra" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                    </div>
-                    <div class="form-group"><label>Nombre / Descripción de la Joya *</label><input type="text" id="prodNombre" required style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-                        <div class="form-group"><label>Categoría</label><input type="text" id="prodCategoria" value="ANILLOS" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                        <div class="form-group"><label>Color</label><input type="text" id="prodColor" value="AMARILLO" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                        <div class="form-group"><label>Material</label><input type="text" id="prodMaterial" value="ORO" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
-                        <div class="form-group"><label>Peso (g)</label><input type="number" step="0.01" id="prodPeso" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                        <div class="form-group"><label>Valor Oro ($)</label><input type="number" id="prodValorOro" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                        <div class="form-group"><label>Valor Piedra ($)</label><input type="number" id="prodValorPiedra" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-                        <div class="form-group"><label>Margen Venta (%)</label><input type="number" id="prodMargen" value="100" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                        <div class="form-group"><label>Descuento (%)</label><input type="number" id="prodDescuento" value="0" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                        <div class="form-group"><label>Ubicación</label><input type="text" id="prodUbicacion" value="CAJA FUERTE" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></div>
-                    </div>
-                    
-                    <!-- SECCIÓN DE FOTO INTEGRADA CON COMPRESIÓN -->
-                    <div class="form-group">
-                        <label>📸 Fotografía de la Joya (Cámara o Galería)</label>
-                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                            <input type="file" accept="image/*" capture="environment" id="prodArchivoFoto" onchange="procesarImagenModulo(event, 'previewProdModulo')" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;">
-                        </div>
-                        <div style="margin-top: 10px; text-align: center;">
-                            <img id="previewProdModulo" src="" style="max-width: 150px; max-height: 150px; display: none; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: cover; margin: 0 auto;">
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-top: 1rem;">
-                        <button type="submit" style="flex: 1; background-color: #0f172a; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer;">💾 Guardar Producto</button>
-                        <button type="button" onclick="cerrarModalProducto()" style="flex: 1; background-color: #ef4444; color: #ffffff; border: none; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer;">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-        </div>`;
-    await cargarListaProductos(false);
+    await cargarListaProductos();
 }
 
-function procesarImagenModulo(event, previewId) {
-    const archivo = event.target.files[0];
-    if (!archivo) return;
-    const lector = new FileReader();
-    lector.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            const MAX_WIDTH = 400;
-            const MAX_HEIGHT = 400;
-            let width = img.width;
-            let height = img.height;
+async function cargarListaProductos() {
+    const tbody = document.getElementById("tablaProductosBody");
+    if (!tbody) return;
 
-            if (width > height) {
-                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-            } else {
-                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-            }
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando inventario y valor del oro...</td></tr>`;
 
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            fotoBase64Temporal = canvas.toDataURL('image/jpeg', 0.5);
-            
-            const preview = document.getElementById(previewId);
-            if (preview) {
-                preview.src = fotoBase64Temporal;
-                preview.style.display = 'block';
-            }
-        };
-        img.src = e.target.result;
-    };
-    lector.readAsDataURL(archivo);
-}
+    try {
+        const [resOro, resProd] = await Promise.all([
+            API.llamar("obtenerValorOroDia", {}, "GET"),
+            API.llamar("obtenerProductos", {}, "GET")
+        ]);
 
-function abrirFormularioCrearProducto() {
-    fotoBase64Temporal = "";
-    document.getElementById("modalProductoTitulo").textContent = "✨ Registrar Nuevo Producto";
-    document.getElementById("prodSku").value = "";
-    document.getElementById("prodSku").readOnly = false;
-    document.getElementById("prodCodigoBarra").value = "";
-    document.getElementById("prodNombre").value = "";
-    document.getElementById("prodPeso").value = "0";
-    document.getElementById("prodValorOro").value = "0";
-    document.getElementById("prodValorPiedra").value = "0";
-    document.getElementById("prodMargen").value = "100";
-    document.getElementById("prodDescuento").value = "0";
-    document.getElementById("prodUbicacion").value = "CAJA FUERTE";
-    document.getElementById("prodArchivoFoto").value = "";
-    
-    const preview = document.getElementById("previewProdModulo");
-    if (preview) {
-        preview.src = "";
-        preview.style.display = "none";
-    }
-
-    document.getElementById("modalFormularioProducto").classList.add("active");
-}
-
-function abrirFormularioEditarProducto(jsonEncoded) {
-    let p = JSON.parse(decodeURIComponent(jsonEncoded));
-    fotoBase64Temporal = p.Foto || "";
-    document.getElementById("modalProductoTitulo").textContent = `✏️ Modificar Producto [${p.SKU}]`;
-    document.getElementById("prodSku").value = p.SKU || "";
-    document.getElementById("prodSku").readOnly = true;
-    document.getElementById("prodCodigoBarra").value = p.Codigo_Barra || p.codigo_barra || "";
-    document.getElementById("prodNombre").value = p.Nombre || "";
-    document.getElementById("prodCategoria").value = p.ID_Categoria || "ANILLOS";
-    document.getElementById("prodColor").value = p.Color || p.ID_Subcategoria || "AMARILLO";
-    document.getElementById("prodMaterial").value = p.Material_Oro || p.Material || "ORO";
-    document.getElementById("prodPeso").value = p.Peso || 0;
-    document.getElementById("prodValorOro").value = p.Valor_Oro || 0;
-    document.getElementById("prodValorPiedra").value = p.Valor_Piedra || 0;
-    document.getElementById("prodMargen").value = p.Porcentaje_Venta || 100;
-    document.getElementById("prodDescuento").value = p.Tiene_Descuento || 0;
-    document.getElementById("prodUbicacion").value = p.ID_Ubicacion || "CAJA FUERTE";
-    document.getElementById("prodArchivoFoto").value = "";
-    
-    const preview = document.getElementById("previewProdModulo");
-    if (preview) {
-        if (fotoBase64Temporal) {
-            preview.src = fotoBase64Temporal;
-            preview.style.display = "block";
-        } else {
-            preview.src = "";
-            preview.style.display = "none";
+        if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
+            window.valorOroDelDiaCache = Number(resOro.valor_oro_dia);
         }
-    }
 
-    document.getElementById("modalFormularioProducto").classList.add("active");
-}
-
-function cerrarModalProducto() {
-    document.getElementById("modalFormularioProducto").classList.remove("active");
-}
-
-async function guardarProductoServidor(e) {
-    e.preventDefault();
-    
-    const esEdicion = document.getElementById("prodSku").readOnly;
-    const accionServidor = esEdicion ? "editarProducto" : "crearProducto";
-
-    let payload = {
-        action: accionServidor,
-        sku: document.getElementById("prodSku").value.trim().toUpperCase(),
-        codigo_barra: document.getElementById("prodCodigoBarra").value.trim(),
-        nombre: document.getElementById("prodNombre").value.trim(),
-        categoria: document.getElementById("prodCategoria").value.trim().toUpperCase(),
-        color: document.getElementById("prodColor").value.trim().toUpperCase(),
-        material: document.getElementById("prodMaterial").value.trim().toUpperCase(),
-        peso: parseFloat(document.getElementById("prodPeso").value) || 0,
-        valor_oro: parseFloat(document.getElementById("prodValorOro").value) || 0,
-        valor_piedra: parseFloat(document.getElementById("prodValorPiedra").value) || 0,
-        porcentaje_venta: parseFloat(document.getElementById("prodMargen").value) || 100,
-        tiene_descuento: parseFloat(document.getElementById("prodDescuento").value) || 0,
-        ubicacion: document.getElementById("prodUbicacion").value.trim().toUpperCase(),
-        foto: fotoBase64Temporal || "",
-        estado: "DISPONIBLE"
-    };
-
-    const res = await API.llamar(accionServidor, payload, "POST");
-    if (res && res.status === "success") {
-        alert(res.message);
-        cerrarModalProducto();
-        localStorage.removeItem("cache_productos_manu");
-        renderizarModuloProductos(document.getElementById('contentBody'));
-    } else {
-        alert("Error al guardar: " + (res ? res.message : "Desconocido"));
-    }
-}
-
-function exportarCatalogoCSV() {
-    if (!listaProductosFiltradosCache || listaProductosFiltradosCache.length === 0) {
-        alert("No hay datos para exportar.");
-        return;
-    }
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "SKU;Codigo_Barra;Nombre;Categoria;Color;Material;Peso;Valor_Oro;Valor_Piedra;Porcentaje_Venta;Tiene_Descuento;Ubicacion;Estado\n";
-
-    listaProductosFiltradosCache.forEach(p => {
-        let sku = p.SKU || "";
-        let codigoBarra = p.Codigo_Barra || "";
-        let nombre = `"${(p.Nombre || "").replace(/"/g, '""')}"`;
-        let cat = p.ID_Categoria || "";
-        let color = p.Color || p.ID_Subcategoria || "";
-        let mat = p.Material_Oro || p.Material || "";
-        let peso = p.Peso || "0";
-        let vOro = p.Valor_Oro || "0";
-        let vPiedra = p.Valor_Piedra || "0";
-        let margen = p.Porcentaje_Venta || "100";
-        let desc = p.Tiene_Descuento || "0";
-        let ubicacion = p.ID_Ubicacion || "";
-        let estadoItem = p.Estado || "DISPONIBLE";
-
-        csvContent += [sku, codigoBarra, nombre, cat, color, mat, peso, vOro, vPiedra, margen, desc, ubicacion, estadoItem].join(";") + "\n";
-    });
-
-    let encodedUri = encodeURI(csvContent);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "catalogo_manu_exportado.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function abrirModalImportarCSV() {
-    let input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.onchange = e => {
-        let archivo = e.target.files[0];
-        let lector = new FileReader();
-        lector.onload = async function(event) {
-            let texto = event.target.result;
-            let lineas = texto.split(/\r\n|\n/);
-            let productosArray = [];
-
-            for (let i = 1; i < lineas.length; i++) {
-                let linea = lineas[i].trim();
-                if (!linea) continue;
-                let cols = linea.split(';');
-                if (cols.length >= 3) {
-                    productosArray.push({
-                        sku: cols[0] ? cols[0].trim() : '',
-                        codigo_barra: cols[1] ? cols[1].trim() : '',
-                        nombre: cols[2] ? cols[2].replace(/"/g, '').trim() : '',
-                        categoria: cols[3] ? cols[3].trim() : 'ANILLOS',
-                        color: cols[4] ? cols[4].trim() : 'AMARILLO',
-                        material: cols[5] ? cols[5].trim() : 'ORO',
-                        peso: cols[6] ? cols[6].trim() : '0',
-                        valor_oro: parseFloat(cols[7]) || 0,
-                        valor_piedra: parseFloat(cols[8]) || 0,
-                        porcentaje_venta: parseFloat(cols[9]) || 100,
-                        tiene_descuento: parseFloat(cols[10]) || 0,
-                        ubicacion: cols[11] ? cols[11].trim() : 'VITRINA 1',
-                        estado: 'DISPONIBLE'
-                    });
-                }
-            }
-
-            if (productosArray.length === 0) {
-                alert("El archivo CSV no contiene registros válidos.");
-                return;
-            }
-
-            if (confirm(`Se detectaron ${productosArray.length} productos. ¿Desea importarlos masivamente?`)) {
-                document.getElementById("vistaProductosInterna").innerHTML = `<div style="text-align: center; padding: 3rem;"><h3 style="color: #3b82f6;">⏳ Importando productos...</h3></div>`;
-                const res = await API.llamar("importarMasivoProductos", { action: "importarMasivoProductos", productos: productosArray }, "POST");
-                if (res && res.status === "success") {
-                    alert(res.message);
-                    localStorage.removeItem("cache_productos_manu");
-                    renderizarModuloProductos(document.getElementById('contentBody'));
-                } else {
-                    alert("Error en la importación.");
-                    renderizarModuloProductos(document.getElementById('contentBody'));
-                }
-            }
-        };
-        lector.readAsText(archivo, 'ISO-8859-1');
-    };
-    input.click();
-}
-
-function seleccionarTodosCheckboxes(source) {
-    const checkboxes = document.querySelectorAll('.sku-checkbox');
-    checkboxes.forEach(cb => cb.checked = source.checked);
-}
-
-async function eliminarProductosSeleccionados() {
-    const checkboxes = document.querySelectorAll('.sku-checkbox:checked');
-    if (checkboxes.length === 0) {
-        alert("Por favor seleccione al menos un producto.");
-        return;
-    }
-    if (!confirm(`¿Eliminar los ${checkboxes.length} productos seleccionados?`)) return;
-
-    let skus = Array.from(checkboxes).map(cb => cb.value);
-    const res = await API.llamar("eliminarMasivoProductos", { action: "eliminarMasivoProductos", skus: skus }, "POST");
-    if (res && res.status === "success") {
-        alert(res.message);
-        localStorage.removeItem("cache_productos_manu");
-        renderizarModuloProductos(document.getElementById('contentBody'));
-    } else {
-        alert("Error al eliminar.");
-    }
-}
-
-async function forzarRecargaCatalogo() {
-    localStorage.removeItem("cache_productos_manu");
-    localStorage.removeItem("cache_productos_tiempo");
-    await cargarListaProductos(true);
-}
-
-async function cargarListaProductos(forzarRed = false) {
-    const contenedor = document.getElementById("vistaProductosInterna");
-    let productos = null;
-    const cacheGuardada = localStorage.getItem("cache_productos_manu");
-    const tiempoCache = localStorage.getItem("cache_productos_tiempo");
-    const ahora = new Date().getTime();
-
-    if (!forzarRed && cacheGuardada && tiempoCache && (ahora - tiempoCache < 300000)) {
-        try { productos = JSON.parse(cacheGuardada); } catch(e) { productos = null; }
-    }
-
-    if (!productos) {
-        const res = await API.llamar("obtenerProductos", {}, "GET");
-        if (res && res.status === "success") {
-            productos = res.data;
-            localStorage.setItem("cache_productos_manu", JSON.stringify(productos));
-            localStorage.setItem("cache_productos_tiempo", ahora);
+        if (resProd && resProd.status === "success" && resProd.data) {
+            window.listaProductosCache = resProd.data;
+            window.listaProductosFiltradosCache = resProd.data;
+            paginaActual = 1;
+            renderizarTablaProductosAdmin();
         } else {
-            contenedor.innerHTML = `<p style="color: #ef4444; text-align: center;">Error al cargar el inventario.</p>`;
-            return;
+            tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
         }
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
     }
-
-    listaProductosCache = (productos || []).filter(p => {
-        let estadoProd = String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase();
-        return estadoProd.includes("DISPONIBLE");
-    });
-
-    listaProductosFiltradosCache = listaProductosCache;
-    paginaActual = 1;
-    renderizarTablaProductosPaginada();
 }
 
-function filtrarCatalogoEnVivo() {
-    const inputElem = document.getElementById("inputBuscadorCatalogo");
-    if (!inputElem) return;
-    const query = inputElem.value.toLowerCase().trim();
-    if (!query) {
-        listaProductosFiltradosCache = listaProductosCache;
-        paginaActual = 1;
-        renderizarTablaProductosPaginada();
+function renderizarTablaProductosAdmin() {
+    const tbody = document.getElementById("tablaProductosBody");
+    if (!tbody) return;
+
+    const lista = window.listaProductosFiltradosCache || [];
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">No hay productos registrados o coincidentes.</td></tr>`;
+        document.getElementById("lblPaginacionTexto").textContent = "Mostrando 0 a 0 de 0";
+        document.getElementById("lblPaginaActualNum").textContent = "Página 1 de 1";
         return;
     }
-    const terminos = query.split(/\s+/);
-    listaProductosFiltradosCache = listaProductosCache.filter(p => {
-        const sku = String(p.SKU || p.sku || "").toLowerCase();
-        const nombre = String(p.Nombre || p.nombre || "").toLowerCase();
-        const codigoBarra = String(p.Codigo_Barra || p.codigo_barra || "").toLowerCase();
-        const categoria = String(p.ID_Categoria || "").toLowerCase();
-        const material = String(p.Material_Oro || p.Material || "").toLowerCase();
-        const color = String(p.Color || "").toLowerCase();
-        const ubicacion = String(p.ID_Ubicacion || "").toLowerCase();
-        
-        return terminos.every(t => sku.includes(t) || codigoBarra.includes(t) || nombre.includes(t) || categoria.includes(t) || material.includes(t) || color.includes(t) || ubicacion.includes(t));
-    });
-    paginaActual = 1;
-    renderizarTablaProductosPaginada();
-}
 
-function cambiarPagina(delta) {
-    const totalPaginas = Math.ceil(listaProductosFiltradosCache.length / registrosPorPagina) || 1;
-    paginaActual += delta;
-    if (paginaActual < 1) paginaActual = 1;
-    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
-    renderizarTablaProductosPaginada();
-}
-
-function renderizarTablaProductosPaginada() {
-    const contenedor = document.getElementById("vistaProductosInterna");
-    const esAdmin = usuarioActual && (usuarioActual.rol.toUpperCase() === 'ADMIN' || usuarioActual.rol.toUpperCase() === 'ADMINISTRADOR');
-
-    if (listaProductosFiltradosCache.length === 0) { 
-        contenedor.innerHTML = `<p style="color: #64748b; text-align: center; padding: 2rem;">No se encontraron joyas disponibles.</p>`;
-        return; 
-    }
-
-    const totalRegistros = listaProductosFiltradosCache.length;
+    const totalRegistros = lista.length;
     const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina) || 1;
     if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    if (paginaActual < 1) paginaActual = 1;
 
     const inicio = (paginaActual - 1) * registrosPorPagina;
     const fin = inicio + registrosPorPagina;
-    const productosPagina = listaProductosFiltradosCache.slice(inicio, fin);
+    const paginaItems = lista.slice(inicio, fin);
 
-    const pagHtml = (pos) => `
-        <div class="pagination-container ${pos}">
-            <span>Mostrando <strong>${inicio + 1}</strong> a <strong>${Math.min(fin, totalRegistros)}</strong> de <strong>${totalRegistros}</strong></span>
-            <div class="pagination-buttons">
-                <button class="btn-page" onclick="cambiarPagina(-1)" ${paginaActual === 1 ? 'disabled' : ''}>◀ Anterior</button>
-                <span>Página ${paginaActual} de ${totalPaginas}</span>
-                <button class="btn-page" onclick="cambiarPagina(1)" ${paginaActual === totalPaginas ? 'disabled' : ''}>Siguiente ▶</button>
-            </div>
-        </div>`;
+    let valorOroActual = window.valorOroDelDiaCache || 250000;
+    let html = "";
 
-    let html = pagHtml('top-pagination');
-    html += `<div class="table-container"><table class="data-table"><thead><tr>`;
-    if (esAdmin) {
-        html += `<th><input type="checkbox" onclick="seleccionarTodosCheckboxes(this)"></th><th>Fecha</th><th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Categoría</th><th>Color</th><th>Material</th><th>Peso</th><th>Costo</th><th>Margen</th><th>Desc.</th><th>Venta Final</th><th>Ubicación</th><th>Foto</th><th>Etiqueta</th><th>Acciones</th>`;
-    } else {
-        html += `<th>SKU</th><th>Código de Barras</th><th>Producto</th><th>Color</th><th>Material</th><th>Peso</th><th>Venta Final</th><th>Ubicación</th><th>Foto</th>`;
-    }
-    html += `</tr></thead><tbody>`;
+    paginaItems.forEach(p => {
+        let sku = p.SKU || p.sku || "-";
+        let nombre = p.Nombre || p.nombre || "Joya sin nombre";
+        let categoria = p.ID_Categoria || p.categoria || "-";
+        let color = p.Color || p.color || "-";
+        let material = p.Material_Oro || p.Material || p.material || "ORO";
+        
+        let pesoCrudo = p.Peso || p.peso || 0;
+        let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-    productosPagina.forEach(p => {
-        let fotoHtml = p.Foto ? `<div class="img-thumbnail-container" onclick="abrirZoomImagen('${p.Foto}')"><img src="${p.Foto}" loading="lazy"></div>` : `💍`;
-        let costo = Number(p.Valor_Compra || (Number(p.Valor_Oro || 0) + Number(p.Valor_Piedra || 0))) || 0;
-        let margen = Number(p.Porcentaje_Venta || 100);
-        let descPct = Number(p.Tiene_Descuento || 0);
-        let pesoItem = parseFloat(String(p.Peso || 0).replace(',', '.')) || 0;
-        let baseVenta = Number(p.Valor_Piedra || 0) + (pesoItem * valorOroDelDiaCache);
-        let precioBase = baseVenta * (1 + (margen / 100));
-        let valorVenta = Math.round(precioBase - (precioBase * (descPct / 100)));
+        let costoItem = Number(p.Costo || p.costo) || 0;
+        let valPiedra = Number(p.Valor_Piedra) || 0;
+        let margen = Number(p.Porcentaje_Venta) || 100;
+        let descPct = Number(p.Tiene_Descuento) || 0;
+        let ubicacion = p.ID_Ubicacion || p.ubicacion || "VITRINA";
+        let foto = p.Foto || p.foto || "";
 
-        let colorTabla = p.Color || p.ID_Subcategoria || '-';
-        let materialTabla = p.Material_Oro || p.Material || '-';
-        let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '-';
-        let fotoVal = p.Foto || '';
+        // FÓRMULA MATEMÁTICA EXACTA Y UNIFICADA CON EL CATÁLOGO WEB
+        let baseVentaCalculada = valPiedra + (pesoItem * valorOroActual);
+        let precioBase = baseVentaCalculada * (1 + (margen / 100));
+        let valorVentaFinal = Math.round(precioBase - (precioBase * (descPct / 100)));
 
-        let metaArq = `&fecha_arq=${new Date().toISOString().split('T')[0]}&resp_arq=${encodeURIComponent(usuarioActual ? usuarioActual.nombre : '')}`;
-        let btnQr = `<td><button class="btn-action btn-qr" onclick="abrirModalEtiqueta('${p.SKU}', '${encodeURIComponent(p.Nombre || '')}', '${codigoBarraVal}', '${encodeURIComponent(fotoVal)}', '${valorVenta}', '${encodeURIComponent(metaArq)}')">🏷️</button></td>`;
+        let fotoHtml = foto ? `<img src="${foto}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="abrirZoomImagenSrc('${foto}')">` : `💍`;
+        let descBadge = descPct > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${descPct}%</span>` : `0%`;
 
-        html += `<tr>`;
-        if (esAdmin) {
-            let fechaLimpia = p.Fecha_Creacion ? String(p.Fecha_Creacion).split('T')[0] : '-';
-            let descBadge = descPct > 0 ? `<span class="badge" style="background-color: #ef4444;">${descPct}%</span>` : `0%`;
-            let acciones = `<td><div class="btn-action-container"><button class="btn-action btn-edit" onclick="abrirFormularioEditarProducto('${encodeURIComponent(JSON.stringify(p))}')">✏️</button><button class="btn-action btn-delete" onclick="eliminarProducto('${p.SKU}')">🗑️</button></div></td>`;
-            html += `<td><input type="checkbox" class="sku-checkbox" value="${p.SKU}"></td><td>${fechaLimpia}</td><td><strong>${p.SKU}</strong></td><td><code>${codigoBarraVal}</code></td><td>${p.Nombre}</td><td>${p.ID_Categoria}</td><td>${colorTabla}</td><td>${materialTabla}</td><td>${pesoItem}g</td><td>$${costo.toLocaleString()}</td><td>${margen}%</td><td>${descBadge}</td><td><strong style="color: #10b981;">$${valorVenta.toLocaleString()}</strong></td><td>${p.ID_Ubicacion}</td><td>${fotoHtml}</td>${btnQr}${acciones}`;
-        } else {
-            html += `<td><strong>${p.SKU}</strong></td><td><code>${codigoBarraVal}</code></td><td>${p.Nombre}</td><td>${colorTabla}</td><td>${materialTabla}</td><td>${pesoItem}g</td><td><strong style="color: #10b981;">$${valorVenta.toLocaleString()}</strong></td><td>${p.ID_Ubicacion}</td><td>${fotoHtml}</td>`;
-        }
-        html += `</tr>`;
+        html += `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px;"><input type="checkbox" class="check-producto-item" value="${sku}"></td>
+                <td style="padding: 10px; font-weight: 500; color: #0f172a; max-width: 220px;">${nombre}</td>
+                <td style="padding: 10px; color: #475569;">${categoria}</td>
+                <td style="padding: 10px; color: #475569;">${color}</td>
+                <td style="padding: 10px; color: #475569;">${material}</td>
+                <td style="padding: 10px;">${pesoItem}g</td>
+                <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
+                <td style="padding: 10px;">${margen}%</td>
+                <td style="padding: 10px;">${descBadge}</td>
+                <td style="padding: 10px; font-weight: bold; color: #059669;">$${valorVentaFinal.toLocaleString()}</td>
+                <td style="padding: 10px; color: #64748b;">${ubicacion}</td>
+                <td style="padding: 10px;">${fotoHtml}</td>
+                <td style="padding: 10px; text-align: center;">
+                    <button type="button" onclick="generarQrBarraAdmin('${sku}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Ver Etiquetas">🏷️</button>
+                </td>
+                <td style="padding: 10px; text-align: center;">
+                    <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️</button>
+                </td>
+            </tr>
+        `;
     });
-    html += `</tbody></table></div>`;
-    html += pagHtml('bottom-pagination');
-    contenedor.innerHTML = html;
+
+    tbody.innerHTML = html;
+
+    document.getElementById("lblPaginacionTexto").textContent = `Mostrando ${inicio + 1} a ${Math.min(fin, totalRegistros)} de ${totalRegistros} productos`;
+    document.getElementById("lblPaginaActualNum").textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById("btnPaginaAnterior").disabled = paginaActual === 1;
+    document.getElementById("btnPaginaSiguiente").disabled = paginaActual === totalPaginas;
 }
 
-function abrirModalEtiqueta(sku, nombreEncoded, codigoBarra, fotoEncoded, valorVentaStr, metaEncoded) {
-    let metadataArqueo = decodeURIComponent(metaEncoded || '');
-    document.getElementById("modalSkuLabel").textContent = `SKU: ${sku} | Barras: ${codigoBarra}`;
-    let certUrl = `https://glasas.github.io/MANU/catalogomanu?token=${btoa(sku)}${metadataArqueo}`;
-    document.getElementById("imgQrGenerado").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(certUrl)}`;
-    
-    try {
-        JsBarcode("#barcodeElement", codigoBarra && codigoBarra !== '-' ? codigoBarra : sku, {
-            format: "CODE128",
-            lineColor: "#0f172a",
-            width: 1.5,
-            height: 40,
-            displayValue: true,
-            fontSize: 12,
-            margin: 2
-        });
-    } catch(e) {
-        console.error("Error generando código de barras:", e);
+function cambiarPaginaProductos(direccion) {
+    const totalPaginas = Math.ceil((window.listaProductosFiltradosCache || []).length / registrosPorPagina) || 1;
+    paginaActual += direccion;
+    if (paginaActual < 1) paginaActual = 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    renderizarTablaProductosAdmin();
+}
+
+function filtrarProductosTabla() {
+    const texto = document.getElementById("buscadorProductos").value.trim().toLowerCase();
+    if (!window.listaProductosCache) return;
+
+    window.listaProductosFiltradosCache = window.listaProductosCache.filter(p => {
+        let sku = String(p.SKU || p.sku || "").toLowerCase();
+        let nombre = String(p.Nombre || p.nombre || "").toLowerCase();
+        let barras = String(p.Codigo_Barra || p.codigo_barra || "").toLowerCase();
+        return sku.includes(texto) || nombre.includes(texto) || barras.includes(texto);
+    });
+
+    paginaActual = 1;
+    renderizarTablaProductosAdmin();
+}
+
+function toggleSelectAllProductos(source) {
+    checkboxes = document.querySelectorAll('.check-producto-item');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+}
+
+function abrirModalNuevoProducto() {
+    document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
+    document.getElementById("formCrudProducto").reset();
+    document.getElementById("prodSkuOriginal").value = "";
+    document.getElementById("modalFormularioProducto").style.display = "flex";
+}
+
+function cerrarModalFormularioProducto() {
+    document.getElementById("modalFormularioProducto").style.display = "none";
+}
+
+async function guardarProductoInventario(event) {
+    event.preventDefault();
+    const skuOriginal = document.getElementById("prodSkuOriginal").value.trim();
+    const sku = document.getElementById("prodSku").value.trim();
+    const codigo_barra = document.getElementById("prodCodigoBarra").value.trim();
+    const nombre = document.getElementById("prodNombre").value.trim();
+    const categoria = document.getElementById("prodCategoria").value.trim();
+    const material = document.getElementById("prodMaterial").value.trim();
+    const color = document.getElementById("prodColor").value.trim();
+    const peso = Number(document.getElementById("prodPeso").value) || 0;
+    const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
+    const costo = Number(document.getElementById("prodCosto").value) || 0;
+    const porcentaje_venta = Number(document.getElementById("prodMargen").value) || 100;
+    const tiene_descuento = Number(document.getElementById("prodDescuento").value) || 0;
+    const ubicacion = document.getElementById("prodUbicacion").value.trim();
+    const foto = document.getElementById("prodFoto").value.trim();
+    const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
+
+    const accionApi = skuOriginal ? "actualizarProducto" : "guardarProducto";
+
+    const res = await API.llamar(accionApi, {
+        action: accionApi,
+        sku_original: skuOriginal,
+        sku: sku,
+        codigo_barra: codigo_barra,
+        nombre: nombre,
+        categoria: categoria,
+        material: material,
+        color: color,
+        peso: peso,
+        valor_piedra: valor_piedra,
+        costo: costo,
+        porcentaje_venta: porcentaje_venta,
+        tiene_descuento: tiene_descuento,
+        ubicacion: ubicacion,
+        foto: foto,
+        usuario: usuario
+    }, "POST");
+
+    if (res && res.status === "success") {
+        alert(res.message || "Operación realizada con éxito.");
+        cerrarModalFormularioProducto();
+        cargarListaProductos();
+    } else {
+        alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
+    }
+}
+
+function editarProducto(sku) {
+    const prod = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === sku.toUpperCase());
+    if (!prod) {
+        alert("No se encontró el producto para editar.");
+        return;
     }
 
-    document.getElementById("modalQrBarra").classList.add("active");
+    document.getElementById("modalProductoTitulo").textContent = `Editar Producto: ${sku}`;
+    document.getElementById("prodSkuOriginal").value = sku;
+    document.getElementById("prodSku").value = prod.SKU || prod.sku || "";
+    document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
+    document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
+    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "";
+    document.getElementById("prodMaterial").value = prod.Material_Oro || prod.Material || prod.material || "";
+    document.getElementById("prodColor").value = prod.Color || prod.color || "";
+    document.getElementById("prodPeso").value = prod.Peso || prod.peso || 0;
+    document.getElementById("prodValorPiedra").value = prod.Valor_Piedra || prod.valor_piedra || 0;
+    document.getElementById("prodCosto").value = prod.Costo || prod.costo || 0;
+    document.getElementById("prodMargen").value = prod.Porcentaje_Venta || prod.porcentaje_venta || 100;
+    document.getElementById("prodDescuento").value = prod.Tiene_Descuento || prod.tiene_descuento || 0;
+    document.getElementById("prodUbicacion").value = prod.ID_Ubicacion || prod.ubicacion || "";
+    document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
+
+    document.getElementById("modalFormularioProducto").style.display = "flex";
 }
 
-function abrirZoomImagen(url) { document.getElementById("imgModalSrc").src = url; document.getElementById("imageModal").classList.add("active"); }
-function cerrarZoomImagen() { document.getElementById("imageModal").classList.remove("active"); }
-function cerrarModalQr() { document.getElementById("modalQrBarra").classList.remove("active"); }
+async function eliminarProductosSeleccionados() {
+    const checks = document.querySelectorAll('.check-producto-item:checked');
+    if (checks.length === 0) {
+        alert("Por favor seleccione al menos un producto para eliminar.");
+        return;
+    }
 
-function descargarQrPNG() {
-    let img = document.getElementById("imgQrGenerado");
-    if (!img || !img.src) return;
-    let a = document.createElement('a');
-    a.href = img.src;
-    a.download = 'etiqueta_qr_manu.png';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    if (!confirm(`¿Está seguro de eliminar ${checks.length} producto(s) seleccionado(s)?`)) return;
+
+    let skusAEliminar = Array.from(checks).map(cb => cb.value);
+    
+    for (let sku of skusAEliminar) {
+        await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
+    }
+
+    alert("Productos eliminados correctamente.");
+    cargarListaProductos();
 }
 
-function descargarBarcodePNG() {
-    let svg = document.getElementById("barcodeElement");
-    if (!svg) return;
-    let svgData = new XMLSerializer().serializeToString(svg);
-    let canvas = document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
-    let img = new Image();
-    img.onload = function() {
-        canvas.width = img.width || 300;
-        canvas.height = img.height || 100;
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-        let pngFile = canvas.toDataURL("image/png");
-        let downloadLink = document.createElement("a");
-        downloadLink.href = pngFile;
-        downloadLink.download = "codigo_barras_manu.png";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+function exportarProductosCSV() {
+    alert("Función de exportación CSV activa.");
 }
 
-async function eliminarProducto(sku) {
-    if (!confirm(`¿Eliminar producto SKU [${sku}]?`)) return;
-    const res = await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
-    if (res && res.status === "success") {
-        alert(res.message);
-        localStorage.removeItem("cache_productos_manu");
-        renderizarModuloProductos(document.getElementById('contentBody'));
-    } else {
-        alert("Error al eliminar producto.");
+function abrirModalImportarExcel() {
+    alert("Módulo de importación activo.");
+}
+
+function abrirModalQrCatalogoAdmin() {
+    alert("Módulo QR de Catálogo activo.");
+}
+
+function generarQrBarraAdmin(sku) {
+    alert(`Generando códigos para SKU: ${sku}`);
+}
+
+function abrirZoomImagenSrc(url) {
+    const modal = document.getElementById("imageModal");
+    const img = document.getElementById("imgModalSrc");
+    if (modal && img) {
+        img.src = url;
+        modal.style.display = "flex";
     }
 }
