@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Íntegra y Completa con SKU Correctamente Codificado para URL
+ * Versión Íntegra y Completa con QR apuntando al Certificado (cert)
  */
 
 async function renderizarModuloProductos(container) {
@@ -425,7 +425,7 @@ function cerrarZoomImagen() {
     }
 }
 
-// ================= MÓDULO: ETIQUETAS (QR CON LINK WEB CODIFICADO Y BARRAS) =================
+// ================= MÓDULO: ETIQUETAS (QR CON LINK CERT Y BARRAS) =================
 
 function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     let modalID = "modalEtiquetaJoya";
@@ -442,10 +442,10 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
 
     const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
     
-    // URL del catálogo web con el SKU debidamente codificado mediante encodeURIComponent
-    const linkWebProducto = `https://glasas.github.io/MANU/catalogomanu?sku=${encodeURIComponent(sku)}`;
+    // URL del certificado con el SKU debidamente codificado mediante encodeURIComponent
+    const linkCertProducto = `https://glasas.github.io/MANU/cert?sku=${encodeURIComponent(sku)}`;
     
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(linkWebProducto)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(linkCertProducto)}`;
     const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(valorBarras)}&scale=3&height=12&includetext=true`;
 
     modalDiv.innerHTML = `
@@ -456,8 +456,8 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
             
             <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:15px;">
                 <div>
-                    <img id="imgQrCanvas" src="${qrUrl}" crossorigin="anonymous" alt="QR Web" style="width:110px; height:110px; border:1px solid #e2e8f0; padding:3px; border-radius:6px;" />
-                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">QR Catálogo Web</span>
+                    <img id="imgQrCanvas" src="${qrUrl}" crossorigin="anonymous" alt="QR Certificado" style="width:110px; height:110px; border:1px solid #e2e8f0; padding:3px; border-radius:6px;" />
+                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">QR Certificado</span>
                 </div>
                 <div>
                     <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:140px; height:60px; object-fit:contain;" />
@@ -469,7 +469,7 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
 
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <div style="display:flex; gap:8px;">
-                    <button onclick="descargarImagenPng('imgQrCanvas', 'QR_Web_${sku}.png')" style="flex:1; padding:8px; background:#0284c7; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📥 Descargar QR</button>
+                    <button onclick="descargarImagenPng('imgQrCanvas', 'QR_Cert_${sku}.png')" style="flex:1; padding:8px; background:#0284c7; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📥 Descargar QR</button>
                     <button onclick="descargarImagenPng('imgBarcodeCanvas', 'Barras_${sku}.png')" style="flex:1; padding:8px; background:#0d9488; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📥 Descargar Barras</button>
                 </div>
                 <button onclick="document.getElementById('${modalID}').style.display='none'" style="width:100%; padding:8px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
