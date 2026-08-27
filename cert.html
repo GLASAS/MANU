@@ -73,6 +73,10 @@
                     Bogotá D.C., Colombia<br>
                     <em style="color: #475569; margin-top: 4px; display: inline-block;">Certificamos la autenticidad y calidad de esta pieza de alta joyería.</em>
                 </div>
+                
+                <div style="text-align: right; margin-top: 15px;">
+                    <span id="lblCertVersion" style="font-size: 0.75rem; color: #94a3b8;">Versión • MANU JOYEROS</span>
+                </div>
             </div>
         </div>
 
@@ -87,6 +91,13 @@
         let valorOroDiaCert = 250000;
 
         document.addEventListener("DOMContentLoaded", async () => {
+            if (typeof CONFIG !== 'undefined') {
+                const elVer = document.getElementById("lblCertVersion");
+                if (elVer) {
+                    elVer.textContent = `Versión ${CONFIG.VERSION} • ${CONFIG.NOMBRE_EMPRESA}`;
+                }
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
 
@@ -131,7 +142,6 @@
                         document.getElementById("lblCertSku").textContent = `SKU: ${sku}`;
                         document.getElementById("lblCertNombre").textContent = nombre;
                         
-                        // SE CONSTRUYE LA LÍNEA DE DETALLES EXCLUYENDO EL PESO
                         let detalleTexto = `Material: ${material}`;
                         if (color) {
                             detalleTexto += ` • Color: ${color}`;
