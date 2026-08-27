@@ -1,5 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
+ * Versión Íntegra y Completa con Dos Botones (Descargar Formato y Guardar Arqueo Excel)
  */
 
 let listaInventarioCache = [];
@@ -15,7 +16,8 @@ async function renderizarModuloInventario(container) {
             <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.25rem;">Verifique existencias reales en vitrinas y caja fuerte escaneando o buscando por SKU, código de barras o nombre.</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;">
-                <button class="btn-modern btn-success-action" onclick="exportarArqueoExcel()">📥 Descargar Formato Excel</button>
+                <button class="btn-modern btn-success-action" onclick="exportarFormatoExcelVacio()">📥 Descargar Formato Excel</button>
+                <button class="btn-modern" onclick="exportarArqueoExcel()" style="background: #0284c7; color: white;">📊 Guardar Arqueo (Excel)</button>
                 <button class="btn-modern btn-danger-action" onclick="limpiarArqueoFisico()">🧹 Limpiar</button>
             </div>
 
@@ -249,8 +251,20 @@ function limpiarArqueoFisico() {
     renderizarTablaArqueo();
 }
 
+function exportarFormatoExcelVacio() {
+    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos para exportar formato."); return; }
+    let csv = "SKU;Codigo_Barra;Nombre;Categoria;Ubicacion;Peso;Conteo_Fisico\n";
+    listaInventarioCache.forEach(p => {
+        csv += [p.SKU, p.Codigo_Barra || "", `"${(p.Nombre || "").replace(/"/g, '""')}"`, p.ID_Categoria || "", p.ID_Ubicacion || "", p.Peso || 0, ""].join(";") + "\n";
+    });
+    let link = document.createElement("a");
+    link.href = encodeURI("data:text/csv;charset=utf-8,\uFEFF" + csv);
+    link.download = `formato_inventario_vacio.csv`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+}
+
 function exportarArqueoExcel() {
-    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos para exportar."); return; }
+    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos de arqueo para exportar."); return; }
     
     let responsable = document.getElementById("arqResponsableSelect")?.value || "No asignado";
     let fecha = document.getElementById("arqFecha")?.value || new Date().toISOString().split('T')[0];
