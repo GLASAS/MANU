@@ -43,7 +43,7 @@
         <div class="cert-card" id="certContainer">
             <div class="cert-header">
                 <img src="manu_joyeros.jpg" alt="MANU JOYEROS" class="cert-logo">
-                <div class="cert-title">Certificado Digital de Autenticidad</div>
+                <div class="cert-title" id="certMainTitle">CERTIFICADO DE AUTENTICIDAD Y GARANTÍA</div>
             </div>
 
             <div class="cert-body">
@@ -51,49 +51,41 @@
                     <span style="font-size: 4rem;">💍</span>
                 </div>
 
-                <div class="cert-grid">
-                    <div class="cert-field">
-                        <span class="cert-field-label">SKU / Referencia</span>
-                        <span class="cert-field-value" id="lblCertSku">Cargando...</span>
-                    </div>
-                    <div class="cert-field">
-                        <span class="cert-field-label">Código de Barras</span>
-                        <span class="cert-field-value" id="lblCertBarra">-</span>
-                    </div>
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <span id="lblCertSku" style="background: #0f172a; color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;">SKU: -</span>
                 </div>
 
-                <div class="cert-field" style="margin-bottom: 20px;">
-                    <span class="cert-field-label">Descripción de la Joya</span>
-                    <span class="cert-field-value" id="lblCertNombre">Cargando detalles de la pieza...</span>
+                <div class="cert-field" style="margin-bottom: 15px; text-align: center;">
+                    <span class="cert-field-value" id="lblCertNombre" style="font-size: 1.05rem; font-weight: bold; color: #0f172a; display: block; line-height: 1.4;">Cargando detalles de la pieza...</span>
+                    <span id="lblCertDetallesMaterial" style="font-size: 0.85rem; color: #64748b; margin-top: 4px; display: block;">-</span>
                 </div>
 
-                <div class="cert-grid">
-                    <div class="cert-field">
-                        <span class="cert-field-label">Categoría / Material</span>
-                        <span class="cert-field-value" id="lblCertMaterial">-</span>
-                    </div>
-                    <div class="cert-field">
-                        <span class="cert-field-label">Ubicación / Vitrina</span>
-                        <span class="cert-field-value" id="lblCertUbicacion">-</span>
-                    </div>
+                <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 20px;">
+                    <span style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: bold; display: block; margin-bottom: 4px;">VALOR COMERCIAL ESTIMADO</span>
+                    <span id="lblCertValorComercial" style="font-size: 1.5rem; font-weight: bold; color: #059669;">$0 COP</span>
                 </div>
 
                 <div class="cert-seal">
-                    <strong>MANU JOYEROS S.A.S.</strong><br>
-                    Este documento certifica la trazabilidad y calidad garantizada de la pieza descrita conforme a los estándares de alta joyería.<br>
-                    <em style="color: #d97706; margin-top: 6px; display: inline-block;">🪙 ¡Joyas que trascienden el tiempo!</em>
+                    <strong>MANU JOYEROS</strong><br>
+                    NIT: 902.078.370-8 • Tel: +57 (311) 888 6137<br>
+                    Dirección Principal: Calle 114 # 6 A - 92, Local 301<br>
+                    Hacienda Santa Barbara<br>
+                    Bogotá D.C., Colombia<br>
+                    <em style="color: #475569; margin-top: 4px; display: inline-block;">Certificamos la autenticidad y calidad de esta pieza de alta joyería.</em>
                 </div>
             </div>
         </div>
 
         <div class="no-print">
-            <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar Certificado</button>
+            <button class="btn-print" onclick="window.print()">🖨️ Imprimir Certificado</button>
         </div>
     </div>
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script>
+        let valorOroDiaCert = 250000;
+
         document.addEventListener("DOMContentLoaded", async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
@@ -106,19 +98,47 @@
             try {
                 const skuBuscado = atob(token).trim();
 
-                const res = await API.llamar("obtenerProductos", {}, "GET");
-                if (res && res.status === "success" && res.data) {
-                    const producto = res.data.find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuBuscado.toUpperCase());
+                const [resOro, resProd] = await Promise.all([
+                    API.llamar("obtenerValorOroDia", {}, "GET"),
+                    API.llamar("obtenerProductos", {}, "GET")
+                ]);
+
+                if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
+                    valorOroDiaCert = Number(resOro.valor_oro_dia);
+                }
+
+                if (resProd && resProd.status === "success" && resProd.data) {
+                    const producto = resProd.data.find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuBuscado.toUpperCase());
 
                     if (producto) {
-                        document.getElementById("lblCertSku").textContent = producto.SKU || producto.sku || "-";
-                        document.getElementById("lblCertBarra").textContent = producto.Codigo_Barra || producto.codigo_barra || "-";
-                        document.getElementById("lblCertNombre").textContent = producto.Nombre || producto.nombre || "Joya Exclusiva MANU";
+                        let sku = producto.SKU || producto.sku || "-";
+                        let nombre = producto.Nombre || producto.nombre || "Joya Exclusiva MANU";
+                        let material = producto.Material_Oro || producto.Material || producto.material || "ORO";
+                        let color = producto.Color || producto.color || "";
                         
-                        let materialTxt = (producto.Material_Oro || producto.Material || "ORO") + (producto.Color ? ' • ' + producto.Color : '');
-                        document.getElementById("lblCertMaterial").textContent = materialTxt;
+                        let pesoCrudo = producto.Peso || producto.peso || 0;
+                        let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
+
+                        let valPiedra = Number(producto.Valor_Piedra) || 0;
+                        let margen = Number(producto.Porcentaje_Venta) || 100;
+                        let descPct = Number(producto.Tiene_Descuento) || 0;
+
+                        let baseVentaCalculada = valPiedra + (pesoItem * valorOroDiaCert);
+                        let precioBase = baseVentaCalculada * (1 + (margen / 100));
+                        let valorVenta = precioBase - (precioBase * (descPct / 100));
+                        let valorVentaFinal = Math.round(isNaN(valorVenta) ? 0 : valorVenta);
+
+                        document.getElementById("lblCertSku").textContent = `SKU: ${sku}`;
+                        document.getElementById("lblCertNombre").textContent = nombre;
                         
-                        document.getElementById("lblCertUbicacion").textContent = producto.ID_Ubicacion || producto.ubicacion || "VITRINA";
+                        // SE CONSTRUYE LA LÍNEA DE DETALLES EXCLUYENDO EL PESO
+                        let detalleTexto = `Material: ${material}`;
+                        if (color) {
+                            detalleTexto += ` • Color: ${color}`;
+                        }
+                        document.getElementById("lblCertDetallesMaterial").textContent = detalleTexto;
+
+                        document.getElementById("lblCertValorComercial").textContent = `$${valorVentaFinal.toLocaleString()} COP`;
 
                         if (producto.Foto || producto.foto) {
                             document.getElementById("certImgBox").innerHTML = `<img src="${producto.Foto || producto.foto}" alt="Joya Certificada">`;
