@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
- * Versión Íntegra y Completa con Diseño Ajustado y Dos Botones de Excel
+ * Versión Íntegra y Completa con Ajuste de Columna de Producto y Dos Botones de Excel
  */
 
 let listaInventarioCache = [];
@@ -216,8 +216,8 @@ function renderizarTablaArqueo() {
     listaInventarioFiltradosCache.forEach(p => {
         let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '-';
         let badgeEstado = p.auditado 
-            ? `<span class="badge" style="background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">✔ Encontrado</span>` 
-            : `<span class="badge" style="background-color: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">✖ FALTANTE</span>`;
+            ? `<span class="badge" style="background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">✔ Encontrado</span>` 
+            : `<span class="badge" style="background-color: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">✖ FALTANTE</span>`;
         
         let btnAccion = p.auditado
             ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Desmarcar</button>`
@@ -227,7 +227,7 @@ function renderizarTablaArqueo() {
             <td style="word-break: break-word; vertical-align: middle;">${badgeEstado}</td>
             <td style="word-break: break-word; vertical-align: middle;"><strong>${p.SKU}</strong></td>
             <td style="word-break: break-word; vertical-align: middle;"><code>${codigoBarraVal}</code></td>
-            <td style="word-break: break-word; vertical-align: middle; line-height: 1.4;">${p.Nombre || ''}</td>
+            <td style="word-break: break-word; white-space: normal; vertical-align: middle; line-height: 1.4;">${p.Nombre || ''}</td>
             <td style="word-break: break-word; vertical-align: middle; text-align: right;">${btnAccion}</td>
         </tr>`;
     });
