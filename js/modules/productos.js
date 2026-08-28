@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con SKU Automático por Categoría, Código de Barras Único y CSV Sincronizado
+ * Versión Íntegra con SKU Automático, Importación CSV y Spinner de Carga Global
  */
 
 async function renderizarModuloProductos(container) {
@@ -155,7 +155,7 @@ async function renderizarModuloProductos(container) {
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px;">
                         <button type="button" onclick="cerrarModalFormularioProducto()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                        <button type="submit" style="padding: 8px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">💾 Guardar Producto</button>
+                        <button type="submit" id="btnGuardarProdSubmit" style="padding: 8px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">💾 Guardar Producto</button>
                     </div>
                 </form>
             </div>
@@ -176,10 +176,26 @@ async function renderizarModuloProductos(container) {
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button type="button" onclick="cerrarModalImportarExcel()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                    <button type="button" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
+                    <button type="button" id="btnProcesarCsv" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
                 </div>
             </div>
         </div>
+
+        <!-- SPINNER / MODAL GLOBAL DE CARGA EN PROCESO -->
+        <div id="modalSpinnerGlobal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); max-width: 300px; width: 90%;">
+                <div style="width: 50px; height: 50px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: girarSpinner 0.8s linear infinite; margin: 0 auto 15px auto;"></div>
+                <h4 id="lblSpinnerTexto" style="color: #0f172a; margin: 0; font-size: 1rem;">Procesando...</h4>
+                <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Por favor espere un momento.</p>
+            </div>
+        </div>
+
+        <style>
+            @keyframes girarSpinner {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
 
         <!-- MODAL ZOOM IMAGEN -->
         <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
@@ -191,6 +207,19 @@ async function renderizarModuloProductos(container) {
     `;
 
     await cargarListaProductos();
+}
+
+// Funciones auxiliares para mostrar y ocultar el círculo girando (Spinner)
+function mostrarSpinner(texto = "Procesando...") {
+    const lbl = document.getElementById("lblSpinnerTexto");
+    if (lbl) lbl.textContent = texto;
+    const modal = document.getElementById("modalSpinnerGlobal");
+    if (modal) modal.style.display = "flex";
+}
+
+function ocultarSpinner() {
+    const modal = document.getElementById("modalSpinnerGlobal");
+    if (modal) modal.style.display = "none";
 }
 
 async function cargarListaProductos() {
@@ -374,7 +403,6 @@ function generarSkuYBarraAutomatico() {
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
     
-    // Regla exacta: ANILLOS->AN, CADENAS->CA, CANDONGAS->CAN, etc.
     let prefijo = "JO";
     if (catValor.includes("CANDON")) {
         prefijo = "CAN";
@@ -446,6 +474,8 @@ function procesarImagenSeleccionada(input) {
 
 async function guardarProductoInventario(event) {
     event.preventDefault();
+    mostrarSpinner("Guardando producto...");
+
     const skuOriginal = document.getElementById("prodSkuOriginal").value.trim();
     const sku = document.getElementById("prodSku").value.trim();
     const codigo_barra = document.getElementById("prodCodigoBarra").value.trim();
@@ -464,31 +494,39 @@ async function guardarProductoInventario(event) {
 
     const accionApi = skuOriginal ? "actualizarProducto" : "guardarProducto";
 
-    const res = await API.llamar(accionApi, {
-        action: accionApi,
-        sku_original: skuOriginal,
-        sku: sku,
-        codigo_barra: codigo_barra,
-        nombre: nombre,
-        categoria: categoria,
-        material: material,
-        color: color,
-        peso: peso,
-        valor_piedra: valor_piedra,
-        costo: costo,
-        porcentaje_venta: porcentaje_venta,
-        tiene_descuento: tiene_descuento,
-        ubicacion: ubicacion,
-        foto: foto,
-        usuario: usuario
-    }, "POST");
+    try {
+        const res = await API.llamar(accionApi, {
+            action: accionApi,
+            sku_original: skuOriginal,
+            sku: sku,
+            codigo_barra: codigo_barra,
+            nombre: nombre,
+            categoria: categoria,
+            material: material,
+            color: color,
+            peso: peso,
+            valor_piedra: valor_piedra,
+            costo: costo,
+            porcentaje_venta: porcentaje_venta,
+            tiene_descuento: tiene_descuento,
+            ubicacion: ubicacion,
+            foto: foto,
+            usuario: usuario
+        }, "POST");
 
-    if (res && res.status === "success") {
-        alert(res.message || "Operación realizada con éxito.");
-        cerrarModalFormularioProducto();
-        cargarListaProductos();
-    } else {
-        alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
+        ocultarSpinner();
+
+        if (res && res.status === "success") {
+            alert(res.message || "Operación realizada con éxito.");
+            cerrarModalFormularioProducto();
+            cargarListaProductos();
+        } else {
+            alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
+        }
+    } catch(err) {
+        ocultarSpinner();
+        console.error(err);
+        alert("⚠️ Error de conexión al guardar el producto.");
     }
 }
 
@@ -527,12 +565,14 @@ async function eliminarProductosSeleccionados() {
 
     if (!confirm(`¿Está seguro de eliminar ${checks.length} producto(s) seleccionado(s)?`)) return;
 
+    mostrarSpinner("Eliminando productos...");
     let skusAEliminar = Array.from(checks).map(cb => cb.value);
     
     for (let sku of skusAEliminar) {
         await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
     }
 
+    ocultarSpinner();
     alert("Productos eliminados correctamente.");
     cargarListaProductos();
 }
@@ -575,7 +615,7 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO EXACTO =================
+// ================= MÓDULO DE IMPORTACIÓN CSV CON SPINNER DE PROCESO =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -596,7 +636,7 @@ function abrirModalImportarExcel() {
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button type="button" onclick="cerrarModalImportarExcel()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                    <button type="button" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
+                    <button type="button" id="btnProcesarCsv" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
                 </div>
             </div>
         `;
@@ -628,6 +668,8 @@ async function procesarArchivoCsvImportado() {
             alert("⚠️ El archivo CSV está vacío o no contiene registros válidos.");
             return;
         }
+
+        mostrarSpinner("Procesando e importando productos...");
 
         let importadosCount = 0;
         const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
@@ -680,6 +722,7 @@ async function procesarArchivoCsvImportado() {
             }
         }
 
+        ocultarSpinner();
         alert(`✅ ¡Importación completada con éxito! Se procesaron y cargaron ${importadosCount} productos al inventario.`);
         cerrarModalImportarExcel();
         cargarListaProductos();
