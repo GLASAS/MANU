@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Importación Masiva CSV Operativa, SKU Automático y Enlace Limpio
+ * Versión Íntegra y Completa con SKU Automático, Código de Barras Bloqueado y CSV Operativo
  */
 
 async function renderizarModuloProductos(container) {
@@ -17,8 +17,6 @@ async function renderizarModuloProductos(container) {
                     <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
                 ` : ''}
                 <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
-                <button type="button" class="btn-action" onclick="window.open('https://glasas.github.io/MANU/catalogomanu', '_blank')" style="background: #d97706; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🌐 Catálogo Web</button>
-                <button type="button" class="btn-action" onclick="abrirModalQrCatalogoAdmin()" style="background: #7c3aed; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📱 QR Web</button>
                 ${esAdmin ? `
                     <button type="button" class="btn-action text-danger" onclick="eliminarProductosSeleccionados()" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🗑️ Eliminar</button>
                 ` : ''}
@@ -563,8 +561,32 @@ function exportarProductosCSV() {
 
 // ================= MÓDULO DE IMPORTACIÓN CSV OPERATIVO =================
 function abrirModalImportarExcel() {
-    const modal = document.getElementById("modalImportarExcel");
-    if (modal) modal.style.display = "flex";
+    let modal = document.getElementById("modalImportarExcel");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "modalImportarExcel";
+        modal.style.cssText = "display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 9998; position: fixed; top: 0; left: 0; width: 100%; height: 100%;";
+        modal.innerHTML = `
+            <div style="background: white; width: 95%; max-width: 480px; border-radius: 12px; padding: 25px;" onclick="event.stopPropagation()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #0f172a;">📁 Importar Productos Masivos (CSV)</h3>
+                    <button type="button" onclick="cerrarModalImportarExcel()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
+                </div>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con el formato exportado para cargar el inventario masivamente.</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <input type="file" id="inputArchivoCsvImport" accept=".csv" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="cerrarModalImportarExcel()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                    <button type="button" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.style.display = "flex";
 }
 
 function cerrarModalImportarExcel() {
@@ -575,7 +597,7 @@ function cerrarModalImportarExcel() {
 async function procesarArchivoCsvImportado() {
     const input = document.getElementById("inputArchivoCsvImport");
     if (!input || !input.files || input.files.length === 0) {
-        alert("Por favor seleccione un archivo CSV válido.");
+        alert("⚠️ Por favor seleccione un archivo CSV válido antes de procesar.");
         return;
     }
 
@@ -587,19 +609,17 @@ async function procesarArchivoCsvImportado() {
         const lineas = contenido.split(/\r\n|\n/);
         
         if (lineas.length < 2) {
-            alert("El archivo CSV está vacío o no tiene el formato correcto.");
+            alert("⚠️ El archivo CSV está vacío o no contiene registros válidos.");
             return;
         }
 
         let importadosCount = 0;
         const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
 
-        // Omitir la cabecera (fila 0) y recorrer cada línea
         for (let i = 1; i < lineas.length; i++) {
             let linea = lineas[i].trim();
             if (!linea) continue;
 
-            // Separar por punto y coma (;) o coma (,)
             let columnas = linea.split(';');
             if (columnas.length < 3) {
                 columnas = linea.split(',');
@@ -612,7 +632,7 @@ async function procesarArchivoCsvImportado() {
                 let categoria = columnas[3] ? columnas[3].replace(/"/g, '').trim() : 'ANILLOS';
                 let color = columnas[4] ? columnas[4].replace(/"/g, '').trim() : 'AMARILLO';
                 let material = columnas[5] ? columnas[5].replace(/"/g, '').trim() : 'ORO';
-                let peso = Number(columnas[6]) || 0;
+                let peso = Number(String(columnas[6] || 0).replace(',', '.')) || 0;
                 let costo = Number(columnas[7]) || 0;
                 let margen = Number(columnas[8]) || 100;
                 let descuento = Number(columnas[9]) || 0;
@@ -645,7 +665,7 @@ async function procesarArchivoCsvImportado() {
             }
         }
 
-        alert(`¡Importación completada con éxito! Se procesaron ${importadosCount} productos.`);
+        alert(`✅ ¡Importación completada con éxito! Se procesaron y cargaron ${importadosCount} productos al inventario.`);
         cerrarModalImportarExcel();
         cargarListaProductos();
     };
@@ -689,7 +709,6 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
 
     const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
     const skuToken = btoa(sku);
-    // Ruta corregida a MANU sin '_joyeros'
     const certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
     
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(certLink)}`;
