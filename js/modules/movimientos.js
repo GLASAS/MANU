@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Entradas, Salidas y Kardex (movimientos.js)
- * Versión Íntegra con Acciones de Backend Sincronizadas
+ * Versión Íntegra con Doble Parámetro de Envío (action y accion) para Compatibilidad Absoluta con el Backend
  */
 
 async function renderizarModuloEntradasSalidas(container, tipo = 'ENTRADAS') {
@@ -64,11 +64,13 @@ async function ejecutarRegistroMovimiento(event, tipo) {
     const observaciones = document.getElementById("movObservaciones").value.trim();
     const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? (usuarioActual.nombre || usuarioActual.usuario) : 'Admin';
 
-    // Acciones simplificadas ("entrada" / "salida") compatibles con el backend estándar de Apps Script
-    const accionApi = esEntrada ? "entrada" : "salida";
+    // Definimos ambos nombres de acción habituales que suelen requerir los scripts de Apps Script
+    const nombreAccion = esEntrada ? "registrarEntrada" : "registrarSalida";
 
     const payload = {
-        action: accionApi,
+        action: nombreAccion,
+        accion: nombreAccion,
+        tipo: esEntrada ? "ENTRADA" : "SALIDA",
         sku: sku,
         cantidad: cantidad,
         motivo: motivo,
@@ -77,7 +79,7 @@ async function ejecutarRegistroMovimiento(event, tipo) {
     };
 
     try {
-        const res = await API.llamar(accionApi, payload, "POST");
+        const res = await API.llamar(nombreAccion, payload, "POST");
         if (res && res.status === "success") {
             alert(res.message || "Movimiento registrado con éxito.");
             document.getElementById("formMovimientoInventario").reset();
