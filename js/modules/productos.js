@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Mapeo por Cabeceras y Cálculo Automático de Valor Compra (Columna R)
+ * Versión Íntegra con Cálculo Exacto de Valor Venta (Oro_Dia * Peso + Valor_Piedra)
  */
 
 async function renderizarModuloProductos(container) {
@@ -44,6 +44,7 @@ async function renderizarModuloProductos(container) {
                             <th style="padding: 10px;">Peso</th>
                             ${esAdmin ? `
                                 <th style="padding: 10px;">Costo Oro</th>
+                                <th style="padding: 10px;">Valor Venta (Base)</th>
                                 <th style="padding: 10px;">Margen</th>
                                 <th style="padding: 10px;">Desc.</th>
                             ` : ''}
@@ -55,7 +56,7 @@ async function renderizarModuloProductos(container) {
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody">
-                        <tr><td colspan="${esAdmin ? '14' : '10'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
+                        <tr><td colspan="${esAdmin ? '15' : '10'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -226,7 +227,7 @@ async function cargarListaProductos() {
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
     );
-    const colspanVal = esAdmin ? '14' : '10';
+    const colspanVal = esAdmin ? '15' : '10';
 
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
@@ -262,7 +263,7 @@ function renderizarTablaProductosAdmin() {
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
     );
-    const colspanVal = esAdmin ? '14' : '10';
+    const colspanVal = esAdmin ? '15' : '10';
 
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
@@ -305,9 +306,10 @@ function renderizarTablaProductosAdmin() {
         let ubicacion = p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "VITRINA";
         let foto = p.Foto || p.foto || "";
 
-        let baseVentaCalculada = valPiedra + (pesoItem * valorOroActual);
-        let precioBase = baseVentaCalculada * (1 + (margen / 100));
-        let valorVentaFinal = Math.round(precioBase - (precioBase * (descPct / 100)));
+        // VALOR VENTA BASE = (oro_dia * peso) + valor_piedra
+        let valorVentaBase = (valorOroActual * pesoItem) + valPiedra;
+        let precioBaseConMargen = valorVentaBase * (1 + (margen / 100));
+        let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
 
         let fotoHtml = foto ? `<img src="${foto}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="abrirZoomImagenSrc('${foto}')">` : `💍`;
         let descBadge = descPct > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${descPct}%</span>` : `0%`;
@@ -325,6 +327,7 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px;">${pesoItem}g</td>
                 ${esAdmin ? `
                     <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
+                    <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
                     <td style="padding: 10px;">${margen}%</td>
                     <td style="padding: 10px;">${descBadge}</td>
                 ` : ''}
