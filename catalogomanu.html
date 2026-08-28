@@ -116,9 +116,60 @@
         .btn-whatsapp-link:hover { background: #20ba5a; }
 
         .catalog-footer { text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 0.8rem; border-top: 1px solid #e2e8f0; margin-top: 40px; line-height: 1.5; }
+
+        /* ESTILOS DEL SPINNER / MODAL DE PROCESAMIENTO */
+        #spinnerOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .spinner-modal {
+            background: #ffffff;
+            padding: 30px 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            animation: fadeInScale 0.2s ease-in-out;
+        }
+        .spinner-circle {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #0f172a;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
+
+    <!-- MODAL / SPINNER DE CARGA FLOTANTE -->
+    <div id="spinnerOverlay">
+        <div class="spinner-modal">
+            <div class="spinner-circle"></div>
+            <div id="spinnerTexto" style="font-weight: 700; color: #0f172a; font-size: 1.05rem; margin-bottom: 6px;">Procesando...</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Por favor espere un momento.</div>
+        </div>
+    </div>
 
     <header class="catalog-header">
         <div class="catalog-logo-container">
@@ -158,6 +209,19 @@
         let productosGlobales = [];
         let valorOroDiaGlobal = 250000;
 
+        // Funciones del Spinner flotante
+        function mostrarSpinner(mensaje = "Procesando...") {
+            const overlay = document.getElementById("spinnerOverlay");
+            const texto = document.getElementById("spinnerTexto");
+            if (texto) texto.textContent = mensaje;
+            if (overlay) overlay.style.display = "flex";
+        }
+
+        function ocultarSpinner() {
+            const overlay = document.getElementById("spinnerOverlay");
+            if (overlay) overlay.style.display = "none";
+        }
+
         document.addEventListener("DOMContentLoaded", async () => {
             let empresaNombre = "MANU JOYEROS";
             let empresaNit = "900.000.000-1";
@@ -189,9 +253,7 @@
         });
 
         async function cargarDatosCatalogo() {
-            if (typeof mostrarSpinner === "function") {
-                mostrarSpinner("Sincronizando catálogo digital...");
-            }
+            mostrarSpinner("Sincronizando catálogo digital...");
 
             try {
                 const [resOro, resProd] = await Promise.all([
@@ -199,9 +261,7 @@
                     API.llamar("obtenerProductos", {}, "GET")
                 ]);
 
-                if (typeof ocultarSpinner === "function") {
-                    ocultarSpinner();
-                }
+                ocultarSpinner();
 
                 if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
                     valorOroDiaGlobal = Number(resOro.valor_oro_dia);
@@ -214,9 +274,7 @@
                     document.getElementById("catalogGrid").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444; font-weight: bold;">No se pudo cargar el inventario de joyas.</p>`;
                 }
             } catch (error) {
-                if (typeof ocultarSpinner === "function") {
-                    ocultarSpinner();
-                }
+                ocultarSpinner();
                 document.getElementById("catalogGrid").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444;">Error de conexión con el servidor.</p>`;
             }
         }
