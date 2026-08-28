@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Indicador de Carga Interno - 2026
+ * Versión Completa e Íntegra con Modal Global de Carga - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -55,7 +55,7 @@ async function renderizarModuloProductos(container) {
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody">
-                        <tr><td colspan="${esAdmin ? '14' : '9'}" style="text-align: center; padding: 40px; color: #64748b;">Cargando inventario...</td></tr>
+                        <tr><td colspan="${esAdmin ? '14' : '9'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -188,14 +188,20 @@ async function cargarListaProductos() {
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
 
-    // Mensaje de carga interno directo en la tabla (sin interferir con modales de otros módulos)
-    tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 40px; color: #2563eb; font-weight: bold;">🔄 Sincronizando catálogo de productos y valor del oro...</td></tr>`;
+    // Activamos el modal flotante exacto con el mensaje deseado
+    if (typeof mostrarSpinner === "function") {
+        mostrarSpinner("Sincronizando catálogo digital...");
+    }
 
     try {
         const [resOro, resProd] = await Promise.all([
             API.llamar("obtenerValorOroDia", {}, "GET"),
             API.llamar("obtenerProductos", {}, "GET")
         ]);
+
+        if (typeof ocultarSpinner === "function") {
+            ocultarSpinner();
+        }
 
         if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
             window.valorOroDelDiaCache = Number(resOro.valor_oro_dia);
@@ -210,6 +216,9 @@ async function cargarListaProductos() {
             tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
         }
     } catch (e) {
+        if (typeof ocultarSpinner === "function") {
+            ocultarSpinner();
+        }
         console.error(e);
         tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
     }
@@ -390,6 +399,7 @@ function cerrarModalFormularioProducto() {
 
 async function guardarProductoInventario(event) {
     event.preventDefault();
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Guardando producto...");
 
     const skuOriginal = document.getElementById("prodSkuOriginal").value.trim();
     const sku = document.getElementById("prodSku").value.trim();
@@ -434,6 +444,8 @@ async function guardarProductoInventario(event) {
             foto: foto
         }, "POST");
 
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+
         if (res && res.status === "success") {
             alert(res.message || "Operación realizada con éxito.");
             cerrarModalFormularioProducto();
@@ -442,6 +454,7 @@ async function guardarProductoInventario(event) {
             alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
         }
     } catch(err) {
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
         console.error(err);
         alert("⚠️ Error de conexión al guardar el producto.");
     }
@@ -494,11 +507,13 @@ async function eliminarProductosSeleccionados() {
 
     if (!confirm(`¿Está seguro de eliminar ${checks.length} producto(s) seleccionado(s)?`)) return;
 
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Eliminando productos...");
     let skusAEliminar = Array.from(checks).map(cb => cb.value);
     for (let sku of skusAEliminar) {
         await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
     }
 
+    if (typeof ocultarSpinner === "function") ocultarSpinner();
     alert("Productos eliminados correctamente.");
     cargarListaProductos();
 }
@@ -576,6 +591,8 @@ async function procesarArchivoCsvImportado() {
             alert("⚠️ El archivo CSV está vacío o no contiene registros válidos.");
             return;
         }
+
+        if (typeof mostrarSpinner === "function") mostrarSpinner("Procesando e importando productos...");
 
         let cabeceraLinea = lineas[0].trim();
         let separador = cabeceraLinea.includes(';') ? ';' : ',';
@@ -695,6 +712,7 @@ async function procesarArchivoCsvImportado() {
             }
         }
 
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
         alert(`✅ ¡Importación completada con éxito! Se procesaron y cargaron ${importadosCount} productos al inventario.`);
         cerrarModalImportarExcel();
         cargarListaProductos();
