@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con SKU Automático por Categoría, Código de Barras Único y Restricción de Roles
+ * Versión Íntegra con SKU y Código de Barras Bloqueados/Automáticos y Costo Sincronizado
  */
 
 async function renderizarModuloProductos(container) {
@@ -83,11 +83,11 @@ async function renderizarModuloProductos(container) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU Automático *</label>
-                            <input type="text" id="prodSku" required readonly style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: bold; color: #0f172a;">
+                            <input type="text" id="prodSku" required readonly tabindex="-1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; font-weight: bold; color: #0f172a; cursor: not-allowed;" title="Generado automáticamente">
                         </div>
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras Único</label>
-                            <input type="text" id="prodCodigoBarra" readonly style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; color: #64748b;">
+                            <input type="text" id="prodCodigoBarra" readonly tabindex="-1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; color: #475569; cursor: not-allowed;" title="Generado automáticamente">
                         </div>
                     </div>
                     <div style="margin-bottom: 12px;">
@@ -332,14 +332,19 @@ function toggleSelectAllProductos(source) {
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
-// ================= GENERACIÓN AUTOMÁTICA DE SKU Y CÓDIGO DE BARRAS =================
+// ================= GENERACIÓN AUTOMÁTICA DE SKU Y CÓDIGO DE BARRAS BLOQUEADOS =================
 function abrirModalNuevoProducto() {
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
     document.getElementById("prodSkuOriginal").value = "";
     
-    // Seleccionar categoría por defecto y generar SKU/Barra automáticos
+    // Valores por defecto iniciales
     document.getElementById("prodCategoria").value = "ANILLOS";
+    document.getElementById("prodMaterial").value = "ORO";
+    document.getElementById("prodColor").value = "AMARILLO";
+    document.getElementById("prodMargen").value = "100";
+    document.getElementById("prodUbicacion").value = "CAJA FUERTE";
+
     generarSkuYBarraAutomatico();
 
     document.getElementById("modalFormularioProducto").style.display = "flex";
@@ -350,28 +355,26 @@ function generarSkuYBarraAutomatico() {
     if (!categoriaSelect) return;
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
-    // Tomar las 2 primeras letras de la categoría (ej: AN, CA, TO, DI, PU)
+    
+    // Obtener las 2 primeras letras de la categoría seleccionada (AN, CA, TO, DI, PU, etc.)
     let prefijo = catValor.substring(0, 2);
     if (!prefijo || prefijo.length < 2) prefijo = "JO";
 
-    // Buscar cuántos productos existen en esta categoría para calcular el siguiente número consecutivo
     const lista = window.listaProductosCache || [];
     const filtradosCat = lista.filter(p => String(p.ID_Categoria || p.categoria || "").trim().toUpperCase() === catValor);
     
     let siguienteNumero = filtradosCat.length + 1;
-
-    // Asegurar que el número tenga 5 dígitos (ej: 00001)
     let consecutivoStr = String(siguienteNumero).padStart(5, '0');
     let skuGenerado = `${prefijo}${consecutivoStr}`;
 
-    // Validar que el SKU no exista ya por colisión; si existe, incrementar hasta encontrar uno libre
+    // Validar colisión de SKU existente
     while (lista.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
         siguienteNumero++;
         consecutivoStr = String(siguienteNumero).padStart(5, '0');
         skuGenerado = `${prefijo}${consecutivoStr}`;
     }
 
-    // Generar código de barras único automático (simulando formato EAN / código de barras estándar numérico único)
+    // Generar código de barras único automático
     let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
 
     document.getElementById("prodSku").value = skuGenerado;
@@ -583,7 +586,7 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
 
     const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
     const skuToken = btoa(sku);
-    const certLink = `https://glasas.github.io/MANU_JOYEROS/cert.html?token=${skuToken}`;
+    const certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
     
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(certLink)}`;
     const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(valorBarras)}&scale=3&height=12&includetext=true`;
