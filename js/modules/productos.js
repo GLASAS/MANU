@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Cálculo Automático de Valor Compra (Oro + Piedra) en la Columna R
+ * Versión Definitiva con Lectura por Cabeceras CSV y Cálculo de Columna R (Valor Compra)
  */
 
 async function renderizarModuloProductos(container) {
@@ -582,7 +582,7 @@ function exportarProductosCSV() {
         return;
     }
 
-    let csv = "ID_Producto;SKU;Ref;Codigo_Barra;Nombre;Descripcion;ID_Categoria;Color;Material;ID_Ubicacion;Stock_Min;Stock_Max;Estado;Fecha_Creacion;Peso;Valor_Oro;Valor_Piedra;Valor_Compra\n";
+    let csv = "ID_Producto;SKU;Ref;Codigo_Barra;Nombre;Descripcion;ID_Categoria;Color;Material;ID_Ubicacion;Stock_Min;Stock_Max;Estado;Fecha_Creacion;Peso;Valor_Compra_Oro;Valor_Piedra;Valor_Compra\n";
     window.listaProductosCache.forEach(p => {
         let costoP = Number(p.Costo || p.costo) || 0;
         let piedraP = Number(p.Valor_Piedra || p.valor_piedra) || 0;
@@ -618,7 +618,7 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV CON CÁLCULO DE VALOR COMPRA =================
+// ================= MÓDULO DE IMPORTACIÓN CSV CON LECTURA POR CABECERAS =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -674,98 +674,109 @@ async function procesarArchivoCsvImportado() {
 
         mostrarSpinner("Procesando e importando productos...");
 
+        // 1. Leer y mapear la cabecera exacta por nombre para evitar desfases por columnas vacías
+        let cabeceraLinea = lineas[0].trim();
+        let separador = cabeceraLinea.includes(';') ? ';' : ',';
+        let headers = cabeceraLinea.split(separador).map(h => h.replace(/["\r]/g, "").trim().toLowerCase());
+
+        let idxNombre = headers.findIndex(h => h.includes('nombre'));
+        let idxCat = headers.findIndex(h => h.includes('categoria') || h.includes('id_categoria'));
+        let idxMat = headers.findIndex(h => h.includes('material'));
+        let idxColor = headers.findIndex(h => h.includes('color'));
+        let idxPeso = headers.findIndex(h => h.includes('peso'));
+        let idxCostoOro = headers.findIndex(h => h.includes('valor_compra') || h.includes('valor_oro') || h.includes('costo'));
+        let idxValorPiedra = headers.findIndex(h => h.includes('valor_piedra'));
+        let idxMargen = headers.findIndex(h => h.includes('porcentaje_venta') || h.includes('margen'));
+        let idxDescuento = headers.findIndex(h => h.includes('tiene_descuento') || h.includes('descuento'));
+        let idxUbicacion = headers.findIndex(h => h.includes('ubicacion') || h.includes('id_ubicacion'));
+
         let importadosCount = 0;
         const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
         const listaActual = window.listaProductosCache || [];
+
+        let limpiarMonto = (val) => {
+            if (!val) return 0;
+            let limpio = String(val).replace(/[\$\s"]/g, '');
+            if (limpio.includes(',')) {
+                limpio = limpio.replace(/\./g, '').replace(',', '.');
+            } else {
+                limpio = limpio.replace(/,/g, '');
+            }
+            return parseFloat(limpio) || 0;
+        };
 
         for (let i = 1; i < lineas.length; i++) {
             let linea = lineas[i].trim();
             if (!linea) continue;
 
-            let columnas = linea.split(';');
-            if (columnas.length < 5) {
-                columnas = linea.split(',');
-            }
+            let columnas = linea.split(separador);
+            if (columnas.length < 2) continue;
 
-            if (columnas.length >= 5) {
-                // Mapeo exacto según tu CSV actual:
-                // [0] Nombre, [1] Categoria, [2] Material, [3] Tipo_Piedra, [4] Color, [5] Peso, [6] Valor_Compra (Oro), [7] Valor_Piedra, [8] Porcentaje_Venta, [9] Tiene_Descuento, [10] Ubicacion
+            let getVal = (idx) => (idx !== -1 && columnas[idx] !== undefined) ? columnas[idx].replace(/"/g, '').trim() : '';
 
-                let nombre = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
-                let categoria = columnas[1] ? columnas[1].replace(/"/g, '').trim().toUpperCase() : 'ANILLOS';
-                let material = columnas[2] ? columnas[2].replace(/"/g, '').trim() : 'ORO';
-                let color = columnas[4] ? columnas[4].replace(/"/g, '').trim() : 'AMARILLO';
-                
-                let limpiarMonto = (val) => {
-                    if (!val) return 0;
-                    let limpio = String(val).replace(/[\$\s"]/g, '');
-                    if (limpio.includes(',')) {
-                        limpio = limpio.replace(/\./g, '').replace(',', '.');
-                    } else {
-                        limpio = limpio.replace(/,/g, '');
-                    }
-                    return parseFloat(limpio) || 0;
-                };
+            let nombre = getVal(idxNombre);
+            let categoria = getVal(idxCat) ? getVal(idxCat).toUpperCase() : 'ANILLOS';
+            let material = getVal(idxMat) || 'ORO';
+            let color = getVal(idxColor) || 'AMARILLO';
+            
+            let peso = limpiarMonto(getVal(idxPeso));
+            let costoOro = limpiarMonto(getVal(idxCostoOro));
+            let valorPiedra = limpiarMonto(getVal(idxValorPiedra));
+            
+            // Cálculo automático del valor de compra total (Columna R = Valor Compra Oro + Valor Piedra)
+            let valorCompraTotal = costoOro + valorPiedra;
 
-                let peso = limpiarMonto(columnas[5]);
-                let costoOro = limpiarMonto(columnas[6]);
-                let valorPiedra = limpiarMonto(columnas[7]);
-                
-                // Cálculo automático del valor de compra total (Columna R = Valor Compra Oro + Valor Piedra)
-                let valorCompraTotal = costoOro + valorPiedra;
+            let margen = Number(getVal(idxMargen)) || 100;
+            let descuento = Number(getVal(idxDescuento)) || 0;
+            let ubicacion = getVal(idxUbicacion) || 'CAJA FUERTE';
 
-                let margen = Number(columnas[8]) || 100;
-                let descuento = Number(columnas[9]) || 0;
-                let ubicacion = columnas[10] ? columnas[10].replace(/"/g, '').trim() : 'CAJA FUERTE';
+            if (nombre) {
+                let prefijo = "JO";
+                if (categoria.includes("CANDON")) {
+                    prefijo = "CAN";
+                } else if (categoria.length >= 2) {
+                    prefijo = categoria.substring(0, 2);
+                }
 
-                if (nombre) {
-                    let prefijo = "JO";
-                    if (categoria.includes("CANDON")) {
-                        prefijo = "CAN";
-                    } else if (categoria.length >= 2) {
-                        prefijo = categoria.substring(0, 2);
-                    }
+                const filtradosPrefijo = listaActual.filter(p => {
+                    let s = String(p.SKU || p.sku || "").trim().toUpperCase();
+                    return s.startsWith(prefijo);
+                });
 
-                    const filtradosPrefijo = listaActual.filter(p => {
-                        let s = String(p.SKU || p.sku || "").trim().toUpperCase();
-                        return s.startsWith(prefijo);
-                    });
+                let siguienteNumero = filtradosPrefijo.length + importadosCount + 1;
+                let consecutivoStr = String(siguienteNumero).padStart(5, '0');
+                let skuGenerado = `${prefijo}${consecutivoStr}`;
 
-                    let siguienteNumero = filtradosPrefijo.length + importadosCount + 1;
-                    let consecutivoStr = String(siguienteNumero).padStart(5, '0');
-                    let skuGenerado = `${prefijo}${consecutivoStr}`;
+                while (listaActual.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
+                    siguienteNumero++;
+                    consecutivoStr = String(siguienteNumero).padStart(5, '0');
+                    skuGenerado = `${prefijo}${consecutivoStr}`;
+                }
 
-                    while (listaActual.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
-                        siguienteNumero++;
-                        consecutivoStr = String(siguienteNumero).padStart(5, '0');
-                        skuGenerado = `${prefijo}${consecutivoStr}`;
-                    }
+                let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
 
-                    let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
-
-                    try {
-                        await API.llamar("guardarProducto", {
-                            action: "guardarProducto",
-                            sku: skuGenerado,
-                            codigo_barra: String(codigoBarraUnico),
-                            nombre: nombre,
-                            categoria: categoria,
-                            material: material,
-                            color: color,
-                            peso: peso,
-                            valor_piedra: valorPiedra,
-                            costo: costoOro,
-                            valor_compra: valorCompraTotal, // Se envía el acumulado para la columna R
-                            porcentaje_venta: margen,
-                            tiene_descuento: descuento,
-                            ubicacion: ubicacion,
-                            foto: "",
-                            usuario: usuario
-                        }, "POST");
-                        importadosCount++;
-                    } catch(err) {
-                        console.error("Error al importar producto:", nombre, err);
-                    }
+                try {
+                    await API.llamar("guardarProducto", {
+                        action: "guardarProducto",
+                        sku: skuGenerado,
+                        codigo_barra: String(codigoBarraUnico),
+                        nombre: nombre,
+                        categoria: categoria,
+                        material: material,
+                        color: color,
+                        peso: peso,
+                        valor_piedra: valorPiedra,
+                        costo: costoOro,
+                        valor_compra: valorCompraTotal, // Almacena la suma para la columna R
+                        porcentaje_venta: margen,
+                        tiene_descuento: descuento,
+                        ubicacion: ubicacion,
+                        foto: "",
+                        usuario: usuario
+                    }, "POST");
+                    importadosCount++;
+                } catch(err) {
+                    console.error("Error al importar producto:", nombre, err);
                 }
             }
         }
