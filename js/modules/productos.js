@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Corregida - Mapeo Exacto de Peso y Costo Oro al Editar
+ * Versión Íntegra con Cálculo Exacto de Valor Venta y Carga Robusta al Editar
  */
 
 async function renderizarModuloProductos(container) {
@@ -539,7 +539,6 @@ function editarProducto(sku) {
         return;
     }
 
-    // Mapeo robusto compatible con mayúsculas y minúsculas provenientes de la hoja de Google Sheets
     const pPeso = prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0);
     const pValorOro = prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)));
     const pValorPiedra = prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0);
@@ -593,11 +592,15 @@ function exportarProductosCSV() {
         return;
     }
 
-    let csv = "ID_Producto;SKU;Codigo_Barra;Nombre;ID_Categoria;Material;Color;Peso;Valor_Piedra;Valor_Oro;Porcentaje_Venta;Tiene_Descuento;ID_Ubicacion;Estado;Fecha_Creacion;Valor_Compra\n";
+    let csv = "ID_Producto;SKU;Codigo_Barra;Nombre;ID_Categoria;Material;Color;Peso;Valor_Piedra;Valor_Oro;Porcentaje_Venta;Tiene_Descuento;ID_Ubicacion;Estado;Fecha_Creacion;Valor_Compra;Valor_Venta\n";
+    let valorOroActual = window.valorOroDelDiaCache || 250000;
+
     window.listaProductosCache.forEach(p => {
         let valOro = Number(p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
         let valPiedra = Number(p.Valor_Piedra || p.valor_piedra) || 0;
+        let pesoItem = parseFloat(String(p.Peso || p.peso || 0).replace(',', '.')) || 0;
         let valorCompraTotal = valOro + valPiedra;
+        let valorVentaCalc = (valorOroActual * pesoItem) + valPiedra;
 
         csv += [
             p.ID_Producto || p.sku || "",
@@ -607,7 +610,7 @@ function exportarProductosCSV() {
             p.ID_Categoria || p.categoria || "",
             p.Material || p.material || "ORO",
             p.Color || p.color || "AMARILLO",
-            p.Peso || p.peso || 0,
+            pesoItem,
             valPiedra,
             valOro,
             p.Porcentaje_Venta || p.porcentaje_venta || 100,
@@ -615,7 +618,8 @@ function exportarProductosCSV() {
             p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "CAJA FUERTE",
             p.Estado || p.estado || "DISPONIBLE",
             p.Fecha_Creacion || p.fecha_creacion || new Date().toISOString().slice(0,10),
-            valorCompraTotal
+            valorCompraTotal,
+            valorVentaCalc
         ].join(";") + "\n";
     });
 
@@ -733,6 +737,9 @@ async function procesarArchivoCsvImportado() {
             let valorPiedra = limpiarMonto(getVal(idxValorPiedra));
             let valorCompraTotal = valorOro + valorPiedra;
 
+            let valorOroActual = window.valorOroDelDiaCache || 250000;
+            let valorVentaCalc = (valorOroActual * peso) + valorPiedra;
+
             let margen = Number(getVal(idxMargen)) || 100;
             let descuento = Number(getVal(idxDescuento)) || 0;
             let ubicacion = getVal(idxUbicacion) || 'CAJA FUERTE';
@@ -778,6 +785,7 @@ async function procesarArchivoCsvImportado() {
                         valor_piedra: valorPiedra,
                         valor_oro: valorOro,
                         valor_compra: valorCompraTotal,
+                        valor_venta: valorVentaCalc,
                         porcentaje_venta: margen,
                         tiene_descuento: descuento,
                         ubicacion: ubicacion,
