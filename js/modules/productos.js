@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Botón de Cerrar Debajo de la Imagen
+ * Versión Completa con Etiquetas Actualizadas y Modal de Imagen Corregido
  */
 
 async function renderizarModuloProductos(container) {
@@ -121,13 +121,13 @@ async function renderizarModuloProductos(container) {
                             <input type="number" step="0.01" id="prodPeso" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Piedra ($)</label>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Piedra ($)</label>
                             <input type="number" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Costo Oro ($)</label>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Oro ($)</label>
                             <input type="number" id="prodCosto" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                         <div>
@@ -198,7 +198,7 @@ async function renderizarModuloProductos(container) {
             }
         </style>
 
-        <!-- MODAL ZOOM IMAGEN (BOTÓN CERRAR ABAJO) -->
+        <!-- MODAL ZOOM IMAGEN (CON ID imageModal Y BOTÓN CERRAR ABAJO) -->
         <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
             <div style="position: relative; display: flex; flex-direction: column; align-items: center; max-width: 90%; max-height: 90%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
                 <img id="imgModalSrc" src="" style="max-width: 100%; max-height: 75vh; border-radius: 8px; object-fit: contain; margin-bottom: 15px;">
@@ -541,11 +541,18 @@ function editarProducto(sku) {
         return;
     }
 
-    const pPeso = prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0);
-    const pValorOro = prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)));
-    const pValorPiedra = prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0);
-    const pMargen = prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100);
-    const pDescuento = prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : 0);
+    const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
+    
+    // CARGAR VALOR BASE DE ORO: valor_oro_dia * peso (o el valor guardado si existe)
+    let valorOroActual = window.valorOroDelDiaCache || 250000;
+    let pValorOro = Number(prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)))) || 0;
+    if (pValorOro === 0 && pPeso > 0) {
+        pValorOro = valorOroActual * pPeso;
+    }
+
+    const pValorPiedra = Number(prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0)) || 0;
+    const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100)) || 100;
+    const pDescuento = Number(prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : 0)) || 0;
     const pUbicacion = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || "CAJA FUERTE";
 
     document.getElementById("modalProductoTitulo").textContent = `Editar Producto: ${sku}`;
@@ -558,7 +565,7 @@ function editarProducto(sku) {
     document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
     document.getElementById("prodPeso").value = pPeso;
     document.getElementById("prodValorPiedra").value = pValorPiedra;
-    document.getElementById("prodCosto").value = pValorOro;
+    document.getElementById("prodCosto").value = Math.round(pValorOro);
     document.getElementById("prodMargen").value = pMargen;
     document.getElementById("prodDescuento").value = pDescuento;
     document.getElementById("prodUbicacion").value = pUbicacion;
