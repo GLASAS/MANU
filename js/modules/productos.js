@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra y Completa con Importación CSV Mapeada Exactamente al Formato Real
+ * Versión Íntegra con SKU Automático por Categoría, Código de Barras Único y CSV Sincronizado
  */
 
 async function renderizarModuloProductos(container) {
@@ -351,7 +351,7 @@ function toggleSelectAllProductos(source) {
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
-// ================= GENERADOR DE SKU EXACTO =================
+// ================= GENERADOR DE SKU EXACTO POR CATEGORÍA Y BARRAS =================
 function abrirModalNuevoProducto() {
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
@@ -374,6 +374,7 @@ function generarSkuYBarraAutomatico() {
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
     
+    // Regla exacta: ANILLOS->AN, CADENAS->CA, CANDONGAS->CAN, etc.
     let prefijo = "JO";
     if (catValor.includes("CANDON")) {
         prefijo = "CAN";
@@ -574,7 +575,7 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= EXPORTACIÓN E IMPORTACIÓN CSV MAPEJADA EXACTA =================
+// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO EXACTO =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -641,21 +642,6 @@ async function procesarArchivoCsvImportado() {
             }
 
             if (columnas.length >= 5) {
-                // Mapeo exacto según tu estructura de columnas real mostrada en el Excel de ejemplo:
-                // [0] ID_Producto (SKU)
-                // [1] SKU (Nombre largo / Descripción)
-                // [2] Ref (Categoría)
-                // [3] Codigo_Barra
-                // [4] Nombre
-                // [5] Descripcion
-                // [6] ID_Categoria
-                // [7] Color
-                // [8] Material
-                // [9] ID_Ubicacion
-                // [14] Peso
-                // [15] Valor_Oro (Costo)
-                // [16] Valor_Piedra
-
                 let sku = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
                 let codigoBarra = columnas[3] ? columnas[3].replace(/"/g, '').trim() : sku;
                 let nombre = columnas[4] ? columnas[4].replace(/"/g, '').trim() : (columnas[1] ? columnas[1].replace(/"/g, '').trim() : 'Joya');
