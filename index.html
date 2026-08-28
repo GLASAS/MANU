@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - MANU JOYEROS</title>
+    <title>MANU JOYEROS</title>
     <link rel="stylesheet" href="./css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
@@ -55,7 +55,7 @@
             <a href="#" class="nav-link" onclick="cambiarVista('productos', event)">💍 Productos</a>
             <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="nav-link">🌐 Catálogo Web</a>
             <a href="#" class="nav-link" onclick="abrirModalQrCatalogo()">📱 QR Catálogo Web</a>
-            <a href="#" class="nav-link" onclick="cambiarVista('consulta', event)">🔍 Consulta Rápida</a>
+            <a href="#" class="nav-link nav-admin-only" onclick="cambiarVista('consulta', event)">🔍 Consulta Rápida</a>
             <a href="#" class="nav-link nav-admin-only" onclick="cambiarVista('inventario', event)">📦 Inventario / Arqueo</a>
             <a href="#" class="nav-link nav-admin-only" onclick="cambiarVista('actualizacion_oro', event)">🪙 Actualización Oro</a>
             <a href="#" class="nav-link nav-admin-only" onclick="cambiarVista('entradas', event)">📥 Entradas</a>
@@ -66,7 +66,7 @@
             <a href="#" class="nav-link" onclick="cambiarVista('cambiar_password', event)">🔑 Cambiar Contraseña</a>
             <a href="#" class="nav-link text-danger" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
-        <div class="sidebar-footer-version" id="versionSidebarLabel">MANU JOYEROS V1.1543</div>
+        <div class="sidebar-footer-version" id="versionSidebarLabel">Cargando versión...</div>
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
