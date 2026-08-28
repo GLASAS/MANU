@@ -2,15 +2,15 @@
  * MANU JOYEROS - Configuración Global y Enrutador (config.js)
  */
 const CONFIG = {
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
-    URL_API: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
-    NOMBRE_EMPRESA: "MANU JOYEROS",
-    NIT: "902.078.370-8",
-    TELEFONO: "+57 (311) 888 6137",
-    DIRECCION: "Calle 114 6A 92 Local 301",
-    EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
-    CIUDAD: "Bogotá D.C., Colombia",
-    VERSION: "V1.1800"
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
+  URL_API: "https://script.google.com/macros/s/AKfycbwUhQTLnUZzJXwEhDLDJa09TwnmDw6R-Uc0YxjJQHSoQK9nNzi1_u5gHBrQlIUx_Iw/exec",
+  NOMBRE_EMPRESA: "MANU JOYEROS",
+  NIT: "902.078.370-8",
+  TELEFONO: "+57 (311) 888 6137",
+  DIRECCION: "Calle 114 6A 92 Local 301",
+  EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
+  CIUDAD: "Bogotá D.C., Colombia",
+  VERSION: "V1.1750"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         lblVersionSidebar.textContent = `${CONFIG.NOMBRE_EMPRESA} ${CONFIG.VERSION}`;
     }
 
-    // Cargar obligatoriamente el valor real del oro desde la base de datos al iniciar la aplicación
+    // CARGAR EL VALOR REAL DE LA BASE DE DATOS AL INICIAR
     await cargarValorOroDia();
 });
 
@@ -113,9 +113,9 @@ async function cambiarVista(vista, event) {
 }
 
 async function renderizarModuloActualizacionOro(container) {
-    // Consultar el valor actual directo de la base de datos antes de pintar el HTML
+    // Consultar obligatoriamente la base de datos antes de pintar el formulario
     await cargarValorOroDia();
-    
+
     container.innerHTML = `
         <div class="card" style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
             <h3 style="margin-bottom: 0.5rem; color: #0f172a;">🪙 Actualización del Valor del Oro del Día</h3>
@@ -132,15 +132,15 @@ async function renderizarModuloActualizacionOro(container) {
 
 async function ejecutarActualizacionOro(event) {
     event.preventDefault();
-    const inputElement = document.getElementById("inputValorOroDiaModal");
-    if (!inputElement) return;
+    const inputEl = document.getElementById("inputValorOroDiaModal");
+    if (!inputEl) return;
 
-    const nuevoValor = Number(inputElement.value);
+    const nuevoValor = Number(inputEl.value);
     if (isNaN(nuevoValor) || nuevoValor <= 0) { alert("Por favor ingrese un valor válido."); return; }
 
     const res = await API.llamar("actualizarValorOroDia", { action: "actualizarValorOroDia", valor_oro_dia: nuevoValor }, "POST");
     if (res && res.status === "success") {
-        alert(res.message || "Valor actualizado con éxito");
+        alert(res.message || "Valor del oro actualizado correctamente.");
         window.valorOroDelDiaCache = nuevoValor;
     } else {
         alert("Error al actualizar: " + (res ? res.message : "Desconocido"));
@@ -157,7 +157,7 @@ async function cargarValorOroDia() {
             }
         }
     } catch(e) { 
-        console.error("No se pudo obtener el valor del oro de la base de datos:", e);
+        console.error("Error al sincronizar el valor del oro:", e);
     }
 }
 
