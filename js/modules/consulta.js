@@ -95,7 +95,7 @@ function manejarInputConsulta(event) {
             if (valorActual === valor && valorActual.length <= 10) {
                 ejecutarConsultaRapidaProducto();
             }
-        }, 1000); // 1 segundo exacto
+        }, 2000); // 1 segundo exacto
     }
 }
 
