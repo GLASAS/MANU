@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra - 2026
+ * Versión Completa e Íntegra con Indicador de Carga Interno - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -55,7 +55,7 @@ async function renderizarModuloProductos(container) {
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody">
-                        <tr><td colspan="${esAdmin ? '14' : '9'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
+                        <tr><td colspan="${esAdmin ? '14' : '9'}" style="text-align: center; padding: 40px; color: #64748b;">Cargando inventario...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -81,11 +81,11 @@ async function renderizarModuloProductos(container) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU Automático *</label>
-                            <input type="text" id="prodSku" required readonly tabindex="-1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; font-weight: bold; color: #0f172a; cursor: not-allowed;" title="Generado automáticamente">
+                            <input type="text" id="prodSku" required readonly tabindex="-1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; font-weight: bold; color: #0f172a; cursor: not-allowed;">
                         </div>
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras Único</label>
-                            <input type="text" id="prodCodigoBarra" readonly tabindex="-1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; color: #475569; cursor: not-allowed;" title="Generado automáticamente">
+                            <input type="text" id="prodCodigoBarra" readonly tabindex="-1" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f1f5f9; color: #475569; cursor: not-allowed;">
                         </div>
                     </div>
                     <div style="margin-bottom: 12px;">
@@ -144,13 +144,8 @@ async function renderizarModuloProductos(container) {
                             <input type="text" id="prodUbicacion" placeholder="CAJA FUERTE" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
-                                <input type="file" id="inputArchivoFoto" accept="image/*" style="display: none;" onchange="procesarImagenSeleccionada(this)">
-                                <button type="button" onclick="document.getElementById('inputArchivoFoto').removeAttribute('capture'); document.getElementById('inputArchivoFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
-                                <button type="button" onclick="const inp = document.getElementById('inputArchivoFoto'); inp.setAttribute('capture', 'environment'); inp.click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
-                            </div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto</label>
+                            <input type="text" id="prodFoto" placeholder="https://..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -169,11 +164,9 @@ async function renderizarModuloProductos(container) {
                     <button type="button" onclick="cerrarModalImportarExcel()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
                 </div>
                 <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con las cabeceras correspondientes para cargar el inventario masivamente.</p>
-                
                 <div style="margin-bottom: 20px;">
                     <input type="file" id="inputArchivoCsvImport" accept=".csv" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
                 </div>
-
                 <div style="display: flex; justify-content: flex-end; gap: 10px;">
                     <button type="button" onclick="cerrarModalImportarExcel()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
                     <button type="button" id="btnProcesarCsv" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
@@ -195,21 +188,14 @@ async function cargarListaProductos() {
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando inventario y valor del oro...</td></tr>`;
-
-    if (typeof mostrarSpinner === "function") {
-        mostrarSpinner("Sincronizando inventario y valor del oro...");
-    }
+    // Mensaje de carga interno directo en la tabla (sin interferir con modales de otros módulos)
+    tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 40px; color: #2563eb; font-weight: bold;">🔄 Sincronizando catálogo de productos y valor del oro...</td></tr>`;
 
     try {
         const [resOro, resProd] = await Promise.all([
             API.llamar("obtenerValorOroDia", {}, "GET"),
             API.llamar("obtenerProductos", {}, "GET")
         ]);
-
-        if (typeof ocultarSpinner === "function") {
-            ocultarSpinner();
-        }
 
         if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
             window.valorOroDelDiaCache = Number(resOro.valor_oro_dia);
@@ -224,9 +210,6 @@ async function cargarListaProductos() {
             tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
         }
     } catch (e) {
-        if (typeof ocultarSpinner === "function") {
-            ocultarSpinner();
-        }
         console.error(e);
         tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
     }
@@ -364,7 +347,6 @@ function abrirModalNuevoProducto() {
     document.getElementById("prodUbicacion").value = "CAJA FUERTE";
 
     generarSkuYBarraAutomatico();
-
     document.getElementById("modalFormularioProducto").style.display = "flex";
 }
 
@@ -373,7 +355,6 @@ function generarSkuYBarraAutomatico() {
     if (!categoriaSelect) return;
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
-    
     let prefijo = "JO";
     if (catValor.includes("CANDON")) {
         prefijo = "CAN";
@@ -407,44 +388,8 @@ function cerrarModalFormularioProducto() {
     document.getElementById("modalFormularioProducto").style.display = "none";
 }
 
-function procesarImagenSeleccionada(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement("canvas");
-                let width = img.width;
-                let height = img.height;
-                
-                const maxDim = 800;
-                if (width > height && width > maxDim) {
-                    height *= maxDim / width;
-                    width = maxDim;
-                } else if (height > maxDim) {
-                    width *= maxDim / height;
-                    height = maxDim;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, width, height);
-
-                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-                document.getElementById("prodFoto").value = dataUrl;
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
 async function guardarProductoInventario(event) {
     event.preventDefault();
-    if (typeof mostrarSpinner === "function") mostrarSpinner("Guardando producto...");
 
     const skuOriginal = document.getElementById("prodSkuOriginal").value.trim();
     const sku = document.getElementById("prodSku").value.trim();
@@ -489,8 +434,6 @@ async function guardarProductoInventario(event) {
             foto: foto
         }, "POST");
 
-        if (typeof ocultarSpinner === "function") ocultarSpinner();
-
         if (res && res.status === "success") {
             alert(res.message || "Operación realizada con éxito.");
             cerrarModalFormularioProducto();
@@ -499,7 +442,6 @@ async function guardarProductoInventario(event) {
             alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
         }
     } catch(err) {
-        if (typeof ocultarSpinner === "function") ocultarSpinner();
         console.error(err);
         alert("⚠️ Error de conexión al guardar el producto.");
     }
@@ -513,7 +455,6 @@ function editarProducto(sku) {
     }
 
     const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
-    
     let valorOroActual = window.valorOroDelDiaCache || 250000;
     let pValorOro = Number(prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)))) || 0;
     if (pValorOro === 0 && pPeso > 0) {
@@ -553,14 +494,11 @@ async function eliminarProductosSeleccionados() {
 
     if (!confirm(`¿Está seguro de eliminar ${checks.length} producto(s) seleccionado(s)?`)) return;
 
-    if (typeof mostrarSpinner === "function") mostrarSpinner("Eliminando productos...");
     let skusAEliminar = Array.from(checks).map(cb => cb.value);
-    
     for (let sku of skusAEliminar) {
         await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
     }
 
-    if (typeof ocultarSpinner === "function") ocultarSpinner();
     alert("Productos eliminados correctamente.");
     cargarListaProductos();
 }
@@ -638,8 +576,6 @@ async function procesarArchivoCsvImportado() {
             alert("⚠️ El archivo CSV está vacío o no contiene registros válidos.");
             return;
         }
-
-        if (typeof mostrarSpinner === "function") mostrarSpinner("Procesando e importando productos...");
 
         let cabeceraLinea = lineas[0].trim();
         let separador = cabeceraLinea.includes(';') ? ';' : ',';
@@ -759,7 +695,6 @@ async function procesarArchivoCsvImportado() {
             }
         }
 
-        if (typeof ocultarSpinner === "function") ocultarSpinner();
         alert(`✅ ¡Importación completada con éxito! Se procesaron y cargaron ${importadosCount} productos al inventario.`);
         cerrarModalImportarExcel();
         cargarListaProductos();
