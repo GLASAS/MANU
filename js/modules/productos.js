@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Definitiva con Lectura por Cabeceras CSV y Cálculo de Columna R (Valor Compra)
+ * Versión Íntegra con Mapeo por Cabeceras y Cálculo Automático de Valor Compra (Columna R)
  */
 
 async function renderizarModuloProductos(container) {
@@ -43,7 +43,7 @@ async function renderizarModuloProductos(container) {
                             <th style="padding: 10px;">Material</th>
                             <th style="padding: 10px;">Peso</th>
                             ${esAdmin ? `
-                                <th style="padding: 10px;">Costo</th>
+                                <th style="padding: 10px;">Costo Oro</th>
                                 <th style="padding: 10px;">Margen</th>
                                 <th style="padding: 10px;">Desc.</th>
                             ` : ''}
@@ -126,7 +126,7 @@ async function renderizarModuloProductos(container) {
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Costo ($)</label>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Costo Oro ($)</label>
                             <input type="number" id="prodCosto" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                         <div>
@@ -168,7 +168,7 @@ async function renderizarModuloProductos(container) {
                     <h3 style="margin: 0; color: #0f172a;">📁 Importar Productos Masivos (CSV)</h3>
                     <button type="button" onclick="cerrarModalImportarExcel()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
                 </div>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con el formato exportado para cargar el inventario masivamente.</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con las cabeceras correspondientes para cargar el inventario masivamente.</p>
                 
                 <div style="margin-bottom: 20px;">
                     <input type="file" id="inputArchivoCsvImport" accept=".csv" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
@@ -293,16 +293,16 @@ function renderizarTablaProductosAdmin() {
         let nombre = p.Nombre || p.nombre || "Joya sin nombre";
         let categoria = p.ID_Categoria || p.categoria || "-";
         let color = p.Color || p.color || "-";
-        let material = p.Material_Oro || p.Material || p.material || "ORO";
+        let material = p.Material || p.material || "ORO";
         
         let pesoCrudo = p.Peso || p.peso || 0;
         let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-        let costoItem = Number(p.Costo || p.costo) || 0;
-        let valPiedra = Number(p.Valor_Piedra) || 0;
-        let margen = Number(p.Porcentaje_Venta) || 100;
-        let descPct = Number(p.Tiene_Descuento) || 0;
-        let ubicacion = p.ID_Ubicacion || p.ubicacion || "VITRINA";
+        let costoItem = Number(p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
+        let valPiedra = Number(p.Valor_Piedra || p.valor_piedra) || 0;
+        let margen = Number(p.Porcentaje_Venta || p.porcentaje_venta) || 100;
+        let descPct = Number(p.Tiene_Descuento || p.tiene_descuento) || 0;
+        let ubicacion = p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "VITRINA";
         let foto = p.Foto || p.foto || "";
 
         let baseVentaCalculada = valPiedra + (pesoItem * valorOroActual);
@@ -484,20 +484,20 @@ async function guardarProductoInventario(event) {
     const color = document.getElementById("prodColor").value.trim();
     const peso = Number(document.getElementById("prodPeso").value) || 0;
     const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
-    const costo = Number(document.getElementById("prodCosto").value) || 0;
+    const valor_oro = Number(document.getElementById("prodCosto").value) || 0;
+    const valor_compra = valor_oro + valor_piedra;
     const porcentaje_venta = Number(document.getElementById("prodMargen").value) || 100;
     const tiene_descuento = Number(document.getElementById("prodDescuento").value) || 0;
     const ubicacion = document.getElementById("prodUbicacion").value.trim();
     const foto = document.getElementById("prodFoto").value.trim();
-    const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
 
     const accionApi = skuOriginal ? "actualizarProducto" : "guardarProducto";
 
     try {
         const res = await API.llamar(accionApi, {
             action: accionApi,
-            sku_original: skuOriginal,
             sku: sku,
+            sku_original: skuOriginal,
             codigo_barra: codigo_barra,
             nombre: nombre,
             categoria: categoria,
@@ -505,12 +505,12 @@ async function guardarProductoInventario(event) {
             color: color,
             peso: peso,
             valor_piedra: valor_piedra,
-            costo: costo,
+            valor_oro: valor_oro,
+            valor_compra: valor_compra,
             porcentaje_venta: porcentaje_venta,
             tiene_descuento: tiene_descuento,
             ubicacion: ubicacion,
-            foto: foto,
-            usuario: usuario
+            foto: foto
         }, "POST");
 
         ocultarSpinner();
@@ -542,14 +542,14 @@ function editarProducto(sku) {
     document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
     document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
     document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "ANILLOS";
-    document.getElementById("prodMaterial").value = prod.Material_Oro || prod.Material || prod.material || "";
+    document.getElementById("prodMaterial").value = prod.Material || prod.material || "";
     document.getElementById("prodColor").value = prod.Color || prod.color || "";
     document.getElementById("prodPeso").value = prod.Peso || prod.peso || 0;
     document.getElementById("prodValorPiedra").value = prod.Valor_Piedra || prod.valor_piedra || 0;
-    document.getElementById("prodCosto").value = prod.Costo || prod.costo || 0;
+    document.getElementById("prodCosto").value = prod.Valor_Oro || prod.valor_oro || prod.Costo || prod.costo || 0;
     document.getElementById("prodMargen").value = prod.Porcentaje_Venta || prod.porcentaje_venta || 100;
     document.getElementById("prodDescuento").value = prod.Tiene_Descuento || prod.tiene_descuento || 0;
-    document.getElementById("prodUbicacion").value = prod.ID_Ubicacion || prod.ubicacion || "";
+    document.getElementById("prodUbicacion").value = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || "";
     document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
 
     document.getElementById("modalFormularioProducto").style.display = "flex";
@@ -582,30 +582,28 @@ function exportarProductosCSV() {
         return;
     }
 
-    let csv = "ID_Producto;SKU;Ref;Codigo_Barra;Nombre;Descripcion;ID_Categoria;Color;Material;ID_Ubicacion;Stock_Min;Stock_Max;Estado;Fecha_Creacion;Peso;Valor_Compra_Oro;Valor_Piedra;Valor_Compra\n";
+    let csv = "ID_Producto;SKU;Codigo_Barra;Nombre;ID_Categoria;Material;Color;Peso;Valor_Piedra;Valor_Oro;Porcentaje_Venta;Tiene_Descuento;ID_Ubicacion;Estado;Fecha_Creacion;Valor_Compra\n";
     window.listaProductosCache.forEach(p => {
-        let costoP = Number(p.Costo || p.costo) || 0;
-        let piedraP = Number(p.Valor_Piedra || p.valor_piedra) || 0;
-        let valorCompraTotal = costoP + piedraP;
+        let valOro = Number(p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
+        let valPiedra = Number(p.Valor_Piedra || p.valor_piedra) || 0;
+        let valorCompraTotal = valOro + valPiedra;
 
         csv += [
-            p.SKU || "",
-            `"${(p.Nombre || "").replace(/"/g, '""')}"`,
+            p.ID_Producto || p.sku || "",
+            p.SKU || p.sku || "",
+            p.Codigo_Barra || p.codigo_barra || "",
+            `"${(p.Nombre || p.nombre || "").replace(/"/g, '""')}"`,
             p.ID_Categoria || p.categoria || "",
-            p.Codigo_Barra || "",
-            `"${(p.Nombre || "").replace(/"/g, '""')}"`,
-            `"${(p.Descripcion || p.Nombre || "").replace(/"/g, '""')}"`,
-            p.ID_Categoria || p.categoria || "",
-            p.Color || "",
-            p.Material_Oro || "",
-            p.ID_Ubicacion || "",
-            0,
-            0,
-            "DISPONIBLE",
-            new Date().toISOString().slice(0,10),
-            p.Peso || 0,
-            costoP,
-            piedraP,
+            p.Material || p.material || "ORO",
+            p.Color || p.color || "AMARILLO",
+            p.Peso || p.peso || 0,
+            valPiedra,
+            valOro,
+            p.Porcentaje_Venta || p.porcentaje_venta || 100,
+            p.Tiene_Descuento || p.tiene_descuento || 0,
+            p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "CAJA FUERTE",
+            p.Estado || p.estado || "DISPONIBLE",
+            p.Fecha_Creacion || p.fecha_creacion || new Date().toISOString().slice(0,10),
             valorCompraTotal
         ].join(";") + "\n";
     });
@@ -618,7 +616,7 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV CON LECTURA POR CABECERAS =================
+// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO POR CABECERAS =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -631,7 +629,7 @@ function abrirModalImportarExcel() {
                     <h3 style="margin: 0; color: #0f172a;">📁 Importar Productos Masivos (CSV)</h3>
                     <button type="button" onclick="cerrarModalImportarExcel()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
                 </div>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con el formato exportado para cargar el inventario masivamente.</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con las cabeceras correspondientes para cargar el inventario masivamente.</p>
                 
                 <div style="margin-bottom: 20px;">
                     <input type="file" id="inputArchivoCsvImport" accept=".csv" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
@@ -674,24 +672,23 @@ async function procesarArchivoCsvImportado() {
 
         mostrarSpinner("Procesando e importando productos...");
 
-        // 1. Leer y mapear la cabecera exacta por nombre para evitar desfases por columnas vacías
         let cabeceraLinea = lineas[0].trim();
         let separador = cabeceraLinea.includes(';') ? ';' : ',';
         let headers = cabeceraLinea.split(separador).map(h => h.replace(/["\r]/g, "").trim().toLowerCase());
 
+        let idxSku = headers.findIndex(h => h === 'sku');
         let idxNombre = headers.findIndex(h => h.includes('nombre'));
         let idxCat = headers.findIndex(h => h.includes('categoria') || h.includes('id_categoria'));
         let idxMat = headers.findIndex(h => h.includes('material'));
         let idxColor = headers.findIndex(h => h.includes('color'));
         let idxPeso = headers.findIndex(h => h.includes('peso'));
-        let idxCostoOro = headers.findIndex(h => h.includes('valor_compra') || h.includes('valor_oro') || h.includes('costo'));
+        let idxValorOro = headers.findIndex(h => h.includes('valor_oro') || h.includes('valor_compra_oro') || h.includes('costo'));
         let idxValorPiedra = headers.findIndex(h => h.includes('valor_piedra'));
         let idxMargen = headers.findIndex(h => h.includes('porcentaje_venta') || h.includes('margen'));
         let idxDescuento = headers.findIndex(h => h.includes('tiene_descuento') || h.includes('descuento'));
         let idxUbicacion = headers.findIndex(h => h.includes('ubicacion') || h.includes('id_ubicacion'));
 
         let importadosCount = 0;
-        const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
         const listaActual = window.listaProductosCache || [];
 
         let limpiarMonto = (val) => {
@@ -715,16 +712,15 @@ async function procesarArchivoCsvImportado() {
             let getVal = (idx) => (idx !== -1 && columnas[idx] !== undefined) ? columnas[idx].replace(/"/g, '').trim() : '';
 
             let nombre = getVal(idxNombre);
+            let skuCsv = getVal(idxSku);
             let categoria = getVal(idxCat) ? getVal(idxCat).toUpperCase() : 'ANILLOS';
             let material = getVal(idxMat) || 'ORO';
             let color = getVal(idxColor) || 'AMARILLO';
             
             let peso = limpiarMonto(getVal(idxPeso));
-            let costoOro = limpiarMonto(getVal(idxCostoOro));
+            let valorOro = limpiarMonto(getVal(idxValorOro));
             let valorPiedra = limpiarMonto(getVal(idxValorPiedra));
-            
-            // Cálculo automático del valor de compra total (Columna R = Valor Compra Oro + Valor Piedra)
-            let valorCompraTotal = costoOro + valorPiedra;
+            let valorCompraTotal = valorOro + valorPiedra;
 
             let margen = Number(getVal(idxMargen)) || 100;
             let descuento = Number(getVal(idxDescuento)) || 0;
@@ -743,14 +739,17 @@ async function procesarArchivoCsvImportado() {
                     return s.startsWith(prefijo);
                 });
 
-                let siguienteNumero = filtradosPrefijo.length + importadosCount + 1;
-                let consecutivoStr = String(siguienteNumero).padStart(5, '0');
-                let skuGenerado = `${prefijo}${consecutivoStr}`;
-
-                while (listaActual.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
-                    siguienteNumero++;
-                    consecutivoStr = String(siguienteNumero).padStart(5, '0');
+                let skuGenerado = skuCsv;
+                if (!skuGenerado) {
+                    let siguienteNumero = filtradosPrefijo.length + importadosCount + 1;
+                    let consecutivoStr = String(siguienteNumero).padStart(5, '0');
                     skuGenerado = `${prefijo}${consecutivoStr}`;
+
+                    while (listaActual.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
+                        siguienteNumero++;
+                        consecutivoStr = String(siguienteNumero).padStart(5, '0');
+                        skuGenerado = `${prefijo}${consecutivoStr}`;
+                    }
                 }
 
                 let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
@@ -766,13 +765,12 @@ async function procesarArchivoCsvImportado() {
                         color: color,
                         peso: peso,
                         valor_piedra: valorPiedra,
-                        costo: costoOro,
-                        valor_compra: valorCompraTotal, // Almacena la suma para la columna R
+                        valor_oro: valorOro,
+                        valor_compra: valorCompraTotal,
                         porcentaje_venta: margen,
                         tiene_descuento: descuento,
                         ubicacion: ubicacion,
-                        foto: "",
-                        usuario: usuario
+                        foto: ""
                     }, "POST");
                     importadosCount++;
                 } catch(err) {
