@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Lógica de Prefijos Dinámicos para SKU (AN, CA, CAN, etc.) y CSV Operativo
+ * Versión Íntegra y Completa con Importación CSV Mapeada Exactamente al Formato Real
  */
 
 async function renderizarModuloProductos(container) {
@@ -351,7 +351,7 @@ function toggleSelectAllProductos(source) {
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
-// ================= GENERACIÓN DE SKU EXACTO POR REGLA DE NEGOCIO Y CÓDIGO DE BARRAS BLOQUEADO =================
+// ================= GENERADOR DE SKU EXACTO =================
 function abrirModalNuevoProducto() {
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
@@ -374,8 +374,6 @@ function generarSkuYBarraAutomatico() {
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
     
-    // Regla de Prefijos exactos solicitada:
-    // ANILLOS -> AN, CADENAS -> CA, CANDONGAS -> CAN, ARETES -> AR, DIJES -> DI, PULSERAS -> PU, TOPOS -> TO
     let prefijo = "JO";
     if (catValor.includes("CANDON")) {
         prefijo = "CAN";
@@ -384,7 +382,6 @@ function generarSkuYBarraAutomatico() {
     }
 
     const lista = window.listaProductosCache || [];
-    // Filtrar los productos que comiencen exactamente con este prefijo para calcular el consecutivo real
     const filtradosPrefijo = lista.filter(p => {
         let s = String(p.SKU || p.sku || "").trim().toUpperCase();
         return s.startsWith(prefijo);
@@ -394,7 +391,6 @@ function generarSkuYBarraAutomatico() {
     let consecutivoStr = String(siguienteNumero).padStart(5, '0');
     let skuGenerado = `${prefijo}${consecutivoStr}`;
 
-    // Validar colisión por seguridad
     while (lista.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
         siguienteNumero++;
         consecutivoStr = String(siguienteNumero).padStart(5, '0');
@@ -546,33 +542,39 @@ function exportarProductosCSV() {
         return;
     }
 
-    let csv = "SKU;Codigo_Barra;Nombre;Categoria;Color;Material;Peso;Costo;Margen;Descuento;Venta_Final;Ubicacion\n";
+    let csv = "ID_Producto;SKU;Ref;Codigo_Barra;Nombre;Descripcion;ID_Categoria;Color;Material;ID_Ubicacion;Stock_Min;Stock_Max;Estado;Fecha_Creacion;Peso;Valor_Oro;Valor_Piedra;Valor_Compra\n";
     window.listaProductosCache.forEach(p => {
         csv += [
             p.SKU || "",
+            `"${(p.Nombre || "").replace(/"/g, '""')}"`,
+            p.ID_Categoria || p.categoria || "",
             p.Codigo_Barra || "",
             `"${(p.Nombre || "").replace(/"/g, '""')}"`,
+            `"${(p.Descripcion || p.Nombre || "").replace(/"/g, '""')}"`,
             p.ID_Categoria || p.categoria || "",
             p.Color || "",
             p.Material_Oro || "",
+            p.ID_Ubicacion || "",
+            0,
+            0,
+            "DISPONIBLE",
+            new Date().toISOString().slice(0,10),
             p.Peso || 0,
             p.Costo || 0,
-            p.Porcentaje_Venta || 100,
-            p.Tiene_Descuento || 0,
-            p.Venta_Final || 0,
-            p.ID_Ubicacion || ""
+            p.Valor_Piedra || 0,
+            0
         ].join(";") + "\n";
     });
 
     let link = document.createElement("a");
     link.href = encodeURI("data:text/csv;charset=utf-8,\uFEFF" + csv);
-    link.download = `catalogo_productos_manu.csv`;
+    link.download = `inventario_manu.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV OPERATIVO =================
+// ================= EXPORTACIÓN E IMPORTACIÓN CSV MAPEJADA EXACTA =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -634,38 +636,52 @@ async function procesarArchivoCsvImportado() {
             if (!linea) continue;
 
             let columnas = linea.split(';');
-            if (columnas.length < 3) {
+            if (columnas.length < 5) {
                 columnas = linea.split(',');
             }
 
-            if (columnas.length >= 3) {
+            if (columnas.length >= 5) {
+                // Mapeo exacto según tu estructura de columnas real mostrada en el Excel de ejemplo:
+                // [0] ID_Producto (SKU)
+                // [1] SKU (Nombre largo / Descripción)
+                // [2] Ref (Categoría)
+                // [3] Codigo_Barra
+                // [4] Nombre
+                // [5] Descripcion
+                // [6] ID_Categoria
+                // [7] Color
+                // [8] Material
+                // [9] ID_Ubicacion
+                // [14] Peso
+                // [15] Valor_Oro (Costo)
+                // [16] Valor_Piedra
+
                 let sku = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
-                let codigoBarra = columnas[1] ? columnas[1].replace(/"/g, '').trim() : '';
-                let nombre = columnas[2] ? columnas[2].replace(/"/g, '').trim() : '';
-                let categoria = columnas[3] ? columnas[3].replace(/"/g, '').trim() : 'ANILLOS';
-                let color = columnas[4] ? columnas[4].replace(/"/g, '').trim() : 'AMARILLO';
-                let material = columnas[5] ? columnas[5].replace(/"/g, '').trim() : 'ORO';
-                let peso = Number(String(columnas[6] || 0).replace(',', '.')) || 0;
-                let costo = Number(columnas[7]) || 0;
-                let margen = Number(columnas[8]) || 100;
-                let descuento = Number(columnas[9]) || 0;
-                let ubicacion = columnas[11] ? columnas[11].replace(/"/g, '').trim() : 'CAJA FUERTE';
+                let codigoBarra = columnas[3] ? columnas[3].replace(/"/g, '').trim() : sku;
+                let nombre = columnas[4] ? columnas[4].replace(/"/g, '').trim() : (columnas[1] ? columnas[1].replace(/"/g, '').trim() : 'Joya');
+                let categoria = columnas[6] ? columnas[6].replace(/"/g, '').trim() : (columnas[2] ? columnas[2].replace(/"/g, '').trim() : 'ANILLOS');
+                let color = columnas[7] ? columnas[7].replace(/"/g, '').trim() : 'AMARILLO';
+                let material = columnas[8] ? columnas[8].replace(/"/g, '').trim() : 'ORO';
+                let ubicacion = columnas[9] ? columnas[9].replace(/"/g, '').trim() : 'CAJA FUERTE';
+                let peso = Number(String(columnas[14] || 0).replace(',', '.')) || 0;
+                let costo = Number(String(columnas[15] || 0).replace(',', '.')) || 0;
+                let valorPiedra = Number(String(columnas[16] || 0).replace(',', '.')) || 0;
 
                 if (sku && nombre) {
                     try {
                         await API.llamar("guardarProducto", {
                             action: "guardarProducto",
                             sku: sku,
-                            codigo_barra: codigoBarra || sku,
+                            codigo_barra: codigoBarra,
                             nombre: nombre,
                             categoria: categoria,
                             material: material,
                             color: color,
                             peso: peso,
-                            valor_piedra: 0,
+                            valor_piedra: valorPiedra,
                             costo: costo,
-                            porcentaje_venta: margen,
-                            tiene_descuento: descuento,
+                            porcentaje_venta: 100,
+                            tiene_descuento: 0,
                             ubicacion: ubicacion,
                             foto: "",
                             usuario: usuario
