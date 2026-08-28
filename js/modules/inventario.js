@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
- * Versión Íntegra y Completa con Ajuste de Columna de Producto y Dos Botones de Excel
+ * Versión Móvil Amigable y Ordenada para Android / iOS
  */
 
 let listaInventarioCache = [];
@@ -11,32 +11,32 @@ async function renderizarModuloInventario(container) {
     let fechaHoy = new Date().toISOString().split('T')[0];
 
     container.innerHTML = `
-        <div class="card">
-            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.1rem;">📦 Módulo de Auditoría — Arqueo e Inventario Físico en Línea</h3>
-            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1.25rem;">Verifique existencias reales en vitrinas y caja fuerte escaneando o buscando por SKU, código de barras o nombre.</p>
+        <div class="card" style="background: #ffffff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <h3 style="color: #0f172a; margin-bottom: 0.25rem; font-size: 1.1rem;">📦 Auditoría y Arqueo Físico</h3>
+            <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 1rem;">Verifique existencias reales escaneando o buscando por SKU, código de barras o nombre.</p>
             
-            <div style="display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;">
-                <button class="btn-modern btn-success-action" onclick="exportarFormatoExcelVacio()">📥 Descargar Formato Excel</button>
-                <button class="btn-modern" onclick="exportarArqueoExcel()" style="background: #0284c7; color: white;">📊 Guardar Arqueo (Excel)</button>
-                <button class="btn-modern btn-danger-action" onclick="limpiarArqueoFisico()">🧹 Limpiar</button>
+            <div style="display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap;">
+                <button class="btn-modern btn-success-action" onclick="exportarFormatoExcelVacio()" style="flex: 1; min-width: 140px; padding: 10px; font-size: 0.85rem;">📥 Descargar Formato</button>
+                <button class="btn-modern" onclick="exportarArqueoExcel()" style="flex: 1; min-width: 140px; background: #0284c7; color: white; padding: 10px; font-size: 0.85rem;">📊 Guardar Arqueo</button>
+                <button class="btn-modern btn-danger-action" onclick="limpiarArqueoFisico()" style="padding: 10px; font-size: 0.85rem;">🧹 Limpiar</button>
             </div>
 
-            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
-                <div style="font-weight: bold; color: #334155; margin-bottom: 8px;">📋 Responsables y Filtros</div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1rem;">
+                <div style="font-weight: bold; color: #334155; margin-bottom: 6px; font-size: 0.85rem;">📋 Filtros de Auditoría</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
                     <div>
-                        <label style="font-size: 0.8rem; color: #64748b;">Fecha</label>
-                        <input type="date" id="arqFecha" value="${fechaHoy}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <label style="font-size: 0.75rem; color: #64748b;">Fecha</label>
+                        <input type="date" id="arqFecha" value="${fechaHoy}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size: 0.85rem;">
                     </div>
                     <div>
-                        <label style="font-size: 0.8rem; color: #64748b;">Responsable</label>
-                        <select id="arqResponsableSelect" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; background:white;">
-                            <option value="">Cargando usuarios...</option>
+                        <label style="font-size: 0.75rem; color: #64748b;">Responsable</label>
+                        <select id="arqResponsableSelect" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; background:white; font-size: 0.85rem;">
+                            <option value="">Cargando...</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size: 0.8rem; color: #64748b;">Área / Vitrina</label>
-                        <select id="arqArea" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;">
+                        <label style="font-size: 0.75rem; color: #64748b;">Área / Vitrina</label>
+                        <select id="arqArea" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-size: 0.85rem;">
                             <option value="Inventario General / Vitrinas">Inventario General / Vitrinas</option>
                             <option value="Caja Fuerte">Caja Fuerte</option>
                             <option value="Vitrina 1">Vitrina 1</option>
@@ -47,35 +47,35 @@ async function renderizarModuloInventario(container) {
             </div>
 
             <!-- RESUMEN DE ARQUEO -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; text-align: center;">
-                <div style="background: #e0f2fe; padding: 12px; border-radius: 8px; border: 1px solid #bae6fd;">
-                    <div style="font-size: 0.75rem; color: #0369a1; font-weight: bold;">TOTAL</div>
-                    <div id="lblTotalInventario" style="font-size: 1.25rem; font-weight: bold; color: #0369a1;">0</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; text-align: center;">
+                <div style="background: #e0f2fe; padding: 10px; border-radius: 8px; border: 1px solid #bae6fd;">
+                    <div style="font-size: 0.7rem; color: #0369a1; font-weight: bold;">TOTAL</div>
+                    <div id="lblTotalInventario" style="font-size: 1.15rem; font-weight: bold; color: #0369a1;">0</div>
                 </div>
-                <div style="background: #dcfce7; padding: 12px; border-radius: 8px; border: 1px solid #bbf7d0;">
-                    <div style="font-size: 0.75rem; color: #15803d; font-weight: bold;">PRESENTES</div>
-                    <div id="lblPresentesInventario" style="font-size: 1.25rem; font-weight: bold; color: #15803d;">0</div>
+                <div style="background: #dcfce7; padding: 10px; border-radius: 8px; border: 1px solid #bbf7d0;">
+                    <div style="font-size: 0.7rem; color: #15803d; font-weight: bold;">PRESENTES</div>
+                    <div id="lblPresentesInventario" style="font-size: 1.15rem; font-weight: bold; color: #15803d;">0</div>
                 </div>
-                <div style="background: #fee2e2; padding: 12px; border-radius: 8px; border: 1px solid #fecaca;">
-                    <div style="font-size: 0.75rem; color: #b91c1c; font-weight: bold;">FALTANTES</div>
-                    <div id="lblFaltantesInventario" style="font-size: 1.25rem; font-weight: bold; color: #b91c1c;">0</div>
+                <div style="background: #fee2e2; padding: 10px; border-radius: 8px; border: 1px solid #fecaca;">
+                    <div style="font-size: 0.7rem; color: #b91c1c; font-weight: bold;">FALTANTES</div>
+                    <div id="lblFaltantesInventario" style="font-size: 1.15rem; font-weight: bold; color: #b91c1c;">0</div>
                 </div>
             </div>
 
             <!-- BUSCADOR UNIVERSAL INTELIGENTE DE ARQUEO -->
-            <div style="margin-bottom: 1rem; display: flex; gap: 10px; align-items: center;">
+            <div style="margin-bottom: 1rem; display: flex; gap: 8px; align-items: center;">
                 <div class="toolbar-search-box" style="flex: 1;">
                     <span>🔍</span>
-                    <input type="text" id="inputBuscadorArqueo" placeholder="Buscar por SKU, código de barras, nombre, ubicación..." oninput="filtrarArqueoEnVivoOptimizado()" style="width: 100%; padding: 8px 8px 8px 32px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <input type="text" id="inputBuscadorArqueo" placeholder="Buscar SKU, barras, nombre..." oninput="filtrarArqueoEnVivoOptimizado()" style="width: 100%; padding: 8px 8px 8px 32px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem;">
                 </div>
-                <select id="filtroEstadoArqueo" onchange="filtrarArqueoEnVivoOptimizado()" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                <select id="filtroEstadoArqueo" onchange="filtrarArqueoEnVivoOptimizado()" style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-size: 0.85rem;">
                     <option value="TODOS">Todos</option>
                     <option value="PRESENTES">Presentes</option>
                     <option value="FALTANTES">Faltantes</option>
                 </select>
             </div>
 
-            <div id="tablaInventarioContainer"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario para auditoría...</p></div>
+            <div id="tablaInventarioContainer"><p style="text-align: center; color: #64748b; padding: 2rem;">Cargando inventario...</p></div>
         </div>`;
 
     await cargarUsuariosResponsablesArqueo();
@@ -89,7 +89,7 @@ async function cargarUsuariosResponsablesArqueo() {
     try {
         const res = await API.llamar("obtenerUsuarios", {}, "GET");
         if (res && res.status === "success" && res.data) {
-            let html = `<option value="">Seleccione responsable...</option>`;
+            let html = `<option value="">Seleccione...</option>`;
             res.data.forEach(u => {
                 let nombreUser = u.Nombre || u.nombre || u.Usuario || u.usuario || "Admin";
                 html += `<option value="${nombreUser}">${nombreUser}</option>`;
@@ -136,9 +136,6 @@ async function cargarDatosInventarioArqueo() {
     renderizarTablaArqueo();
 }
 
-/**
- * Buscador Universal de Arqueo Inteligente y Veloz con Debounce
- */
 function filtrarArqueoEnVivoOptimizado() {
     clearTimeout(timeoutArqueoBuscador);
     timeoutArqueoBuscador = setTimeout(() => {
@@ -201,34 +198,42 @@ function actualizarContadoresArqueo() {
 function renderizarTablaArqueo() {
     const contenedor = document.getElementById("tablaInventarioContainer");
     if (!listaInventarioFiltradosCache || listaInventarioFiltradosCache.length === 0) {
-        contenedor.innerHTML = `<p style="color: #64748b; text-align: center; padding: 2rem;">No se encontraron registros en el arqueo.</p>`;
+        contenedor.innerHTML = `<p style="color: #64748b; text-align: center; padding: 2rem;">No se encontraron registros.</p>`;
         return;
     }
 
-    let html = `<div class="table-container"><table class="data-table" style="table-layout: fixed; width: 100%;"><thead><tr>
-        <th style="width: 120px;">Estado Físico</th>
-        <th style="width: 100px;">SKU</th>
-        <th style="width: 160px;">Código de Barras</th>
-        <th style="width: auto;">Producto</th>
-        <th style="width: 140px; text-align: right;">Acción / Marcar</th>
+    let html = `<div class="table-container" style="overflow-x: auto;"><table class="data-table" style="width: 100%; min-width: 750px; border-collapse: collapse;"><thead><tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left; font-size: 0.8rem; color: #475569;">
+        <th style="padding: 10px; width: 110px;">Estado</th>
+        <th style="padding: 10px; width: 90px;">SKU</th>
+        <th style="padding: 10px; width: auto;">Producto / Descripción</th>
+        <th style="padding: 10px; width: 110px;">Categoría</th>
+        <th style="padding: 10px; width: 95px;">Ubicación</th>
+        <th style="padding: 10px; width: 65px;">Peso</th>
+        <th style="padding: 10px; width: 110px; text-align: center;">Acción</th>
     </tr></thead><tbody>`;
 
     listaInventarioFiltradosCache.forEach(p => {
-        let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '-';
+        let codigoBarraVal = p.Codigo_Barra || p.codigo_barra || '';
         let badgeEstado = p.auditado 
-            ? `<span class="badge" style="background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">✔ Encontrado</span>` 
-            : `<span class="badge" style="background-color: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">✖ FALTANTE</span>`;
+            ? `<span class="badge" style="background-color: #10b981; color: white; padding: 5px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; display: inline-block;">✔ PRESENTE</span>` 
+            : `<span class="badge" style="background-color: #ef4444; color: white; padding: 5px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; display: inline-block;">✖ FALTANTE</span>`;
         
         let btnAccion = p.auditado
-            ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Desmarcar</button>`
-            : `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">✔ Encontrado</button>`;
+            ? `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; width: 100%;">Desmarcar</button>`
+            : `<button class="btn-action" onclick="marcarItemAuditado('${p.SKU}')" style="background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; width: 100%;">✔ Encontrado</button>`;
 
-        html += `<tr>
-            <td style="word-break: break-word; vertical-align: middle;">${badgeEstado}</td>
-            <td style="word-break: break-word; vertical-align: middle;"><strong>${p.SKU}</strong></td>
-            <td style="word-break: break-word; vertical-align: middle;"><code>${codigoBarraVal}</code></td>
-            <td style="word-break: break-word; white-space: normal; vertical-align: middle; line-height: 1.4;">${p.Nombre || ''}</td>
-            <td style="word-break: break-word; vertical-align: middle; text-align: right;">${btnAccion}</td>
+        // Estructura ordenada en celdas separadas y limpias para evitar el desorden
+        html += `<tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;">
+            <td style="padding: 10px; vertical-align: middle;">${badgeEstado}</td>
+            <td style="padding: 10px; vertical-align: middle;"><strong style="color: #0f172a;">${p.SKU}</strong></td>
+            <td style="padding: 10px; vertical-align: middle;">
+                <div style="font-weight: 600; color: #1e293b; line-height: 1.3; margin-bottom: 2px;">${p.Nombre || ''}</div>
+                <div style="font-size: 0.75rem; color: #64748b;">Código: <code>${codigoBarraVal}</code></div>
+            </td>
+            <td style="padding: 10px; vertical-align: middle; color: #475569;">${p.ID_Categoria || ''}</td>
+            <td style="padding: 10px; vertical-align: middle; color: #475569;">${p.ID_Ubicacion || ''}</td>
+            <td style="padding: 10px; vertical-align: middle; color: #475569;">${p.Peso || 0}g</td>
+            <td style="padding: 10px; vertical-align: middle; text-align: center;">${btnAccion}</td>
         </tr>`;
     });
 
@@ -246,7 +251,7 @@ function limpiarArqueoFisico() {
 }
 
 function exportarFormatoExcelVacio() {
-    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos para exportar formato."); return; }
+    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos para exportar."); return; }
     let csv = "SKU;Codigo_Barra;Nombre;Categoria;Ubicacion;Peso;Conteo_Fisico\n";
     listaInventarioCache.forEach(p => {
         csv += [p.SKU, p.Codigo_Barra || "", `"${(p.Nombre || "").replace(/"/g, '""')}"`, p.ID_Categoria || "", p.ID_Ubicacion || "", p.Peso || 0, ""].join(";") + "\n";
@@ -258,7 +263,7 @@ function exportarFormatoExcelVacio() {
 }
 
 function exportarArqueoExcel() {
-    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos de arqueo para exportar."); return; }
+    if (!listaInventarioCache || listaInventarioCache.length === 0) { alert("No hay datos de arqueo."); return; }
     
     let responsable = document.getElementById("arqResponsableSelect")?.value || "No asignado";
     let fecha = document.getElementById("arqFecha")?.value || new Date().toISOString().split('T')[0];
