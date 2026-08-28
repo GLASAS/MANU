@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida de Productos por Código de Barras o SKU (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida de Productos con Opción de Limpiar (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -17,10 +17,11 @@ async function renderizarModuloConsulta(container) {
 
             <div style="display: flex; gap: 10px; margin-bottom: 25px;">
                 <input type="text" id="inputConsultaCodigo" placeholder="Escanee código de barras o digite SKU..." style="flex: 1; padding: 12px 15px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;" onkeydown="if(event.key === 'Enter') ejecutarConsultaRapidaProducto()">
-                <button type="button" onclick="ejecutarConsultaRapidaProducto()" style="background: #0f172a; color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">Consultar</button>
+                <button type="button" onclick="ejecutarConsultaRapidaProducto()" style="background: #0f172a; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">Consultar</button>
+                <button type="button" onclick="limpiarConsultaRapida()" style="background: #ef4444; color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;" title="Limpiar consulta">🧹 Limpiar</button>
             </div>
 
-            <!-- CONTENEDOR DE RESULTADO (SIN PESO) -->
+            <!-- CONTENEDOR DE RESULTADO -->
             <div id="resultadoConsultaContainer" style="display: none; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #f8fafc; text-align: center;">
                 <div style="margin-bottom: 15px;">
                     <img id="imgConsultaFoto" src="" style="width: 180px; height: 180px; object-fit: cover; border-radius: 8px; border: 2px solid #cbd5e1; display: inline-block; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto del Producto">
@@ -60,6 +61,24 @@ async function renderizarModuloConsulta(container) {
         } catch (e) {
             console.error(e);
         }
+    }
+}
+
+function limpiarConsultaRapida() {
+    const input = document.getElementById("inputConsultaCodigo");
+    const containerRes = document.getElementById("resultadoConsultaContainer");
+    const mensajeVacio = document.getElementById("mensajeConsultaVacio");
+
+    if (input) {
+        input.value = "";
+        input.focus();
+    }
+    if (containerRes) {
+        containerRes.style.display = "none";
+    }
+    if (mensajeVacio) {
+        mensajeVacio.style.display = "block";
+        mensajeVacio.innerHTML = "Esperando lectura de código...";
     }
 }
 
