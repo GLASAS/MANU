@@ -189,11 +189,19 @@
         });
 
         async function cargarDatosCatalogo() {
+            if (typeof mostrarSpinner === "function") {
+                mostrarSpinner("Sincronizando catálogo digital...");
+            }
+
             try {
                 const [resOro, resProd] = await Promise.all([
                     API.llamar("obtenerValorOroDia", {}, "GET"),
                     API.llamar("obtenerProductos", {}, "GET")
                 ]);
+
+                if (typeof ocultarSpinner === "function") {
+                    ocultarSpinner();
+                }
 
                 if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
                     valorOroDiaGlobal = Number(resOro.valor_oro_dia);
@@ -206,6 +214,9 @@
                     document.getElementById("catalogGrid").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444; font-weight: bold;">No se pudo cargar el inventario de joyas.</p>`;
                 }
             } catch (error) {
+                if (typeof ocultarSpinner === "function") {
+                    ocultarSpinner();
+                }
                 document.getElementById("catalogGrid").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444;">Error de conexión con el servidor.</p>`;
             }
         }
@@ -268,7 +279,6 @@
                 let certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
                 
                 let textoWp = encodeURIComponent(`Hola MANU JOYEROS, vi esta joya en el catálogo digital y quiero más información:\n\n*SKU:* ${sku}\n*Modelo:* ${nombre}\n*Material:* ${material} ${color ? '• ' + color : ''}\n*(Nota: Adjunto la foto de la joya de referencia).*`);
-                // Limpiamos el teléfono de CONFIG para dejar solo los números requeridos por la API de WhatsApp
                 let telefonoLimpio = CONFIG.TELEFONO.replace(/\D/g, ''); 
 
                 let whatsappLink = `https://wa.me/${telefonoLimpio}?text=${textoWp}`;
@@ -305,7 +315,6 @@
                     `;
                 }
 
-                // Detalles visibles sin mostrar el peso
                 let detallesVisualesTexto = material;
                 if (color) {
                     detallesVisualesTexto += ` • ${color}`;
