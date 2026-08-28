@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo Independiente de Kardex (kardex.js)
- * Versión Completa e Íntegra - 2026
+ * Versión Completa e Íntegra corregida para leer correctamente la hoja KARDEX - 2026
  */
 
 async function renderizarModuloKardex(container) {
