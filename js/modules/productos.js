@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra y Completa sin Catálogo Web ni QR Web superior, con SKU Automático y CSV Operativo
+ * Versión Íntegra con Lógica de Prefijos Dinámicos para SKU (AN, CA, CAN, etc.) y CSV Operativo
  */
 
 async function renderizarModuloProductos(container) {
@@ -98,6 +98,7 @@ async function renderizarModuloProductos(container) {
                             <select id="prodCategoria" onchange="generarSkuYBarraAutomatico()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
                                 <option value="ANILLOS">ANILLOS</option>
                                 <option value="CADENAS">CADENAS</option>
+                                <option value="CANDONGAS">CANDONGAS</option>
                                 <option value="ARETES">ARETES</option>
                                 <option value="DIJES">DIJES</option>
                                 <option value="PULSERAS">PULSERAS</option>
@@ -350,7 +351,7 @@ function toggleSelectAllProductos(source) {
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
-// ================= GENERACIÓN AUTOMÁTICA DE SKU Y CÓDIGO DE BARRAS BLOQUEADOS =================
+// ================= GENERACIÓN DE SKU EXACTO POR REGLA DE NEGOCIO Y CÓDIGO DE BARRAS BLOQUEADO =================
 function abrirModalNuevoProducto() {
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
@@ -372,16 +373,28 @@ function generarSkuYBarraAutomatico() {
     if (!categoriaSelect) return;
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
-    let prefijo = catValor.substring(0, 2);
-    if (!prefijo || prefijo.length < 2) prefijo = "JO";
+    
+    // Regla de Prefijos exactos solicitada:
+    // ANILLOS -> AN, CADENAS -> CA, CANDONGAS -> CAN, ARETES -> AR, DIJES -> DI, PULSERAS -> PU, TOPOS -> TO
+    let prefijo = "JO";
+    if (catValor.includes("CANDON")) {
+        prefijo = "CAN";
+    } else if (catValor.length >= 2) {
+        prefijo = catValor.substring(0, 2);
+    }
 
     const lista = window.listaProductosCache || [];
-    const filtradosCat = lista.filter(p => String(p.ID_Categoria || p.categoria || "").trim().toUpperCase() === catValor);
+    // Filtrar los productos que comiencen exactamente con este prefijo para calcular el consecutivo real
+    const filtradosPrefijo = lista.filter(p => {
+        let s = String(p.SKU || p.sku || "").trim().toUpperCase();
+        return s.startsWith(prefijo);
+    });
     
-    let siguienteNumero = filtradosCat.length + 1;
+    let siguienteNumero = filtradosPrefijo.length + 1;
     let consecutivoStr = String(siguienteNumero).padStart(5, '0');
     let skuGenerado = `${prefijo}${consecutivoStr}`;
 
+    // Validar colisión por seguridad
     while (lista.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
         siguienteNumero++;
         consecutivoStr = String(siguienteNumero).padStart(5, '0');
