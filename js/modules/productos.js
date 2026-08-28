@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Cálculo Exacto de Valor Venta y Carga Robusta al Editar
+ * Versión Completa e Íntegra - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -306,7 +306,6 @@ function renderizarTablaProductosAdmin() {
         let ubicacion = p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "VITRINA";
         let foto = p.Foto || p.foto || "";
 
-        // VALOR VENTA BASE = (oro_dia * peso) + valor_piedra
         let valorVentaBase = (valorOroActual * pesoItem) + valPiedra;
         let precioBaseConMargen = valorVentaBase * (1 + (margen / 100));
         let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
@@ -324,7 +323,7 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${categoria}</td>
                 <td style="padding: 10px; color: #475569;">${color}</td>
                 <td style="padding: 10px; color: #475569;">${material}</td>
-                <td style="padding: 10px;">${pesoItem}g</td>
+                <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>
                 ${esAdmin ? `
                     <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
                     <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
@@ -382,7 +381,6 @@ function toggleSelectAllProductos(source) {
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
-// ================= GENERADOR DE SKU EXACTO POR CATEGORÍA Y BARRAS =================
 function abrirModalNuevoProducto() {
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
@@ -438,7 +436,6 @@ function cerrarModalFormularioProducto() {
     document.getElementById("modalFormularioProducto").style.display = "none";
 }
 
-// ================= PROCESAR FOTO (CÁMARA O GALERÍA) =================
 function procesarImagenSeleccionada(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
@@ -485,10 +482,14 @@ async function guardarProductoInventario(event) {
     const categoria = document.getElementById("prodCategoria").value.trim();
     const material = document.getElementById("prodMaterial").value.trim();
     const color = document.getElementById("prodColor").value.trim();
-    const peso = Number(document.getElementById("prodPeso").value) || 0;
+    const peso = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
     const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
     const valor_oro = Number(document.getElementById("prodCosto").value) || 0;
     const valor_compra = valor_oro + valor_piedra;
+    
+    let valorOroActual = window.valorOroDelDiaCache || 250000;
+    let valor_venta = (valorOroActual * peso) + valor_piedra;
+
     const porcentaje_venta = Number(document.getElementById("prodMargen").value) || 100;
     const tiene_descuento = Number(document.getElementById("prodDescuento").value) || 0;
     const ubicacion = document.getElementById("prodUbicacion").value.trim();
@@ -506,10 +507,11 @@ async function guardarProductoInventario(event) {
             categoria: categoria,
             material: material,
             color: color,
-            peso: peso,
+            peso: Number(peso.toFixed(2)),
             valor_piedra: valor_piedra,
             valor_oro: valor_oro,
             valor_compra: valor_compra,
+            valor_venta: valor_venta,
             porcentaje_venta: porcentaje_venta,
             tiene_descuento: tiene_descuento,
             ubicacion: ubicacion,
@@ -610,7 +612,7 @@ function exportarProductosCSV() {
             p.ID_Categoria || p.categoria || "",
             p.Material || p.material || "ORO",
             p.Color || p.color || "AMARILLO",
-            pesoItem,
+            pesoItem.toFixed(2),
             valPiedra,
             valOro,
             p.Porcentaje_Venta || p.porcentaje_venta || 100,
@@ -631,7 +633,6 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO POR CABECERAS =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -717,6 +718,13 @@ async function procesarArchivoCsvImportado() {
             return parseFloat(limpio) || 0;
         };
 
+        let limpiarPesoDecimal = (val) => {
+            if (!val) return 0;
+            let limpio = String(val).replace(/[\s"]/g, '').replace(',', '.');
+            let num = parseFloat(limpio);
+            return isNaN(num) ? 0 : Number(num.toFixed(2));
+        };
+
         for (let i = 1; i < lineas.length; i++) {
             let linea = lineas[i].trim();
             if (!linea) continue;
@@ -732,7 +740,7 @@ async function procesarArchivoCsvImportado() {
             let material = getVal(idxMat) || 'ORO';
             let color = getVal(idxColor) || 'AMARILLO';
             
-            let peso = limpiarMonto(getVal(idxPeso));
+            let peso = limpiarPesoDecimal(getVal(idxPeso));
             let valorOro = limpiarMonto(getVal(idxValorOro));
             let valorPiedra = limpiarMonto(getVal(idxValorPiedra));
             let valorCompraTotal = valorOro + valorPiedra;
@@ -823,7 +831,6 @@ function cerrarZoomImagen() {
     }
 }
 
-// ================= ETIQUETAS (QR Y BARRAS) =================
 function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     let modalID = "modalEtiquetaJoya";
     let modalDiv = document.getElementById(modalID);
