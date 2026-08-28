@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo Independiente de Kardex (kardex.js)
- * Versión Completa e Íntegra corregida para leer correctamente la hoja KARDEX - 2026
+ * Versión Completa e Íntegra corregida para reflejar correctamente Motivo, Observación, Tipo y Cantidades - 2026
  */
 
 async function renderizarModuloKardex(container) {
@@ -26,12 +26,12 @@ async function renderizarModuloKardex(container) {
                             <th style="padding: 10px;">Fecha</th>
                             <th style="padding: 10px;">SKU / Producto</th>
                             <th style="padding: 10px;">Tipo</th>
-                            <th style="padding: 10px;">Documento</th>
                             <th style="padding: 10px; text-align: center;">Entrada</th>
                             <th style="padding: 10px; text-align: center;">Salida</th>
                             <th style="padding: 10px; text-align: center;">Stock</th>
+                            <th style="padding: 10px;">Motivo</th>
+                            <th style="padding: 10px;">Observaciones</th>
                             <th style="padding: 10px;">Usuario</th>
-                            <th style="padding: 10px;">Motivo / Obs</th>
                         </tr>
                     </thead>
                     <tbody id="tablaKardexBody">
@@ -55,23 +55,36 @@ async function cargarDatosKardex() {
         if (res && res.status === "success" && res.data && res.data.length > 0) {
             let html = "";
             res.data.reverse().forEach(row => {
-                let tipo = String(row.Tipo_Movimiento || "").toUpperCase();
-                let badgeTipo = tipo === "ENTRADA" 
+                // Buscamos dinámicamente el tipo de movimiento cubriendo variaciones de nombres en las cabeceras
+                let tipoRaw = row["Tipo_Movimiento (ENTRADA/SALIDA/AJUSTE)"] || row.Tipo_Movimiento || row.tipo_movimiento || "";
+                let tipo = String(tipoRaw).toUpperCase();
+                
+                let badgeTipo = tipo.includes("ENTRADA") 
                     ? `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">ENTRADA</span>`
                     : `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">SALIDA</span>`;
 
+                let skuProd = row.ID_Producto || row.id_producto || row.SKU || row.sku || "-";
+                let cantEntrada = row.Cant_Entrada !== undefined ? row.Cant_Entrada : (row.cant_entrada || 0);
+                let cantSalida = row.Cant_Salida !== undefined ? row.Cant_Salida : (row.cant_salida || 0);
+                let saldoStock = row.Saldo_Stock !== undefined ? row.Saldo_Stock : (row.saldo_stock || 0);
+                let motivoVal = row.Motivo || row.motivo || "-";
+                let observacionVal = row.Observacion || row.observacion || row.Observaciones || row.observaciones || "-";
+                let usuarioVal = row.Usuario || row.usuario || "-";
+                let fechaVal = row.Fecha || row.fecha || "-";
+                let idKardexVal = row.ID_Kardex || row.id_kardex || "-";
+
                 html += `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
-                        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${row.ID_Kardex || '-'}</td>
-                        <td style="padding: 10px; color: #475569;">${row.Fecha || '-'}</td>
-                        <td style="padding: 10px; font-weight: bold; color: #2563eb;">${row.ID_Producto || '-'}</td>
+                        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${idKardexVal}</td>
+                        <td style="padding: 10px; color: #475569;">${fechaVal}</td>
+                        <td style="padding: 10px; font-weight: bold; color: #2563eb;">${skuProd}</td>
                         <td style="padding: 10px;">${badgeTipo}</td>
-                        <td style="padding: 10px; color: #475569;">${row.Documento || '-'}</td>
-                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #059669;">${row.Cant_Entrada || 0}</td>
-                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #dc2626;">${row.Cant_Salida || 0}</td>
-                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #0f172a;">${row.Saldo_Stock || 0}</td>
-                        <td style="padding: 10px; color: #475569;">${row.Usuario || '-'}</td>
-                        <td style="padding: 10px; color: #64748b;">${row.Motivo || '-'} ${row.Observacion ? '• ' + row.Observacion : ''}</td>
+                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #059669;">${cantEntrada}</td>
+                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #dc2626;">${cantSalida}</td>
+                        <td style="padding: 10px; text-align: center; font-weight: bold; color: #0f172a;">${saldoStock}</td>
+                        <td style="padding: 10px; color: #334155; font-weight: 600;">${motivoVal}</td>
+                        <td style="padding: 10px; color: #64748b;">${observacionVal}</td>
+                        <td style="padding: 10px; color: #475569;">${usuarioVal}</td>
                     </tr>
                 `;
             });
