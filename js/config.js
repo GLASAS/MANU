@@ -10,7 +10,7 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.2100"
+  VERSION: "V1.816"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
