@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Inventario y Arqueo (inventario.js)
- * Versión Ultra-Optimizada para Móviles (Android / iOS) con Tarjetas Limpias y Ordenadas
+ * Versión Ultra-Optimizada para Móviles con Spinner de Carga Integrado - 2026
  */
 
 let listaInventarioCache = [];
@@ -108,6 +108,10 @@ async function cargarUsuariosResponsablesArqueo() {
 }
 
 async function cargarDatosInventarioArqueo() {
+    if (typeof mostrarSpinner === "function") {
+        mostrarSpinner("Sincronizando inventario físico...");
+    }
+
     let productos = null;
     let cache = localStorage.getItem("cache_productos_manu");
     
@@ -121,9 +125,14 @@ async function cargarDatosInventarioArqueo() {
             productos = res.data;
             localStorage.setItem("cache_productos_manu", JSON.stringify(productos));
         } else {
+            if (typeof ocultarSpinner === "function") ocultarSpinner();
             document.getElementById("tablaInventarioContainer").innerHTML = `<p style="color: #ef4444; text-align: center;">Error al cargar datos.</p>`;
             return;
         }
+    }
+
+    if (typeof ocultarSpinner === "function") {
+        ocultarSpinner();
     }
 
     listaInventarioCache = (productos || []).filter(p => String(p.Estado || p.estado || "DISPONIBLE").trim().toUpperCase().includes("DISPONIBLE")).map(p => ({
@@ -202,7 +211,6 @@ function renderizarTablaArqueo() {
         return;
     }
 
-    // Diseño en formato de tarjetas responsivas perfecto para móviles (Android / iOS)
     let html = `<div style="display: flex; flex-direction: column; gap: 10px;">`;
 
     listaInventarioFiltradosCache.forEach(p => {
