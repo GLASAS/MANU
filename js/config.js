@@ -10,7 +10,7 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V1.1750"
+  VERSION: "V1.2100"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -21,10 +21,21 @@ const registrosPorPagina = 10;
 let valorOroDelDiaCache = 250000;
 
 document.addEventListener("DOMContentLoaded", async () => {
-    if (!usuarioActual && !window.location.href.includes("login.html")) {
+    // Detectar si la página actual es pública (catálogo o certificado)
+    const pathActual = window.location.pathname.toLowerCase();
+    const esPaginaPublica = pathActual.includes("catalogomanu") || pathActual.includes("cert.html");
+
+    // Si NO hay sesión y NO es una página pública, redirigir al login
+    if (!usuarioActual && !esPaginaPublica && !window.location.href.includes("login.html")) {
         window.location.href = "login.html";
         return;
     }
+
+    // Si es una página pública, no ejecutar lógica del panel administrativo
+    if (esPaginaPublica) {
+        return; 
+    }
+
     if (usuarioActual) {
         const lblNombre = document.getElementById("userNameLabel");
         const lblBanner = document.getElementById("userNameBanner");
@@ -167,7 +178,7 @@ async function cargarColoresDinamicos() {}
 
 // Módulo de Generación de Código QR Catálogo Web
 function abrirModalQrCatalogo() {
-    const urlCatalogo = window.location.origin + window.location.pathname.replace("index.html", "catalogomanu.html");
+    const urlCatalogo = "https://glasas.github.io/MANU/catalogomanu";
     
     let modalID = "modalQrDinamico";
     let modalDiv = document.getElementById(modalID);
