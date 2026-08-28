@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra y Completa con SKU Automático, Código de Barras Bloqueado y CSV Operativo
+ * Versión Íntegra y Completa sin Catálogo Web ni QR Web superior, con SKU Automático y CSV Operativo
  */
 
 async function renderizarModuloProductos(container) {
@@ -671,10 +671,6 @@ async function procesarArchivoCsvImportado() {
     };
 
     reader.readAsText(file, "UTF-8");
-}
-
-function abrirModalQrCatalogoAdmin() {
-    abrirModalQrCatalogo();
 }
 
 function abrirZoomImagenSrc(url) {
