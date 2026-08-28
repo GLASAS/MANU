@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Etiquetas Actualizadas y Modal de Imagen Corregido
+ * Versión Completa e Íntegra - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -198,7 +198,7 @@ async function renderizarModuloProductos(container) {
             }
         </style>
 
-        <!-- MODAL ZOOM IMAGEN (CON ID imageModal Y BOTÓN CERRAR ABAJO) -->
+        <!-- MODAL ZOOM IMAGEN -->
         <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
             <div style="position: relative; display: flex; flex-direction: column; align-items: center; max-width: 90%; max-height: 90%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
                 <img id="imgModalSrc" src="" style="max-width: 100%; max-height: 75vh; border-radius: 8px; object-fit: contain; margin-bottom: 15px;">
@@ -543,7 +543,6 @@ function editarProducto(sku) {
 
     const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
     
-    // CARGAR VALOR BASE DE ORO: valor_oro_dia * peso (o el valor guardado si existe)
     let valorOroActual = window.valorOroDelDiaCache || 250000;
     let pValorOro = Number(prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)))) || 0;
     if (pValorOro === 0 && pPeso > 0) {
