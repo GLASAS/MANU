@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con SKU Automático, Importación CSV y Spinner de Carga Global
+ * Versión Íntegra con Mapeo CSV Exacto, SKU Automático por Categoría y Spinner de Carga
  */
 
 async function renderizarModuloProductos(container) {
@@ -209,7 +209,6 @@ async function renderizarModuloProductos(container) {
     await cargarListaProductos();
 }
 
-// Funciones auxiliares para mostrar y ocultar el círculo girando (Spinner)
 function mostrarSpinner(texto = "Procesando...") {
     const lbl = document.getElementById("lblSpinnerTexto");
     if (lbl) lbl.textContent = texto;
@@ -615,7 +614,7 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV CON SPINNER DE PROCESO =================
+// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO EXACTO Y SKU AUTOMÁTICO =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -673,6 +672,7 @@ async function procesarArchivoCsvImportado() {
 
         let importadosCount = 0;
         const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
+        const listaActual = window.listaProductosCache || [];
 
         for (let i = 1; i < lineas.length; i++) {
             let linea = lineas[i].trim();
@@ -684,23 +684,50 @@ async function procesarArchivoCsvImportado() {
             }
 
             if (columnas.length >= 5) {
-                let sku = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
-                let codigoBarra = columnas[3] ? columnas[3].replace(/"/g, '').trim() : sku;
-                let nombre = columnas[4] ? columnas[4].replace(/"/g, '').trim() : (columnas[1] ? columnas[1].replace(/"/g, '').trim() : 'Joya');
-                let categoria = columnas[6] ? columnas[6].replace(/"/g, '').trim() : (columnas[2] ? columnas[2].replace(/"/g, '').trim() : 'ANILLOS');
-                let color = columnas[7] ? columnas[7].replace(/"/g, '').trim() : 'AMARILLO';
-                let material = columnas[8] ? columnas[8].replace(/"/g, '').trim() : 'ORO';
-                let ubicacion = columnas[9] ? columnas[9].replace(/"/g, '').trim() : 'CAJA FUERTE';
-                let peso = Number(String(columnas[14] || 0).replace(',', '.')) || 0;
-                let costo = Number(String(columnas[15] || 0).replace(',', '.')) || 0;
-                let valorPiedra = Number(String(columnas[16] || 0).replace(',', '.')) || 0;
+                // Mapeo exacto según el CSV de la imagen 1:
+                // [0] Nombre, [1] Categoria, [2] Material, [3] Tipo_Piedra, [4] Color, [5] Peso, [6] Valor_Oro (Costo), [7] Valor_Piedra, [8] Porcentaje_Venta, [9] Tiene_Descuento, [10] Ubicacion
+                let nombre = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
+                let categoria = columnas[1] ? columnas[1].replace(/"/g, '').trim().toUpperCase() : 'ANILLOS';
+                let material = columnas[2] ? columnas[2].replace(/"/g, '').trim() : 'ORO';
+                let color = columnas[4] ? columnas[4].replace(/"/g, '').trim() : 'AMARILLO';
+                let peso = Number(String(columnas[5] || 0).replace(',', '.')) || 0;
+                let costo = Number(String(columnas[6] || 0).replace(',', '.')) || 0;
+                let valorPiedra = Number(String(columnas[7] || 0).replace(',', '.')) || 0;
+                let margen = Number(columnas[8]) || 100;
+                let descuento = Number(columnas[9]) || 0;
+                let ubicacion = columnas[10] ? columnas[10].replace(/"/g, '').trim() : 'CAJA FUERTE';
 
-                if (sku && nombre) {
+                if (nombre) {
+                    // Generar SKU automático único por categoría en base al conteo actual
+                    let prefijo = "JO";
+                    if (categoria.includes("CANDON")) {
+                        prefijo = "CAN";
+                    } else if (categoria.length >= 2) {
+                        prefijo = categoria.substring(0, 2);
+                    }
+
+                    const filtradosPrefijo = listaActual.filter(p => {
+                        let s = String(p.SKU || p.sku || "").trim().toUpperCase();
+                        return s.startsWith(prefijo);
+                    });
+
+                    let siguienteNumero = filtradosPrefijo.length + importadosCount + 1;
+                    let consecutivoStr = String(siguienteNumero).padStart(5, '0');
+                    let skuGenerado = `${prefijo}${consecutivoStr}`;
+
+                    while (listaActual.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
+                        siguienteNumero++;
+                        consecutivoStr = String(siguienteNumero).padStart(5, '0');
+                        skuGenerado = `${prefijo}${consecutivoStr}`;
+                    }
+
+                    let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
+
                     try {
                         await API.llamar("guardarProducto", {
                             action: "guardarProducto",
-                            sku: sku,
-                            codigo_barra: codigoBarra,
+                            sku: skuGenerado,
+                            codigo_barra: String(codigoBarraUnico),
                             nombre: nombre,
                             categoria: categoria,
                             material: material,
@@ -708,15 +735,15 @@ async function procesarArchivoCsvImportado() {
                             peso: peso,
                             valor_piedra: valorPiedra,
                             costo: costo,
-                            porcentaje_venta: 100,
-                            tiene_descuento: 0,
+                            porcentaje_venta: margen,
+                            tiene_descuento: descuento,
                             ubicacion: ubicacion,
                             foto: "",
                             usuario: usuario
                         }, "POST");
                         importadosCount++;
                     } catch(err) {
-                        console.error("Error al importar SKU:", sku, err);
+                        console.error("Error al importar producto:", nombre, err);
                     }
                 }
             }
