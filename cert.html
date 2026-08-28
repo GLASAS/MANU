@@ -172,15 +172,20 @@
                             `;
                             contenedorPrecio.innerHTML = `
                                 <span style="text-decoration: line-through; color: #94a3b8; font-size: 1.1rem; margin-right: 10px;">$${Math.round(precioBaseConMargen).toLocaleString()}</span>
-                                <span style="color: #059669;">$${valorVentaFinal.toLocaleString()} COP</span>
+                                <span style="color: #dc2626;">$${valorVentaFinal.toLocaleString()} COP</span>
                             `;
                         } else {
-                            contenedorPrecio.textContent = `$${valorVentaFinal.toLocaleString()} COP`;
+                            contenedorPrecio.innerHTML = `<span style="color: #059669;">$${valorVentaFinal.toLocaleString()} COP</span>`;
                         }
 
                         if (producto.Foto || producto.foto) {
                             document.getElementById("certImgBox").innerHTML = `
                                 <img src="${producto.Foto || producto.foto}" alt="Joya Certificada" style="width: 100%; height: 100%; object-fit: contain;">
+                                ${htmlBadge}
+                            `;
+                        } else if (descPct > 0) {
+                            document.getElementById("certImgBox").innerHTML = `
+                                <span style="font-size: 4rem;">💍</span>
                                 ${htmlBadge}
                             `;
                         }
