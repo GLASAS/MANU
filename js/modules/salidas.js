@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo Independiente de Salidas (salidas.js)
- * Versión Completa e Íntegra - 2026
+ * Versión Completa e Íntegra con Soporte para Código de Barras y Pistola - 2026
  */
 
 async function renderizarModuloSalidas(container) {
@@ -11,13 +11,13 @@ async function renderizarModuloSalidas(container) {
     container.innerHTML = `
         <div class="card" style="margin-bottom: 25px; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <h3 style="margin-top: 0; color: #0f172a; font-size: 1.2rem; margin-bottom: 5px;">📤 Salidas de Inventario</h3>
-            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Registre la salida de joyas por venta, garantía o traslado.</p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Escanee el código de barras o digite el SKU para registrar la salida.</p>
             
             <form id="formRegistrarSalida" onsubmit="enviarRegistroSalida(event)">
                 <div style="display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 15px; margin-bottom: 15px;">
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU o Código de Producto *</label>
-                        <input type="text" id="inputSalidaSku" required placeholder="Ej: AN0001" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras / SKU *</label>
+                        <input type="text" id="inputSalidaSku" required placeholder="Escanee o digite código..." oninput="manejarInputSalida(event)" onpaste="setTimeout(enviarRegistroSalidaDirecto, 50)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Cantidad *</label>
@@ -25,7 +25,7 @@ async function renderizarModuloSalidas(container) {
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Motivo / Referencia *</label>
-                        <input type="text" id="inputSalidaMotivo" required placeholder="Ej: Venta directa" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
+                        <input type="text" id="inputSalidaMotivo" required placeholder="Ej: Venta directa / Garantía" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
                     </div>
                 </div>
                 <div style="margin-bottom: 20px;">
@@ -49,7 +49,7 @@ async function renderizarModuloSalidas(container) {
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
                             <th style="padding: 10px;">ID Salida</th>
                             <th style="padding: 10px;">Fecha</th>
-                            <th style="padding: 10px;">SKU</th>
+                            <th style="padding: 10px;">SKU / Barras</th>
                             <th style="padding: 10px;">Cantidad</th>
                             <th style="padding: 10px;">Motivo</th>
                             <th style="padding: 10px;">Usuario</th>
@@ -64,7 +64,44 @@ async function renderizarModuloSalidas(container) {
         </div>
     `;
 
+    setTimeout(() => {
+        const inp = document.getElementById("inputSalidaSku");
+        if (inp) inp.focus();
+    }, 200);
+
     await cargarHistorialSalidas();
+}
+
+function manejarInputSalida(event) {
+    const input = document.getElementById("inputSalidaSku");
+    if (!input) return;
+
+    const valor = input.value.trim();
+    // Si la pistola escanea un código de barras estándar (ej: 13 dígitos) se dispara automáticamente
+    if (valor.length >= 12) {
+        setTimeout(() => {
+            if (document.getElementById("inputSalidaSku") && document.getElementById("inputSalidaSku").value.trim() === valor) {
+                // Autocompletar motivo por defecto si está vacío para agilizar la venta con pistola
+                const motivoInput = document.getElementById("inputSalidaMotivo");
+                if (motivoInput && !motivoInput.value.trim()) {
+                    motivoInput.value = "Venta Directa (Escaneo)";
+                }
+            }
+        }, 50);
+    }
+}
+
+async function enviarRegistroSalidaDirecto() {
+    // Función auxiliar para autodisparar al pegar con pistola de códigos
+    setTimeout(() => {
+        const skuVal = document.getElementById("inputSalidaSku")?.value.trim();
+        if (skuVal && skuVal.length >= 5) {
+            const motivoInput = document.getElementById("inputSalidaMotivo");
+            if (motivoInput && !motivoInput.value.trim()) {
+                motivoInput.value = "Venta Directa (Escaneo)";
+            }
+        }
+    }, 50);
 }
 
 async function cargarHistorialSalidas() {
@@ -100,8 +137,8 @@ async function cargarHistorialSalidas() {
 }
 
 async function enviarRegistroSalida(event) {
-    event.preventDefault();
-    if (typeof mostrarSpinner === "function") mostrarSpinner("Registrando salida...");
+    if (event) event.preventDefault();
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Registrando salida y actualizando estado...");
 
     const sku = document.getElementById("inputSalidaSku").value.trim();
     const cantidad = document.getElementById("inputSalidaCantidad").value;
@@ -126,6 +163,10 @@ async function enviarRegistroSalida(event) {
             document.getElementById("formRegistrarSalida").reset();
             document.getElementById("inputSalidaCantidad").value = "1";
             cargarHistorialSalidas();
+            
+            // Volver a enfocar el input de escaneo para el siguiente producto
+            const inputSku = document.getElementById("inputSalidaSku");
+            if (inputSku) inputSku.focus();
         } else {
             alert("Error: " + (res ? res.message : "No se pudo registrar la salida."));
         }
