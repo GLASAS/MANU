@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida Optimizado (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -51,7 +51,6 @@ async function renderizarModuloConsulta(container) {
         if (inp) inp.focus();
     }, 200);
 
-    // Cargar caché de productos y oro al entrar al módulo
     if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
         if (typeof mostrarSpinner === "function") {
             mostrarSpinner("Sincronizando inventario y valor del oro...");
@@ -103,11 +102,11 @@ async function ejecutarConsultaRapidaProducto() {
 
     const lista = window.listaProductosCache || [];
     
-    // Búsqueda exacta y limpia por SKU o Código de Barras
+    // Búsqueda flexible recuperada para que encuentre por SKU o por código de barras de forma infalible
     const productoEncontrado = lista.find(p => {
         let sku = String(p.SKU || p.sku || "").trim().toLowerCase();
         let barras = String(p.Codigo_Barra || p.codigo_barra || "").trim().toLowerCase();
-        return sku === query || barras === query;
+        return sku === query || barras === query || barras.includes(query) || query.includes(barras);
     });
 
     const containerRes = document.getElementById("resultadoConsultaContainer");
