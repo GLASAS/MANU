@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Mapeo CSV Exacto, SKU Automático por Categoría y Spinner de Carga
+ * Versión Íntegra con Mapeo CSV Corregido para Peso, Costo y Valor Piedra
  */
 
 async function renderizarModuloProductos(container) {
@@ -614,7 +614,7 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO EXACTO Y SKU AUTOMÁTICO =================
+// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO EXACTO =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -684,21 +684,40 @@ async function procesarArchivoCsvImportado() {
             }
 
             if (columnas.length >= 5) {
-                // Mapeo exacto según el CSV de la imagen 1:
-                // [0] Nombre, [1] Categoria, [2] Material, [3] Tipo_Piedra, [4] Color, [5] Peso, [6] Valor_Oro (Costo), [7] Valor_Piedra, [8] Porcentaje_Venta, [9] Tiene_Descuento, [10] Ubicacion
+                // Mapeo exacto basado en el orden real de las columnas de tu CSV (imagen 1):
+                // [0] Nombre
+                // [1] Categoria
+                // [2] Material
+                // [3] Tipo_Piedra
+                // [4] Color
+                // [5] Peso
+                // [6] Valor_Oro (Costo)
+                // [7] Valor_Piedra
+                // [8] Porcentaje_Venta
+                // [9] Tiene_Descuento
+                // [10] Ubicacion
+
                 let nombre = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
                 let categoria = columnas[1] ? columnas[1].replace(/"/g, '').trim().toUpperCase() : 'ANILLOS';
                 let material = columnas[2] ? columnas[2].replace(/"/g, '').trim() : 'ORO';
                 let color = columnas[4] ? columnas[4].replace(/"/g, '').trim() : 'AMARILLO';
-                let peso = Number(String(columnas[5] || 0).replace(',', '.')) || 0;
-                let costo = Number(String(columnas[6] || 0).replace(',', '.')) || 0;
-                let valorPiedra = Number(String(columnas[7] || 0).replace(',', '.')) || 0;
+                
+                // Limpieza robusta de montos numéricos (eliminando símbolos $, puntos de miles y comas decimales de Excel)
+                let limpiarNumero = (val) => {
+                    if (!val) return 0;
+                    let limpio = String(val).replace(/[\$\s"]/g, '').replace(/\./g, '').replace(',', '.');
+                    return parseFloat(limpio) || 0;
+                };
+
+                let peso = limpiarNumero(columnas[5]);
+                let costo = limpiarNumero(columnas[6]);
+                let valorPiedra = limpiarNumero(columnas[7]);
                 let margen = Number(columnas[8]) || 100;
                 let descuento = Number(columnas[9]) || 0;
                 let ubicacion = columnas[10] ? columnas[10].replace(/"/g, '').trim() : 'CAJA FUERTE';
 
                 if (nombre) {
-                    // Generar SKU automático único por categoría en base al conteo actual
+                    // Generación automática del SKU exacto según categoría (ej. AN00001, CAN00001)
                     let prefijo = "JO";
                     if (categoria.includes("CANDON")) {
                         prefijo = "CAN";
