@@ -97,6 +97,19 @@
     <script src="./js/modules/usuarios.js"></script>
     
     <script>
+
+       function cargarModuloConsulta() {
+    // Selecciona el contenedor principal de tu diseño donde cambian las vistas
+    const contenedor = document.getElementById("main-content") || document.getElementById("contenidoPrincipal") || document.querySelector("main");
+    if (typeof renderizarModuloConsulta === "function") {
+        renderizarModuloConsulta(contenedor);
+    } else {
+        console.error("La función renderizarModuloConsulta no está definida. Revisa que el script consulta.js esté cargado.");
+        alert("⚠️ Error: El módulo de consulta rápida no se ha cargado correctamente.");
+    }
+}
+
+        
         function renderizarModuloCambiarPassword(container) {
             container.innerHTML = `
                 <div class="card" style="max-width: 450px; margin: 2rem auto; padding: 2.5rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
