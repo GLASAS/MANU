@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra - 2026
+ * Versión Completa e Íntegra con Spinner de Carga Integrado - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -225,11 +225,17 @@ async function cargarListaProductos() {
 
     tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando inventario y valor del oro...</td></tr>`;
 
+    // Activamos el spinner flotante global de carga
+    mostrarSpinner("Sincronizando inventario y valor del oro...");
+
     try {
         const [resOro, resProd] = await Promise.all([
             API.llamar("obtenerValorOroDia", {}, "GET"),
             API.llamar("obtenerProductos", {}, "GET")
         ]);
+
+        // Ocultamos el spinner flotante una vez recibida la respuesta
+        ocultarSpinner();
 
         if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
             window.valorOroDelDiaCache = Number(resOro.valor_oro_dia);
@@ -244,6 +250,7 @@ async function cargarListaProductos() {
             tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
         }
     } catch (e) {
+        ocultarSpinner();
         console.error(e);
         tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
     }
