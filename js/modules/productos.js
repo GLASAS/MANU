@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Spinner de Carga Integrado - 2026
+ * Versión Completa e Íntegra - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -180,37 +180,9 @@ async function renderizarModuloProductos(container) {
                 </div>
             </div>
         </div>
-
-        <!-- SPINNER / MODAL GLOBAL DE CARGA EN PROCESO -->
-        <div id="modalSpinnerGlobal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center;">
-            <div style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); max-width: 300px; width: 90%;">
-                <div style="width: 50px; height: 50px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: girarSpinner 0.8s linear infinite; margin: 0 auto 15px auto;"></div>
-                <h4 id="lblSpinnerTexto" style="color: #0f172a; margin: 0; font-size: 1rem;">Procesando...</h4>
-                <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Por favor espere un momento.</p>
-            </div>
-        </div>
-
-        <style>
-            @keyframes girarSpinner {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
     `;
 
     await cargarListaProductos();
-}
-
-function mostrarSpinner(texto = "Procesando...") {
-    const lbl = document.getElementById("lblSpinnerTexto");
-    if (lbl) lbl.textContent = texto;
-    const modal = document.getElementById("modalSpinnerGlobal");
-    if (modal) modal.style.display = "flex";
-}
-
-function ocultarSpinner() {
-    const modal = document.getElementById("modalSpinnerGlobal");
-    if (modal) modal.style.display = "none";
 }
 
 async function cargarListaProductos() {
@@ -225,8 +197,9 @@ async function cargarListaProductos() {
 
     tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando inventario y valor del oro...</td></tr>`;
 
-    // Activamos el spinner flotante global de carga
-    mostrarSpinner("Sincronizando inventario y valor del oro...");
+    if (typeof mostrarSpinner === "function") {
+        mostrarSpinner("Sincronizando inventario y valor del oro...");
+    }
 
     try {
         const [resOro, resProd] = await Promise.all([
@@ -234,8 +207,9 @@ async function cargarListaProductos() {
             API.llamar("obtenerProductos", {}, "GET")
         ]);
 
-        // Ocultamos el spinner flotante una vez recibida la respuesta
-        ocultarSpinner();
+        if (typeof ocultarSpinner === "function") {
+            ocultarSpinner();
+        }
 
         if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
             window.valorOroDelDiaCache = Number(resOro.valor_oro_dia);
@@ -250,7 +224,9 @@ async function cargarListaProductos() {
             tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
         }
     } catch (e) {
-        ocultarSpinner();
+        if (typeof ocultarSpinner === "function") {
+            ocultarSpinner();
+        }
         console.error(e);
         tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
     }
@@ -372,7 +348,7 @@ function filtrarProductosTabla() {
 }
 
 function toggleSelectAllProductos(source) {
-    checkboxes = document.querySelectorAll('.check-producto-item');
+    let checkboxes = document.querySelectorAll('.check-producto-item');
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
@@ -468,7 +444,7 @@ function procesarImagenSeleccionada(input) {
 
 async function guardarProductoInventario(event) {
     event.preventDefault();
-    mostrarSpinner("Guardando producto...");
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Guardando producto...");
 
     const skuOriginal = document.getElementById("prodSkuOriginal").value.trim();
     const sku = document.getElementById("prodSku").value.trim();
@@ -513,7 +489,7 @@ async function guardarProductoInventario(event) {
             foto: foto
         }, "POST");
 
-        ocultarSpinner();
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
 
         if (res && res.status === "success") {
             alert(res.message || "Operación realizada con éxito.");
@@ -523,7 +499,7 @@ async function guardarProductoInventario(event) {
             alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
         }
     } catch(err) {
-        ocultarSpinner();
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
         console.error(err);
         alert("⚠️ Error de conexión al guardar el producto.");
     }
@@ -577,14 +553,14 @@ async function eliminarProductosSeleccionados() {
 
     if (!confirm(`¿Está seguro de eliminar ${checks.length} producto(s) seleccionado(s)?`)) return;
 
-    mostrarSpinner("Eliminando productos...");
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Eliminando productos...");
     let skusAEliminar = Array.from(checks).map(cb => cb.value);
     
     for (let sku of skusAEliminar) {
         await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
     }
 
-    ocultarSpinner();
+    if (typeof ocultarSpinner === "function") ocultarSpinner();
     alert("Productos eliminados correctamente.");
     cargarListaProductos();
 }
@@ -636,35 +612,11 @@ function exportarProductosCSV() {
 
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
-    if (!modal) {
-        modal = document.createElement("div");
-        modal.id = "modalImportarExcel";
-        modal.style.cssText = "display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 9998; position: fixed; top: 0; left: 0; width: 100%; height: 100%;";
-        modal.innerHTML = `
-            <div style="background: white; width: 95%; max-width: 480px; border-radius: 12px; padding: 25px;" onclick="event.stopPropagation()">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; color: #0f172a;">📁 Importar Productos Masivos (CSV)</h3>
-                    <button type="button" onclick="cerrarModalImportarExcel()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
-                </div>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con las cabeceras correspondientes para cargar el inventario masivamente.</p>
-                
-                <div style="margin-bottom: 20px;">
-                    <input type="file" id="inputArchivoCsvImport" accept=".csv" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" onclick="cerrarModalImportarExcel()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                    <button type="button" id="btnProcesarCsv" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    modal.style.display = "flex";
+    if (modal) modal.style.display = "flex";
 }
 
 function cerrarModalImportarExcel() {
-    const modal = document.getElementById("modalImportarExcel");
+    let modal = document.getElementById("modalImportarExcel");
     if (modal) modal.style.display = "none";
 }
 
@@ -687,7 +639,7 @@ async function procesarArchivoCsvImportado() {
             return;
         }
 
-        mostrarSpinner("Procesando e importando productos...");
+        if (typeof mostrarSpinner === "function") mostrarSpinner("Procesando e importando productos...");
 
         let cabeceraLinea = lineas[0].trim();
         let separador = cabeceraLinea.includes(';') ? ';' : ',';
@@ -807,7 +759,7 @@ async function procesarArchivoCsvImportado() {
             }
         }
 
-        ocultarSpinner();
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
         alert(`✅ ¡Importación completada con éxito! Se procesaron y cargaron ${importadosCount} productos al inventario.`);
         cerrarModalImportarExcel();
         cargarListaProductos();
