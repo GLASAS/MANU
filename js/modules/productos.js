@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Cálculo Exacto de Valor Venta (Oro_Dia * Peso + Valor_Piedra)
+ * Versión Corregida - Mapeo Exacto de Peso y Costo Oro al Editar
  */
 
 async function renderizarModuloProductos(container) {
@@ -296,13 +296,13 @@ function renderizarTablaProductosAdmin() {
         let color = p.Color || p.color || "-";
         let material = p.Material || p.material || "ORO";
         
-        let pesoCrudo = p.Peso || p.peso || 0;
+        let pesoCrudo = p.Peso !== undefined ? p.Peso : (p.peso !== undefined ? p.peso : 0);
         let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-        let costoItem = Number(p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
-        let valPiedra = Number(p.Valor_Piedra || p.valor_piedra) || 0;
-        let margen = Number(p.Porcentaje_Venta || p.porcentaje_venta) || 100;
-        let descPct = Number(p.Tiene_Descuento || p.tiene_descuento) || 0;
+        let costoItem = Number(p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))) || 0;
+        let valPiedra = Number(p.Valor_Piedra !== undefined ? p.Valor_Piedra : (p.valor_piedra !== undefined ? p.valor_piedra : 0)) || 0;
+        let margen = Number(p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100)) || 100;
+        let descPct = Number(p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0)) || 0;
         let ubicacion = p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "VITRINA";
         let foto = p.Foto || p.foto || "";
 
@@ -539,20 +539,28 @@ function editarProducto(sku) {
         return;
     }
 
+    // Mapeo robusto compatible con mayúsculas y minúsculas provenientes de la hoja de Google Sheets
+    const pPeso = prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0);
+    const pValorOro = prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)));
+    const pValorPiedra = prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0);
+    const pMargen = prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100);
+    const pDescuento = prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : 0);
+    const pUbicacion = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || "CAJA FUERTE";
+
     document.getElementById("modalProductoTitulo").textContent = `Editar Producto: ${sku}`;
     document.getElementById("prodSkuOriginal").value = sku;
     document.getElementById("prodSku").value = prod.SKU || prod.sku || "";
     document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
     document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
     document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "ANILLOS";
-    document.getElementById("prodMaterial").value = prod.Material || prod.material || "";
-    document.getElementById("prodColor").value = prod.Color || prod.color || "";
-    document.getElementById("prodPeso").value = prod.Peso || prod.peso || 0;
-    document.getElementById("prodValorPiedra").value = prod.Valor_Piedra || prod.valor_piedra || 0;
-    document.getElementById("prodCosto").value = prod.Valor_Oro || prod.valor_oro || prod.Costo || prod.costo || 0;
-    document.getElementById("prodMargen").value = prod.Porcentaje_Venta || prod.porcentaje_venta || 100;
-    document.getElementById("prodDescuento").value = prod.Tiene_Descuento || prod.tiene_descuento || 0;
-    document.getElementById("prodUbicacion").value = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || "";
+    document.getElementById("prodMaterial").value = prod.Material || prod.material || "ORO";
+    document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
+    document.getElementById("prodPeso").value = pPeso;
+    document.getElementById("prodValorPiedra").value = pValorPiedra;
+    document.getElementById("prodCosto").value = pValorOro;
+    document.getElementById("prodMargen").value = pMargen;
+    document.getElementById("prodDescuento").value = pDescuento;
+    document.getElementById("prodUbicacion").value = pUbicacion;
     document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
 
     document.getElementById("modalFormularioProducto").style.display = "flex";
