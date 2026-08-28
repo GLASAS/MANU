@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida con Formato de Imagen de Catálogo (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida Optimizado (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -12,11 +12,11 @@ async function renderizarModuloConsulta(container) {
         <div class="card" style="max-width: 650px; margin: 30px auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="text-align: center; margin-bottom: 25px;">
                 <h3 style="margin: 0; color: #0f172a; font-size: 1.4rem;">🔍 Consulta Rápida de Joyas</h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Escanee el código de barras (carga automática) o digite el SKU / Código y presione Consultar.</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Escanee el código de barras o digite el SKU / Código y presione Consultar o Enter.</p>
             </div>
 
             <div style="display: flex; gap: 10px; margin-bottom: 25px;">
-                <input type="text" id="inputConsultaCodigo" placeholder="Escanee código de barras o digite SKU..." style="flex: 1; padding: 12px 15px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;" oninput="verificarEscaneoAutomatico(event)" onkeydown="if(event.key === 'Enter') ejecutarConsultaRapidaProducto()">
+                <input type="text" id="inputConsultaCodigo" placeholder="Escanee código de barras o digite SKU..." style="flex: 1; padding: 12px 15px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;" onkeydown="if(event.key === 'Enter') ejecutarConsultaRapidaProducto()">
                 <button type="button" onclick="ejecutarConsultaRapidaProducto()" style="background: #0f172a; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">Consultar</button>
                 <button type="button" onclick="limpiarConsultaRapida()" style="background: #ef4444; color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;" title="Limpiar consulta">🧹 Limpiar</button>
             </div>
@@ -51,6 +51,7 @@ async function renderizarModuloConsulta(container) {
         if (inp) inp.focus();
     }, 200);
 
+    // Cargar caché de productos y oro al entrar al módulo
     if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
         if (typeof mostrarSpinner === "function") {
             mostrarSpinner("Sincronizando inventario y valor del oro...");
@@ -69,20 +70,6 @@ async function renderizarModuloConsulta(container) {
                 ocultarSpinner();
             }
         }
-    }
-}
-
-function verificarEscaneoAutomatico(event) {
-    const input = document.getElementById("inputConsultaCodigo");
-    if (!input) return;
-
-    const valor = input.value.trim();
-    if (valor.length >= 8 && /^\d+$/.test(valor)) {
-        setTimeout(() => {
-            if (document.getElementById("inputConsultaCodigo") && document.getElementById("inputConsultaCodigo").value.trim() === valor) {
-                ejecutarConsultaRapidaProducto();
-            }
-        }, 80);
     }
 }
 
@@ -115,10 +102,12 @@ async function ejecutarConsultaRapidaProducto() {
     }
 
     const lista = window.listaProductosCache || [];
+    
+    // Búsqueda exacta y limpia por SKU o Código de Barras
     const productoEncontrado = lista.find(p => {
         let sku = String(p.SKU || p.sku || "").trim().toLowerCase();
         let barras = String(p.Codigo_Barra || p.codigo_barra || "").trim().toLowerCase();
-        return sku === query || barras === query || barras.includes(query) || query.includes(barras);
+        return sku === query || barras === query;
     });
 
     const containerRes = document.getElementById("resultadoConsultaContainer");
