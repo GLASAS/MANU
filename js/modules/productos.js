@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra - 2026
+ * Versión Completa con Botón de Cerrar Debajo de la Imagen
  */
 
 async function renderizarModuloProductos(container) {
@@ -198,11 +198,11 @@ async function renderizarModuloProductos(container) {
             }
         </style>
 
-        <!-- MODAL ZOOM IMAGEN -->
+        <!-- MODAL ZOOM IMAGEN (BOTÓN CERRAR ABAJO) -->
         <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center; max-width: 90%; max-height: 90%;" onclick="event.stopPropagation()">
-                <img id="imgModalSrc" src="" style="max-width: 100%; max-height: 80vh; border-radius: 8px; border: 2px solid white; object-fit: contain; margin-bottom: 15px;">
-                <button type="button" onclick="cerrarZoomImagen()" style="background: #ef4444; color: white; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">✕ Cerrar</button>
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center; max-width: 90%; max-height: 90%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
+                <img id="imgModalSrc" src="" style="max-width: 100%; max-height: 75vh; border-radius: 8px; object-fit: contain; margin-bottom: 15px;">
+                <button type="button" onclick="cerrarZoomImagen()" style="background: #ef4444; color: white; border: none; padding: 10px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; width: 100%; max-width: 250px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Cerrar</button>
             </div>
         </div>
     `;
