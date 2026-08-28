@@ -1,6 +1,6 @@
 /**
- * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Íntegra y Completa con Selector de Cámara/Galería y Restricción de Visibilidad por Rol
+ * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
+ * Versión Íntegra con SKU Automático por Categoría, Código de Barras Único y Restricción de Roles
  */
 
 async function renderizarModuloProductos(container) {
@@ -17,6 +17,8 @@ async function renderizarModuloProductos(container) {
                     <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
                 ` : ''}
                 <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
+                <button type="button" class="btn-action" onclick="window.open('https://glasas.github.io/MANU/catalogomanu', '_blank')" style="background: #d97706; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🌐 Catálogo Web</button>
+                <button type="button" class="btn-action" onclick="abrirModalQrCatalogoAdmin()" style="background: #7c3aed; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📱 QR Web</button>
                 ${esAdmin ? `
                     <button type="button" class="btn-action text-danger" onclick="eliminarProductosSeleccionados()" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🗑️ Eliminar</button>
                 ` : ''}
@@ -80,12 +82,12 @@ async function renderizarModuloProductos(container) {
                     <input type="hidden" id="prodSkuOriginal">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU *</label>
-                            <input type="text" id="prodSku" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU Automático *</label>
+                            <input type="text" id="prodSku" required readonly style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; font-weight: bold; color: #0f172a;">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras</label>
-                            <input type="text" id="prodCodigoBarra" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras Único</label>
+                            <input type="text" id="prodCodigoBarra" readonly style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; color: #64748b;">
                         </div>
                     </div>
                     <div style="margin-bottom: 12px;">
@@ -94,8 +96,15 @@ async function renderizarModuloProductos(container) {
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Categoría</label>
-                            <input type="text" id="prodCategoria" placeholder="ANILLOS" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Categoría *</label>
+                            <select id="prodCategoria" onchange="generarSkuYBarraAutomatico()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                                <option value="ANILLOS">ANILLOS</option>
+                                <option value="CADENAS">CADENAS</option>
+                                <option value="ARETES">ARETES</option>
+                                <option value="DIJES">DIJES</option>
+                                <option value="PULSERAS">PULSERAS</option>
+                                <option value="TOPOS">TOPOS</option>
+                            </select>
                         </div>
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Material</label>
@@ -153,7 +162,7 @@ async function renderizarModuloProductos(container) {
             </div>
         </div>
 
-        <!-- MODAL ZOOM IMAGEN CON BOTÓN DE CERRAR ROJO ABAJO Y CENTRADO -->
+        <!-- MODAL ZOOM IMAGEN -->
         <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
             <div style="position: relative; display: flex; flex-direction: column; align-items: center; max-width: 90%; max-height: 90%;" onclick="event.stopPropagation()">
                 <img id="imgModalSrc" src="" style="max-width: 100%; max-height: 80vh; border-radius: 8px; border: 2px solid white; object-fit: contain; margin-bottom: 15px;">
@@ -323,18 +332,57 @@ function toggleSelectAllProductos(source) {
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
+// ================= GENERACIÓN AUTOMÁTICA DE SKU Y CÓDIGO DE BARRAS =================
 function abrirModalNuevoProducto() {
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
     document.getElementById("prodSkuOriginal").value = "";
+    
+    // Seleccionar categoría por defecto y generar SKU/Barra automáticos
+    document.getElementById("prodCategoria").value = "ANILLOS";
+    generarSkuYBarraAutomatico();
+
     document.getElementById("modalFormularioProducto").style.display = "flex";
+}
+
+function generarSkuYBarraAutomatico() {
+    const categoriaSelect = document.getElementById("prodCategoria");
+    if (!categoriaSelect) return;
+
+    const catValor = categoriaSelect.value.trim().toUpperCase();
+    // Tomar las 2 primeras letras de la categoría (ej: AN, CA, TO, DI, PU)
+    let prefijo = catValor.substring(0, 2);
+    if (!prefijo || prefijo.length < 2) prefijo = "JO";
+
+    // Buscar cuántos productos existen en esta categoría para calcular el siguiente número consecutivo
+    const lista = window.listaProductosCache || [];
+    const filtradosCat = lista.filter(p => String(p.ID_Categoria || p.categoria || "").trim().toUpperCase() === catValor);
+    
+    let siguienteNumero = filtradosCat.length + 1;
+
+    // Asegurar que el número tenga 5 dígitos (ej: 00001)
+    let consecutivoStr = String(siguienteNumero).padStart(5, '0');
+    let skuGenerado = `${prefijo}${consecutivoStr}`;
+
+    // Validar que el SKU no exista ya por colisión; si existe, incrementar hasta encontrar uno libre
+    while (lista.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
+        siguienteNumero++;
+        consecutivoStr = String(siguienteNumero).padStart(5, '0');
+        skuGenerado = `${prefijo}${consecutivoStr}`;
+    }
+
+    // Generar código de barras único automático (simulando formato EAN / código de barras estándar numérico único)
+    let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
+
+    document.getElementById("prodSku").value = skuGenerado;
+    document.getElementById("prodCodigoBarra").value = codigoBarraUnico;
 }
 
 function cerrarModalFormularioProducto() {
     document.getElementById("modalFormularioProducto").style.display = "none";
 }
 
-// ================= FUNCIÓN PARA PROCESAR FOTO (CÁMARA O GALERÍA) =================
+// ================= PROCESAR FOTO (CÁMARA O GALERÍA) =================
 function procesarImagenSeleccionada(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
@@ -347,7 +395,6 @@ function procesarImagenSeleccionada(input) {
                 let width = img.width;
                 let height = img.height;
                 
-                // Redimensionar si es muy grande para optimizar almacenamiento
                 const maxDim = 800;
                 if (width > height && width > maxDim) {
                     height *= maxDim / width;
@@ -362,7 +409,6 @@ function procesarImagenSeleccionada(input) {
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Convertir a JPEG comprimido
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
                 document.getElementById("prodFoto").value = dataUrl;
             };
@@ -432,7 +478,7 @@ function editarProducto(sku) {
     document.getElementById("prodSku").value = prod.SKU || prod.sku || "";
     document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
     document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
-    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "";
+    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "ANILLOS";
     document.getElementById("prodMaterial").value = prod.Material_Oro || prod.Material || prod.material || "";
     document.getElementById("prodColor").value = prod.Color || prod.color || "";
     document.getElementById("prodPeso").value = prod.Peso || prod.peso || 0;
@@ -466,7 +512,35 @@ async function eliminarProductosSeleccionados() {
 }
 
 function exportarProductosCSV() {
-    alert("Función de exportación CSV activa.");
+    if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
+        alert("No hay productos para exportar.");
+        return;
+    }
+
+    let csv = "SKU;Codigo_Barra;Nombre;Categoria;Color;Material;Peso;Costo;Margen;Descuento;Venta_Final;Ubicacion\n";
+    window.listaProductosCache.forEach(p => {
+        csv += [
+            p.SKU || "",
+            p.Codigo_Barra || "",
+            `"${(p.Nombre || "").replace(/"/g, '""')}"`,
+            p.ID_Categoria || p.categoria || "",
+            p.Color || "",
+            p.Material_Oro || "",
+            p.Peso || 0,
+            p.Costo || 0,
+            p.Porcentaje_Venta || 100,
+            p.Tiene_Descuento || 0,
+            p.Venta_Final || 0,
+            p.ID_Ubicacion || ""
+        ].join(";") + "\n";
+    });
+
+    let link = document.createElement("a");
+    link.href = encodeURI("data:text/csv;charset=utf-8,\uFEFF" + csv);
+    link.download = `catalogo_productos_manu.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function abrirModalImportarExcel() {
@@ -474,7 +548,7 @@ function abrirModalImportarExcel() {
 }
 
 function abrirModalQrCatalogoAdmin() {
-    alert("Módulo QR de Catálogo activo.");
+    abrirModalQrCatalogo();
 }
 
 function abrirZoomImagenSrc(url) {
@@ -493,8 +567,7 @@ function cerrarZoomImagen() {
     }
 }
 
-// ================= MÓDULO: ETIQUETAS (QR CON CERT TOKEN Y BARRAS) =================
-
+// ================= ETIQUETAS (QR Y BARRAS) =================
 function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     let modalID = "modalEtiquetaJoya";
     let modalDiv = document.getElementById(modalID);
@@ -509,7 +582,6 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     }
 
     const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
-    
     const skuToken = btoa(sku);
     const certLink = `https://glasas.github.io/MANU_JOYEROS/cert.html?token=${skuToken}`;
     
@@ -565,16 +637,4 @@ function descargarImagenPng(imgId, nombreArchivo) {
         link.click();
     };
     imageObj.src = img.src;
-}
-
-function generarQrBarraAdmin(sku) {
-    const prod = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === sku.toUpperCase());
-    if (prod) {
-        let nombre = prod.Nombre || prod.nombre || "";
-        let codigoBarra = prod.Codigo_Barra || prod.codigo_barra || sku;
-        let costo = Number(prod.Costo || prod.costo) || 0;
-        abrirEtiquetaProducto(sku, nombre, costo.toLocaleString(), codigoBarra);
-    } else {
-        abrirEtiquetaProducto(sku, "Joya MANU JOYEROS", "0", sku);
-    }
 }
