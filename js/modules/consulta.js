@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida con Disparador de 13 Dígitos (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -38,7 +38,7 @@ async function renderizarModuloConsulta(container) {
                     <span id="lblConsultaSku" style="background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;"></span>
                 </div>
                 <h4 id="lblConsultaNombre" style="color: #0f172a; font-size: 1.1rem; margin: 0 0 10px 0; padding: 0 10px;"></h4>
-                <div style="font-size: 1.3rem; font-weight: bold; color: #059669; margin-bottom: 15px;" id="contenedorPrecioConsulta">
+                <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 15px;" id="contenedorPrecioConsulta">
                     Valor Venta: <span id="lblConsultaPrecio">$0</span>
                 </div>
                 <div style="display: flex; justify-content: center; gap: 20px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 12px;">
@@ -79,7 +79,6 @@ async function renderizarModuloConsulta(container) {
     }
 }
 
-// Validación exacta: Si la longitud llega a 13 caracteres (código completo de pistola o pegado), se dispara automáticamente
 function manejarInputConsulta(event) {
     const input = document.getElementById("inputConsultaCodigo");
     if (!input) return;
@@ -174,7 +173,7 @@ async function ejecutarConsultaRapidaProducto() {
         badgeEstado.style.display = "block";
         badgeEstado.style.borderColor = "#ef4444";
         badgeEstado.innerHTML = `<div style="background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 900; padding: 2px 4px; border-radius: 4px;">ESTADO</div><div style="color: #ef4444; font-size: 0.8rem; font-weight: 900; margin: 2px 0;">VENDIDO</div>`;
-        document.getElementById("lblConsultaPrecio").textContent = `Vendido ($${valorVentaFinal.toLocaleString()})`;
+        document.getElementById("lblConsultaPrecio").innerHTML = `<span style="color: #ef4444;">Vendido ($${valorVentaFinal.toLocaleString()})</span>`;
     } else if (descPct > 0) {
         badgeEstado.style.display = "block";
         badgeEstado.style.borderColor = "#dc2626";
@@ -183,10 +182,17 @@ async function ejecutarConsultaRapidaProducto() {
             <div style="color: #dc2626; font-size: 0.95rem; font-weight: 900; line-height: 1.1; margin: 2px 0;">${descPct}%</div>
             <div style="color: #dc2626; font-size: 0.6rem; font-weight: 900; letter-spacing: 1px;">OFF</div>
         `;
-        document.getElementById("lblConsultaPrecio").innerHTML = `<span style="text-decoration: line-through; color: #94a3b8; font-size: 1rem; margin-right: 8px;">$${Math.round(precioBaseConMargen).toLocaleString()}</span> $${valorVentaFinal.toLocaleString()}`;
+        document.getElementById("lblConsultaPrecio").innerHTML = `
+            <span style="color: #0f172a;">Valor Venta:</span> 
+            <span style="text-decoration: line-through; color: #94a3b8; font-size: 1rem; margin-left: 8px; margin-right: 8px;">$${Math.round(precioBaseConMargen).toLocaleString()}</span> 
+            <span style="color: #dc2626;">$${valorVentaFinal.toLocaleString()}</span>
+        `;
     } else {
         badgeEstado.style.display = "none";
-        document.getElementById("lblConsultaPrecio").textContent = `$${valorVentaFinal.toLocaleString()}`;
+        document.getElementById("lblConsultaPrecio").innerHTML = `
+            <span style="color: #0f172a;">Valor Venta:</span> 
+            <span style="color: #059669;">$${valorVentaFinal.toLocaleString()}</span>
+        `;
     }
 
     document.getElementById("lblConsultaCategoria").textContent = categoria;
