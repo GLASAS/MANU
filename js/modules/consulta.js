@@ -38,9 +38,12 @@ async function renderizarModuloConsulta(container) {
                     <span id="lblConsultaSku" style="background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;"></span>
                 </div>
                 <h4 id="lblConsultaNombre" style="color: #0f172a; font-size: 1.1rem; margin: 0 0 10px 0; padding: 0 10px;"></h4>
+                
+                <!-- CONTENEDOR DINÁMICO DE PRECIO O ESTADO VENDIDO -->
                 <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 15px;" id="contenedorPrecioConsulta">
                     Valor Venta: <span id="lblConsultaPrecio">$0</span>
                 </div>
+
                 <div style="display: flex; justify-content: center; gap: 20px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 12px;">
                     <span>Categoría: <strong id="lblConsultaCategoria" style="color: #334155;">-</strong></span>
                     <span>Ubicación: <strong id="lblConsultaUbicacion" style="color: #334155;">-</strong></span>
@@ -168,31 +171,42 @@ async function ejecutarConsultaRapidaProducto() {
     document.getElementById("lblConsultaNombre").textContent = nombre;
     
     const badgeEstado = document.getElementById("badgeEstadoConsulta");
+    const contenedorPrecio = document.getElementById("contenedorPrecioConsulta");
 
     if (esVendido) {
-        badgeEstado.style.display = "block";
-        badgeEstado.style.borderColor = "#ef4444";
-        badgeEstado.innerHTML = `<div style="background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 900; padding: 2px 4px; border-radius: 4px;">ESTADO</div><div style="color: #ef4444; font-size: 0.8rem; font-weight: 900; margin: 2px 0;">VENDIDO</div>`;
-        document.getElementById("lblConsultaPrecio").innerHTML = `<span style="color: #ef4444;">Vendido ($${valorVentaFinal.toLocaleString()})</span>`;
-    } else if (descPct > 0) {
-        badgeEstado.style.display = "block";
-        badgeEstado.style.borderColor = "#dc2626";
-        badgeEstado.innerHTML = `
-            <div style="background: #dc2626; color: #ffffff; font-size: 0.55rem; font-weight: 900; letter-spacing: 0.5px; padding: 1px 4px; border-radius: 4px; text-transform: uppercase;">UP TO</div>
-            <div style="color: #dc2626; font-size: 0.95rem; font-weight: 900; line-height: 1.1; margin: 2px 0;">${descPct}%</div>
-            <div style="color: #dc2626; font-size: 0.6rem; font-weight: 900; letter-spacing: 1px;">OFF</div>
-        `;
-        document.getElementById("lblConsultaPrecio").innerHTML = `
-            <span style="color: #0f172a;">Valor Venta:</span> 
-            <span style="text-decoration: line-through; color: #94a3b8; font-size: 1rem; margin-left: 8px; margin-right: 8px;">$${Math.round(precioBaseConMargen).toLocaleString()}</span> 
-            <span style="color: #dc2626;">$${valorVentaFinal.toLocaleString()}</span>
+        badgeEstado.style.display = "none"; // Ocultamos la etiqueta de descuento si está vendido
+        contenedorPrecio.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <div style="text-align: left;">
+                    <span style="font-size: 0.65rem; color: #64748b; font-weight: bold; display: block; text-transform: uppercase;">ESTADO</span>
+                    <span style="font-size: 1.1rem; font-weight: 900; color: #0f172a; letter-spacing: 1px;">SOLD</span>
+                </div>
+                <div style="background: #22c55e; color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                    💬 <span style="font-size: 0.8rem;">Artículo Vendido / Salida</span>
+                </div>
+            </div>
         `;
     } else {
-        badgeEstado.style.display = "none";
-        document.getElementById("lblConsultaPrecio").innerHTML = `
-            <span style="color: #0f172a;">Valor Venta:</span> 
-            <span style="color: #059669;">$${valorVentaFinal.toLocaleString()}</span>
-        `;
+        if (descPct > 0) {
+            badgeEstado.style.display = "block";
+            badgeEstado.style.borderColor = "#dc2626";
+            badgeEstado.innerHTML = `
+                <div style="background: #dc2626; color: #ffffff; font-size: 0.55rem; font-weight: 900; letter-spacing: 0.5px; padding: 1px 4px; border-radius: 4px; text-transform: uppercase;">UP TO</div>
+                <div style="color: #dc2626; font-size: 0.95rem; font-weight: 900; line-height: 1.1; margin: 2px 0;">${descPct}%</div>
+                <div style="color: #dc2626; font-size: 0.6rem; font-weight: 900; letter-spacing: 1px;">OFF</div>
+            `;
+            contenedorPrecio.innerHTML = `
+                Valor Venta: 
+                <span style="text-decoration: line-through; color: #94a3b8; font-size: 1rem; margin-left: 8px; margin-right: 8px;">$${Math.round(precioBaseConMargen).toLocaleString()}</span> 
+                <span style="color: #dc2626;">$${valorVentaFinal.toLocaleString()}</span>
+            `;
+        } else {
+            badgeEstado.style.display = "none";
+            contenedorPrecio.innerHTML = `
+                Valor Venta: 
+                <span style="color: #059669;">$${valorVentaFinal.toLocaleString()}</span>
+            `;
+        }
     }
 
     document.getElementById("lblConsultaCategoria").textContent = categoria;
