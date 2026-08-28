@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con SKU y Código de Barras Bloqueados/Automáticos y Costo Sincronizado
+ * Versión Íntegra con Importación Masiva CSV Operativa, SKU Automático y Enlace Limpio
  */
 
 async function renderizarModuloProductos(container) {
@@ -159,6 +159,26 @@ async function renderizarModuloProductos(container) {
                         <button type="submit" style="padding: 8px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">💾 Guardar Producto</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- MODAL IMPORTAR CSV -->
+        <div class="image-modal" id="modalImportarExcel" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index:9998; position:fixed; top:0; left:0; width:100%; height:100%;">
+            <div style="background: white; width: 95%; max-width: 480px; border-radius: 12px; padding: 25px;" onclick="event.stopPropagation()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #0f172a;">📁 Importar Productos Masivos (CSV)</h3>
+                    <button type="button" onclick="cerrarModalImportarExcel()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
+                </div>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con el formato exportado para cargar el inventario masivamente.</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <input type="file" id="inputArchivoCsvImport" accept=".csv" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="cerrarModalImportarExcel()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                    <button type="button" onclick="procesarArchivoCsvImportado()" style="padding: 8px 20px; background: #059669; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">📥 Procesar e Importar</button>
+                </div>
             </div>
         </div>
 
@@ -338,7 +358,6 @@ function abrirModalNuevoProducto() {
     document.getElementById("formCrudProducto").reset();
     document.getElementById("prodSkuOriginal").value = "";
     
-    // Valores por defecto iniciales
     document.getElementById("prodCategoria").value = "ANILLOS";
     document.getElementById("prodMaterial").value = "ORO";
     document.getElementById("prodColor").value = "AMARILLO";
@@ -355,8 +374,6 @@ function generarSkuYBarraAutomatico() {
     if (!categoriaSelect) return;
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
-    
-    // Obtener las 2 primeras letras de la categoría seleccionada (AN, CA, TO, DI, PU, etc.)
     let prefijo = catValor.substring(0, 2);
     if (!prefijo || prefijo.length < 2) prefijo = "JO";
 
@@ -367,14 +384,12 @@ function generarSkuYBarraAutomatico() {
     let consecutivoStr = String(siguienteNumero).padStart(5, '0');
     let skuGenerado = `${prefijo}${consecutivoStr}`;
 
-    // Validar colisión de SKU existente
     while (lista.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
         siguienteNumero++;
         consecutivoStr = String(siguienteNumero).padStart(5, '0');
         skuGenerado = `${prefijo}${consecutivoStr}`;
     }
 
-    // Generar código de barras único automático
     let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
 
     document.getElementById("prodSku").value = skuGenerado;
@@ -546,8 +561,96 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
+// ================= MÓDULO DE IMPORTACIÓN CSV OPERATIVO =================
 function abrirModalImportarExcel() {
-    alert("Módulo de importación activo.");
+    const modal = document.getElementById("modalImportarExcel");
+    if (modal) modal.style.display = "flex";
+}
+
+function cerrarModalImportarExcel() {
+    const modal = document.getElementById("modalImportarExcel");
+    if (modal) modal.style.display = "none";
+}
+
+async function procesarArchivoCsvImportado() {
+    const input = document.getElementById("inputArchivoCsvImport");
+    if (!input || !input.files || input.files.length === 0) {
+        alert("Por favor seleccione un archivo CSV válido.");
+        return;
+    }
+
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async function(e) {
+        const contenido = e.target.result;
+        const lineas = contenido.split(/\r\n|\n/);
+        
+        if (lineas.length < 2) {
+            alert("El archivo CSV está vacío o no tiene el formato correcto.");
+            return;
+        }
+
+        let importadosCount = 0;
+        const usuario = (typeof usuarioActual !== 'undefined' && usuarioActual) ? usuarioActual.usuario : 'Admin';
+
+        // Omitir la cabecera (fila 0) y recorrer cada línea
+        for (let i = 1; i < lineas.length; i++) {
+            let linea = lineas[i].trim();
+            if (!linea) continue;
+
+            // Separar por punto y coma (;) o coma (,)
+            let columnas = linea.split(';');
+            if (columnas.length < 3) {
+                columnas = linea.split(',');
+            }
+
+            if (columnas.length >= 3) {
+                let sku = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
+                let codigoBarra = columnas[1] ? columnas[1].replace(/"/g, '').trim() : '';
+                let nombre = columnas[2] ? columnas[2].replace(/"/g, '').trim() : '';
+                let categoria = columnas[3] ? columnas[3].replace(/"/g, '').trim() : 'ANILLOS';
+                let color = columnas[4] ? columnas[4].replace(/"/g, '').trim() : 'AMARILLO';
+                let material = columnas[5] ? columnas[5].replace(/"/g, '').trim() : 'ORO';
+                let peso = Number(columnas[6]) || 0;
+                let costo = Number(columnas[7]) || 0;
+                let margen = Number(columnas[8]) || 100;
+                let descuento = Number(columnas[9]) || 0;
+                let ubicacion = columnas[11] ? columnas[11].replace(/"/g, '').trim() : 'CAJA FUERTE';
+
+                if (sku && nombre) {
+                    try {
+                        await API.llamar("guardarProducto", {
+                            action: "guardarProducto",
+                            sku: sku,
+                            codigo_barra: codigoBarra || sku,
+                            nombre: nombre,
+                            categoria: categoria,
+                            material: material,
+                            color: color,
+                            peso: peso,
+                            valor_piedra: 0,
+                            costo: costo,
+                            porcentaje_venta: margen,
+                            tiene_descuento: descuento,
+                            ubicacion: ubicacion,
+                            foto: "",
+                            usuario: usuario
+                        }, "POST");
+                        importadosCount++;
+                    } catch(err) {
+                        console.error("Error al importar SKU:", sku, err);
+                    }
+                }
+            }
+        }
+
+        alert(`¡Importación completada con éxito! Se procesaron ${importadosCount} productos.`);
+        cerrarModalImportarExcel();
+        cargarListaProductos();
+    };
+
+    reader.readAsText(file, "UTF-8");
 }
 
 function abrirModalQrCatalogoAdmin() {
@@ -586,6 +689,7 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
 
     const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
     const skuToken = btoa(sku);
+    // Ruta corregida a MANU sin '_joyeros'
     const certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
     
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(certLink)}`;
