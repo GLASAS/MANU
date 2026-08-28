@@ -50,13 +50,12 @@ async function renderizarModuloProductos(container) {
                             ` : ''}
                             <th style="padding: 10px;">Venta Final</th>
                             <th style="padding: 10px;">Ubicación</th>
-                            <th style="padding: 10px;">Foto</th>
                             <th style="padding: 10px; text-align: center;">Etiqueta</th>
                             ${esAdmin ? `<th style="padding: 10px; text-align: center;">Acciones</th>` : ''}
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody">
-                        <tr><td colspan="${esAdmin ? '15' : '10'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
+                        <tr><td colspan="${esAdmin ? '14' : '9'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -197,14 +196,6 @@ async function renderizarModuloProductos(container) {
                 100% { transform: rotate(360deg); }
             }
         </style>
-
-        <!-- MODAL ZOOM IMAGEN -->
-        <div id="imageModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center;" onclick="cerrarZoomImagen()">
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center; max-width: 90%; max-height: 90%; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
-                <img id="imgModalSrc" src="" style="max-width: 100%; max-height: 75vh; border-radius: 8px; object-fit: contain; margin-bottom: 15px;">
-                <button type="button" onclick="cerrarZoomImagen()" style="background: #ef4444; color: white; border: none; padding: 10px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; width: 100%; max-width: 250px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Cerrar</button>
-            </div>
-        </div>
     `;
 
     await cargarListaProductos();
@@ -227,7 +218,7 @@ async function cargarListaProductos() {
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
     );
-    const colspanVal = esAdmin ? '15' : '10';
+    const colspanVal = esAdmin ? '14' : '9';
 
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
@@ -263,7 +254,7 @@ function renderizarTablaProductosAdmin() {
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
     );
-    const colspanVal = esAdmin ? '15' : '10';
+    const colspanVal = esAdmin ? '14' : '9';
 
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
@@ -304,13 +295,11 @@ function renderizarTablaProductosAdmin() {
         let margen = Number(p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100)) || 100;
         let descPct = Number(p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0)) || 0;
         let ubicacion = p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "VITRINA";
-        let foto = p.Foto || p.foto || "";
 
         let valorVentaBase = (valorOroActual * pesoItem) + valPiedra;
         let precioBaseConMargen = valorVentaBase * (1 + (margen / 100));
         let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
 
-        let fotoHtml = foto ? `<img src="${foto}" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px; cursor: pointer;" onclick="abrirZoomImagenSrc('${foto}')">` : `💍`;
         let descBadge = descPct > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${descPct}%</span>` : `0%`;
 
         html += `
@@ -332,9 +321,8 @@ function renderizarTablaProductosAdmin() {
                 ` : ''}
                 <td style="padding: 10px; font-weight: bold; color: #059669;">$${valorVentaFinal.toLocaleString()}</td>
                 <td style="padding: 10px; color: #64748b;">${ubicacion}</td>
-                <td style="padding: 10px;">${fotoHtml}</td>
                 <td style="padding: 10px; text-align: center;">
-                    <button type="button" onclick="abrirEtiquetaProducto('${sku}', '${nombre.replace(/'/g, "\\'")}', '${valorVentaFinal.toLocaleString()}', '${codigoBarra}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Generar Etiqueta QR y Código de Barras">🏷️</button>
+                    <button type="button" onclick="abrirEtiquetaProducto('${sku}', '${nombre.replace(/'/g, "\\'")}', '${valorVentaFinal.toLocaleString()}', '${codigoBarra}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Generar Código de Barras">🏷️</button>
                 </td>
                 ${esAdmin ? `
                     <td style="padding: 10px; text-align: center;">
@@ -821,22 +809,6 @@ async function procesarArchivoCsvImportado() {
     reader.readAsText(file, "UTF-8");
 }
 
-function abrirZoomImagenSrc(url) {
-    const modal = document.getElementById("imageModal");
-    const img = document.getElementById("imgModalSrc");
-    if (modal && img) {
-        img.src = url;
-        modal.style.display = "flex";
-    }
-}
-
-function cerrarZoomImagen() {
-    const modal = document.getElementById("imageModal");
-    if (modal) {
-        modal.style.display = "none";
-    }
-}
-
 function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     let modalID = "modalEtiquetaJoya";
     let modalDiv = document.getElementById(modalID);
@@ -851,37 +823,26 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
     }
 
     const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
-    const skuToken = btoa(sku);
-    const certLink = `https://glasas.github.io/MANU/cert.html?token=${skuToken}`;
-    
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(certLink)}`;
     const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(valorBarras)}&scale=3&height=12&includetext=true`;
 
     modalDiv.innerHTML = `
-        <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:360px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+        <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:340px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
             <h4 style="color:#0f172a; margin-bottom:5px;">MANU JOYEROS</h4>
             <p style="font-size:0.75rem; color:#64748b; margin-bottom:15px;">SKU: <strong id="lblSkuEtiqueta">${sku}</strong></p>
             <p style="font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:15px; max-height:40px; overflow:hidden;">${nombre}</p>
             
-            <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:15px;">
+            <div style="display:flex; justify-content:center; align-items:center; margin-bottom:15px;">
                 <div>
-                    <img id="imgQrCanvas" src="${qrUrl}" crossorigin="anonymous" alt="QR Certificado" style="width:110px; height:110px; border:1px solid #e2e8f0; padding:3px; border-radius:6px;" />
-                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">QR Certificado</span>
-                </div>
-                <div>
-                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:140px; height:60px; object-fit:contain;" />
-                    <span style="display:block; font-size:0.65rem; color:#64748b; margin-top:2px;">${valorBarras}</span>
+                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:200px; height:70px; object-fit:contain;" />
+                    <span style="display:block; font-size:0.7rem; color:#64748b; margin-top:4px;">${valorBarras}</span>
                 </div>
             </div>
 
             <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:15px;">Ref: ${sku}</p>
 
             <div style="display:flex; flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:8px;">
-                    <button onclick="descargarImagenPng('imgQrCanvas', 'QR_Cert_${sku}.png')" style="flex:1; padding:8px; background:#0284c7; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📥 Descargar QR</button>
-                    <button onclick="descargarImagenPng('imgBarcodeCanvas', 'Barras_${sku}.png')" style="flex:1; padding:8px; background:#0d9488; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.8rem;">📥 Descargar Barras</button>
-                </div>
-                <button onclick="document.getElementById('${modalID}').style.display='none'" style="width:100%; padding:8px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
+                <button onclick="descargarImagenPng('imgBarcodeCanvas', 'Barras_${sku}.png')" style="width:100%; padding:9px; background:#0d9488; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">📥 Descargar Código de Barras</button>
+                <button onclick="document.getElementById('${modalID}').style.display='none'" style="width:100%; padding:9px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
             </div>
         </div>
     `;
