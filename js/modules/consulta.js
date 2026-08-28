@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida con Detección Automática por Pistola y Estados (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida con Spinner de Carga (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -51,7 +51,11 @@ async function renderizarModuloConsulta(container) {
         if (inp) inp.focus();
     }, 200);
 
+    // Mostrar spinner flotante si la caché no está cargada
     if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
+        if (typeof mostrarSpinner === "function") {
+            mostrarSpinner("Sincronizando inventario y valor del oro...");
+        }
         try {
             const [resOro, resProd] = await Promise.all([
                 API.llamar("obtenerValorOroDia", {}, "GET"),
@@ -61,17 +65,19 @@ async function renderizarModuloConsulta(container) {
             if (resProd && resProd.status === "success") window.listaProductosCache = resProd.data;
         } catch (e) {
             console.error(e);
+        } finally {
+            if (typeof ocultarSpinner === "function") {
+                ocultarSpinner();
+            }
         }
     }
 }
 
-// Detecta automáticamente si se usó pistola de código de barras (ingreso masivo y rápido de caracteres sin pausas)
 function verificarEscaneoAutomatico(event) {
     const input = document.getElementById("inputConsultaCodigo");
     if (!input) return;
 
     const valor = input.value.trim();
-    // Las pistolas de código de barras suelen inyectar cadenas largas de 8 a 14 dígitos en milisegundos de golpe
     if (valor.length >= 8 && /^\d+$/.test(valor)) {
         setTimeout(() => {
             if (document.getElementById("inputConsultaCodigo") && document.getElementById("inputConsultaCodigo").value.trim() === valor) {
@@ -143,7 +149,6 @@ async function ejecutarConsultaRapidaProducto() {
     let ubicacion = productoEncontrado.ID_Ubicacion || productoEncontrado.id_ubicacion || productoEncontrado.ubicacion || "VITRINA";
     let foto = productoEncontrado.Foto || productoEncontrado.foto || "";
     
-    // Validar estados (Vendido / Descuento)
     let estadoItem = String(productoEncontrado.Estado || productoEncontrado.estado || "").trim().toUpperCase();
     let esVendido = estadoItem === "VENDIDO" || estadoItem === "SALIDA" || estadoItem === "INACTIVO";
 
