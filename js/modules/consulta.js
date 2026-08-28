@@ -4,6 +4,10 @@
  */
 
 async function renderizarModuloConsulta(container) {
+    if (!container) {
+        container = document.getElementById("contentBody") || document.querySelector("main");
+    }
+
     container.innerHTML = `
         <div class="card" style="max-width: 650px; margin: 30px auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="text-align: center; margin-bottom: 25px;">
