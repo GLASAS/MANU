@@ -16,12 +16,10 @@
         
         .cert-body { padding: 30px; }
         
-        .cert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
         .cert-field { background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0; }
-        .cert-field-label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: bold; display: block; margin-bottom: 4px; }
         .cert-field-value { font-size: 1rem; color: #0f172a; font-weight: 600; }
         
-        .cert-img-container { width: 100%; height: 280px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 25px; padding: 10px; box-sizing: border-box; }
+        .cert-img-container { width: 100%; height: 280px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 25px; padding: 10px; box-sizing: border-box; position: relative; }
         .cert-img-container img { width: 100%; height: 100%; object-fit: contain; }
         
         .cert-seal { text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 20px; color: #475569; font-size: 0.85rem; line-height: 1.5; }
@@ -29,6 +27,11 @@
         .no-print { text-align: center; margin-top: 20px; }
         .btn-print { background: #0f172a; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2); transition: background 0.2s; }
         .btn-print:hover { background: #1e293b; }
+
+        @keyframes girarSpinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
         @media print {
             body { background: white; padding: 0; }
@@ -38,6 +41,15 @@
     </style>
 </head>
 <body>
+
+    <!-- SPINNER / MODAL GLOBAL DE CARGA -->
+    <div id="modalSpinnerCert" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); max-width: 300px; width: 90%;">
+            <div style="width: 50px; height: 50px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: girarSpinner 0.8s linear infinite; margin: 0 auto 15px auto;"></div>
+            <h4 style="color: #0f172a; margin: 0; font-size: 1rem;">Cargando certificado...</h4>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Sincronizando autenticidad y valores.</p>
+        </div>
+    </div>
 
     <div style="width: 100%; max-width: 650px;">
         <div class="cert-card" id="certContainer">
@@ -49,6 +61,7 @@
             <div class="cert-body">
                 <div class="cert-img-container" id="certImgBox">
                     <span style="font-size: 4rem;">💍</span>
+                    <div id="badgeCertDesc" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; display: none; z-index: 5;"></div>
                 </div>
 
                 <div style="text-align: center; margin-bottom: 15px;">
@@ -62,7 +75,7 @@
 
                 <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 20px;">
                     <span style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: bold; display: block; margin-bottom: 4px;">VALOR COMERCIAL ESTIMADO</span>
-                    <span id="lblCertValorComercial" style="font-size: 1.5rem; font-weight: bold; color: #059669;">$0 COP</span>
+                    <div id="lblCertValorComercial" style="font-size: 1.5rem; font-weight: bold; color: #059669;">$0 COP</div>
                 </div>
 
                 <div class="cert-seal">
@@ -101,6 +114,7 @@
             const token = urlParams.get('token');
 
             if (!token) {
+                document.getElementById("modalSpinnerCert").style.display = "none";
                 document.getElementById("lblCertNombre").textContent = "❌ Token de certificación no válido o ausente.";
                 return;
             }
@@ -134,9 +148,8 @@
                         let descPct = Number(producto.Tiene_Descuento) || 0;
 
                         let baseVentaCalculada = valPiedra + (pesoItem * valorOroDiaCert);
-                        let precioBase = baseVentaCalculada * (1 + (margen / 100));
-                        let valorVenta = precioBase - (precioBase * (descPct / 100));
-                        let valorVentaFinal = Math.round(isNaN(valorVenta) ? 0 : valorVenta);
+                        let precioBaseConMargen = baseVentaCalculada * (1 + (margen / 100));
+                        let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
 
                         document.getElementById("lblCertSku").textContent = `SKU: ${sku}`;
                         document.getElementById("lblCertNombre").textContent = nombre;
@@ -147,10 +160,29 @@
                         }
                         document.getElementById("lblCertDetallesMaterial").textContent = detalleTexto;
 
-                        document.getElementById("lblCertValorComercial").textContent = `$${valorVentaFinal.toLocaleString()} COP`;
+                        const badgeCert = document.getElementById("badgeCertDesc");
+                        const contenedorPrecio = document.getElementById("lblCertValorComercial");
+
+                        if (descPct > 0) {
+                            badgeCert.style.display = "block";
+                            badgeCert.style.background = "#ef4444";
+                            badgeCert.style.color = "white";
+                            badgeCert.textContent = `${descPct}% OFF`;
+                            
+                            contenedorPrecio.innerHTML = `
+                                <span style="text-decoration: line-through; color: #94a3b8; font-size: 1.1rem; margin-right: 10px;">$${Math.round(precioBaseConMargen).toLocaleString()}</span>
+                                <span style="color: #059669;">$${valorVentaFinal.toLocaleString()} COP</span>
+                            `;
+                        } else {
+                            badgeCert.style.display = "none";
+                            contenedorPrecio.textContent = `$${valorVentaFinal.toLocaleString()} COP`;
+                        }
 
                         if (producto.Foto || producto.foto) {
-                            document.getElementById("certImgBox").innerHTML = `<img src="${producto.Foto || producto.foto}" alt="Joya Certificada" style="width: 100%; height: 100%; object-fit: contain;">`;
+                            document.getElementById("certImgBox").innerHTML = `
+                                <img src="${producto.Foto || producto.foto}" alt="Joya Certificada" style="width: 100%; height: 100%; object-fit: contain;">
+                                <div id="badgeCertDesc" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; ${descPct > 0 ? 'display: block; background: #ef4444; color: white;' : 'display: none;'}">${descPct > 0 ? descPct + '% OFF' : ''}</div>
+                            `;
                         }
                     } else {
                         document.getElementById("lblCertNombre").textContent = "⚠️ No se encontró información registrada para este SKU.";
@@ -161,6 +193,9 @@
             } catch (e) {
                 console.error(e);
                 document.getElementById("lblCertNombre").textContent = "❌ Error al procesar el código de certificación.";
+            } finally {
+                // Ocultar spinner de carga al terminar
+                document.getElementById("modalSpinnerCert").style.display = "none";
             }
         });
     </script>
