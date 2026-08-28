@@ -4,6 +4,12 @@
  */
 
 async function renderizarModuloConsulta(container) {
+    if (!container) {
+        console.error("No se encontró el contenedor principal para la consulta rápida.");
+        alert("⚠️ Error: No se encontró el contenedor de la página.");
+        return;
+    }
+
     container.innerHTML = `
         <div class="card" style="max-width: 650px; margin: 30px auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="text-align: center; margin-bottom: 25px;">
@@ -41,11 +47,13 @@ async function renderizarModuloConsulta(container) {
         </div>
     `;
 
+    // Enfocar automáticamente el input al abrir el módulo
     setTimeout(() => {
         const inp = document.getElementById("inputConsultaCodigo");
         if (inp) inp.focus();
     }, 200);
 
+    // Cargar caché de productos si no está disponible
     if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
         try {
             const [resOro, resProd] = await Promise.all([
@@ -55,7 +63,7 @@ async function renderizarModuloConsulta(container) {
             if (resOro && resOro.status === "success") window.valorOroDelDiaCache = Number(resOro.valor_oro_dia);
             if (resProd && resProd.status === "success") window.listaProductosCache = resProd.data;
         } catch (e) {
-            console.error(e);
+            console.error("Error sincronizando datos de consulta:", e);
         }
     }
 }
