@@ -12,11 +12,11 @@ async function renderizarModuloConsulta(container) {
         <div class="card" style="max-width: 650px; margin: 30px auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="text-align: center; margin-bottom: 25px;">
                 <h3 style="margin: 0; color: #0f172a; font-size: 1.4rem;">🔍 Consulta Rápida de Joyas</h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Escanee el código de barras o digite el SKU / Código y presione Consultar o Enter.</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Escanee con la pistola (búsqueda automática) o digite el SKU y presione Consultar.</p>
             </div>
 
             <div style="display: flex; gap: 10px; margin-bottom: 25px;">
-                <input type="text" id="inputConsultaCodigo" placeholder="Escanee código de barras o digite SKU..." style="flex: 1; padding: 12px 15px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;" onkeydown="if(event.key === 'Enter') ejecutarConsultaRapidaProducto()">
+                <input type="text" id="inputConsultaCodigo" placeholder="Escanee código de barras o digite SKU..." style="flex: 1; padding: 12px 15px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;" oninput="manejarInputConsulta(event)" onkeydown="if(event.key === 'Enter') ejecutarConsultaRapidaProducto()">
                 <button type="button" onclick="ejecutarConsultaRapidaProducto()" style="background: #0f172a; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">Consultar</button>
                 <button type="button" onclick="limpiarConsultaRapida()" style="background: #ef4444; color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;" title="Limpiar consulta">🧹 Limpiar</button>
             </div>
@@ -25,8 +25,15 @@ async function renderizarModuloConsulta(container) {
             <div id="resultadoConsultaContainer" style="display: none; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #f8fafc; text-align: center;">
                 <div style="margin-bottom: 15px; position: relative; display: inline-block; width: 200px; height: 200px; background: #ffffff; border-radius: 8px; border: 2px solid #cbd5e1; overflow: hidden; padding: 5px; box-sizing: border-box;">
                     <img id="imgConsultaFoto" src="" style="width: 100%; height: 100%; object-fit: contain; display: block; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto del Producto">
-                    <div id="badgeEstadoConsulta" style="position: absolute; top: 6px; right: 6px; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: none; z-index: 5;"></div>
+                    
+                    <!-- INSIGNIA DE DESCUENTO IDÉNTICA AL CATÁLOGO -->
+                    <div id="badgeEstadoConsulta" style="position: absolute; top: 8px; right: 8px; background: #ffffff; border: 2px solid #dc2626; border-radius: 10px; padding: 4px 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; z-index: 5; font-family: sans-serif;">
+                        <div style="background: #dc2626; color: #ffffff; font-size: 0.55rem; font-weight: 900; letter-spacing: 0.5px; padding: 1px 4px; border-radius: 4px; text-transform: uppercase;">UP TO</div>
+                        <div id="txtPorcentajeDesc" style="color: #dc2626; font-size: 0.95rem; font-weight: 900; line-height: 1.1; margin: 2px 0;">10%</div>
+                        <div style="color: #dc2626; font-size: 0.6rem; font-weight: 900; letter-spacing: 1px;">OFF</div>
+                    </div>
                 </div>
+
                 <div style="margin-bottom: 15px;">
                     <span id="lblConsultaSku" style="background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;"></span>
                 </div>
@@ -72,6 +79,22 @@ async function renderizarModuloConsulta(container) {
     }
 }
 
+let timerEscaneoPistola = null;
+function manejarInputConsulta(event) {
+    const input = document.getElementById("inputConsultaCodigo");
+    if (!input) return;
+
+    const valor = input.value.trim();
+    if (valor.length >= 8 && /^\d+$/.test(valor)) {
+        clearTimeout(timerEscaneoPistola);
+        timerEscaneoPistola = setTimeout(() => {
+            if (document.getElementById("inputConsultaCodigo") && document.getElementById("inputConsultaCodigo").value.trim() === valor) {
+                ejecutarConsultaRapidaProducto();
+            }
+        }, 100);
+    }
+}
+
 function limpiarConsultaRapida() {
     const input = document.getElementById("inputConsultaCodigo");
     const containerRes = document.getElementById("resultadoConsultaContainer");
@@ -101,8 +124,6 @@ async function ejecutarConsultaRapidaProducto() {
     }
 
     const lista = window.listaProductosCache || [];
-    
-    // Búsqueda flexible recuperada para que encuentre por SKU o por código de barras de forma infalible
     const productoEncontrado = lista.find(p => {
         let sku = String(p.SKU || p.sku || "").trim().toLowerCase();
         let barras = String(p.Codigo_Barra || p.codigo_barra || "").trim().toLowerCase();
@@ -149,17 +170,21 @@ async function ejecutarConsultaRapidaProducto() {
     document.getElementById("lblConsultaNombre").textContent = nombre;
     
     const badgeEstado = document.getElementById("badgeEstadoConsulta");
+    const txtPorcentaje = document.getElementById("txtPorcentajeDesc");
+
     if (esVendido) {
         badgeEstado.style.display = "block";
-        badgeEstado.style.background = "#ef4444";
-        badgeEstado.style.color = "white";
-        badgeEstado.textContent = "🔴 VENDIDO";
+        badgeEstado.style.borderColor = "#ef4444";
+        badgeEstado.innerHTML = `<div style="background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 900; padding: 2px 4px; border-radius: 4px;">ESTADO</div><div style="color: #ef4444; font-size: 0.8rem; font-weight: 900; margin: 2px 0;">VENDIDO</div>`;
         document.getElementById("lblConsultaPrecio").textContent = `Vendido ($${valorVentaFinal.toLocaleString()})`;
     } else if (descPct > 0) {
         badgeEstado.style.display = "block";
-        badgeEstado.style.background = "#f59e0b";
-        badgeEstado.style.color = "white";
-        badgeEstado.textContent = `🔥 ${descPct}% DESC`;
+        badgeEstado.style.borderColor = "#dc2626";
+        badgeEstado.innerHTML = `
+            <div style="background: #dc2626; color: #ffffff; font-size: 0.55rem; font-weight: 900; letter-spacing: 0.5px; padding: 1px 4px; border-radius: 4px; text-transform: uppercase;">UP TO</div>
+            <div style="color: #dc2626; font-size: 0.95rem; font-weight: 900; line-height: 1.1; margin: 2px 0;">${descPct}%</div>
+            <div style="color: #dc2626; font-size: 0.6rem; font-weight: 900; letter-spacing: 1px;">OFF</div>
+        `;
         document.getElementById("lblConsultaPrecio").innerHTML = `<span style="text-decoration: line-through; color: #94a3b8; font-size: 1rem; margin-right: 8px;">$${Math.round(precioBaseConMargen).toLocaleString()}</span> $${valorVentaFinal.toLocaleString()}`;
     } else {
         badgeEstado.style.display = "none";
