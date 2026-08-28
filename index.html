@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MANU JOYEROS</title>
+    <title>Dashboard - MANU JOYEROS</title>
     <link rel="stylesheet" href="./css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
@@ -55,7 +55,7 @@
             <a href="#" class="nav-link" onclick="cambiarVista('productos', event)">💍 Productos</a>
             <a href="https://glasas.github.io/MANU/catalogomanu" target="_blank" class="nav-link">🌐 Catálogo Web</a>
             <a href="#" class="nav-link" onclick="abrirModalQrCatalogo()">📱 QR Catálogo Web</a>
-            <a href="#" class="nav-link nav-admin-only" onclick="cargarModuloConsulta('consulta rápida', event)">🔍 Consulta Rápida</a>
+            <a href="#" class="nav-link" onclick="cambiarVista('consulta', event)">🔍 Consulta Rápida</a>
             <a href="#" class="nav-link nav-admin-only" onclick="cambiarVista('inventario', event)">📦 Inventario / Arqueo</a>
             <a href="#" class="nav-link nav-admin-only" onclick="cambiarVista('actualizacion_oro', event)">🪙 Actualización Oro</a>
             <a href="#" class="nav-link nav-admin-only" onclick="cambiarVista('entradas', event)">📥 Entradas</a>
@@ -66,7 +66,7 @@
             <a href="#" class="nav-link" onclick="cambiarVista('cambiar_password', event)">🔑 Cambiar Contraseña</a>
             <a href="#" class="nav-link text-danger" onclick="cerrarSesion()">🚪 Cerrar Sesión</a>
         </nav>
-        <div class="sidebar-footer-version" id="versionSidebarLabel">Cargando versión...</div>
+        <div class="sidebar-footer-version" id="versionSidebarLabel">MANU JOYEROS V1.1543</div>
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
@@ -91,25 +91,13 @@
     <script src="./js/config.js"></script>
     <script src="./js/api.js"></script>
     <script src="./js/modules/productos.js"></script>
+    <script src="./js/modules/consulta.js"></script>
     <script src="./js/modules/inventario.js"></script>
     <script src="./js/modules/movimientos.js"></script>
     <script src="./js/modules/proveedores.js"></script>
     <script src="./js/modules/usuarios.js"></script>
     
     <script>
-
-       function cargarModuloConsulta() {
-    // Selecciona el contenedor principal de tu diseño donde cambian las vistas
-    const contenedor = document.getElementById("main-content") || document.getElementById("contenidoPrincipal") || document.querySelector("main");
-    if (typeof renderizarModuloConsulta === "function") {
-        renderizarModuloConsulta(contenedor);
-    } else {
-        console.error("La función renderizarModuloConsulta no está definida. Revisa que el script consulta.js esté cargado.");
-        alert("⚠️ Error: El módulo de consulta rápida no se ha cargado correctamente.");
-    }
-}
-
-        
         function renderizarModuloCambiarPassword(container) {
             container.innerHTML = `
                 <div class="card" style="max-width: 450px; margin: 2rem auto; padding: 2.5rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
