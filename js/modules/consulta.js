@@ -20,7 +20,7 @@ async function renderizarModuloConsulta(container) {
                 <button type="button" onclick="ejecutarConsultaRapidaProducto()" style="background: #0f172a; color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">Consultar</button>
             </div>
 
-            <!-- CONTENEDOR DE RESULTADO -->
+            <!-- CONTENEDOR DE RESULTADO (SIN PESO) -->
             <div id="resultadoConsultaContainer" style="display: none; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #f8fafc; text-align: center;">
                 <div style="margin-bottom: 15px;">
                     <img id="imgConsultaFoto" src="" style="width: 180px; height: 180px; object-fit: cover; border-radius: 8px; border: 2px solid #cbd5e1; display: inline-block; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto del Producto">
@@ -32,9 +32,8 @@ async function renderizarModuloConsulta(container) {
                 <div style="font-size: 1.3rem; font-weight: bold; color: #059669; margin-bottom: 15px;">
                     Valor Venta: <span id="lblConsultaPrecio">$0</span>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 15px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                <div style="display: flex; justify-content: center; gap: 20px; font-size: 0.85rem; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 12px;">
                     <span>Categoría: <strong id="lblConsultaCategoria" style="color: #334155;">-</strong></span>
-                    <span>Peso: <strong id="lblConsultaPeso" style="color: #334155;">0g</strong></span>
                     <span>Ubicación: <strong id="lblConsultaUbicacion" style="color: #334155;">-</strong></span>
                 </div>
             </div>
@@ -45,13 +44,11 @@ async function renderizarModuloConsulta(container) {
         </div>
     `;
 
-    // Asegurar que el input tenga el foco automáticamente al entrar al módulo[cite: 2]
     setTimeout(() => {
         const inp = document.getElementById("inputConsultaCodigo");
         if (inp) inp.focus();
     }, 200);
 
-    // Cargar caché de productos si no está disponible[cite: 2]
     if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
         try {
             const [resOro, resProd] = await Promise.all([
@@ -80,7 +77,7 @@ async function ejecutarConsultaRapidaProducto() {
     const productoEncontrado = lista.find(p => {
         let sku = String(p.SKU || p.sku || "").trim().toLowerCase();
         let barras = String(p.Codigo_Barra || p.codigo_barra || "").trim().toLowerCase();
-        return sku === query || barras === query;
+        return sku === query || barras === query || barras.includes(query) || query.includes(barras);
     });
 
     const containerRes = document.getElementById("resultadoConsultaContainer");
@@ -97,12 +94,13 @@ async function ejecutarConsultaRapidaProducto() {
         return;
     }
 
-    // Datos del producto[cite: 2]
     let sku = productoEncontrado.SKU || productoEncontrado.sku || "-";
     let nombre = productoEncontrado.Nombre || productoEncontrado.nombre || "Joya sin nombre";
     let categoria = productoEncontrado.ID_Categoria || productoEncontrado.categoria || "-";
+    
     let pesoCrudo = productoEncontrado.Peso !== undefined ? productoEncontrado.Peso : (productoEncontrado.peso !== undefined ? productoEncontrado.peso : 0);
     let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
+    
     let valPiedra = Number(productoEncontrado.Valor_Piedra !== undefined ? productoEncontrado.Valor_Piedra : (productoEncontrado.valor_piedra !== undefined ? productoEncontrado.valor_piedra : 0)) || 0;
     let margen = Number(productoEncontrado.Porcentaje_Venta !== undefined ? productoEncontrado.Porcentaje_Venta : (productoEncontrado.porcentaje_venta !== undefined ? productoEncontrado.porcentaje_venta : 100)) || 100;
     let descPct = Number(productoEncontrado.Tiene_Descuento !== undefined ? productoEncontrado.Tiene_Descuento : (productoEncontrado.tiene_descuento !== undefined ? productoEncontrado.tiene_descuento : 0)) || 0;
@@ -114,13 +112,11 @@ async function ejecutarConsultaRapidaProducto() {
     let precioBaseConMargen = valorVentaBase * (1 + (margen / 100));
     let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
 
-    // Rellenar elementos visuales[cite: 2]
     document.getElementById("imgConsultaFoto").src = foto || "https://via.placeholder.com/180?text=Sin+Foto";
     document.getElementById("lblConsultaSku").textContent = `SKU: ${sku}`;
     document.getElementById("lblConsultaNombre").textContent = nombre;
     document.getElementById("lblConsultaPrecio").textContent = `$${valorVentaFinal.toLocaleString()}`;
     document.getElementById("lblConsultaCategoria").textContent = categoria;
-    document.getElementById("lblConsultaPeso").textContent = `${pesoItem.toFixed(2)}g`;
     document.getElementById("lblConsultaUbicacion").textContent = ubicacion;
 
     if (mensajeVacio) mensajeVacio.style.display = "none";
