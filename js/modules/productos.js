@@ -1,18 +1,27 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos (productos.js)
- * Versión Íntegra y Completa con Selector de Cámara y Galería para Fotos
+ * Versión Íntegra y Completa con Selector de Cámara/Galería y Restricción de Visibilidad por Rol
  */
 
 async function renderizarModuloProductos(container) {
+    const esAdmin = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
+    );
+
     container.innerHTML = `
         <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
-                <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="contenedorBotonesAccionProductos">
+                ${esAdmin ? `
+                    <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
+                    <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
+                ` : ''}
                 <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
                 <button type="button" class="btn-action" onclick="window.open('https://glasas.github.io/MANU/catalogomanu', '_blank')" style="background: #d97706; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🌐 Catálogo Web</button>
                 <button type="button" class="btn-action" onclick="abrirModalQrCatalogoAdmin()" style="background: #7c3aed; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📱 QR Web</button>
-                <button type="button" class="btn-action text-danger" onclick="eliminarProductosSeleccionados()" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🗑️ Eliminar</button>
+                ${esAdmin ? `
+                    <button type="button" class="btn-action text-danger" onclick="eliminarProductosSeleccionados()" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">🗑️ Eliminar</button>
+                ` : ''}
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <button type="button" onclick="cargarListaProductos()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; cursor: pointer;" title="Actualizar Lista">🔄</button>
@@ -29,24 +38,26 @@ async function renderizarModuloProductos(container) {
                 <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
                     <thead>
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
-                            <th style="padding: 10px; width: 30px;"><input type="checkbox" id="selectAllProductos" onclick="toggleSelectAllProductos(this)"></th>
+                            ${esAdmin ? `<th style="padding: 10px; width: 30px;"><input type="checkbox" id="selectAllProductos" onclick="toggleSelectAllProductos(this)"></th>` : ''}
                             <th style="padding: 10px;">Nombre / Descripción</th>
                             <th style="padding: 10px;">Categoría</th>
                             <th style="padding: 10px;">Color</th>
                             <th style="padding: 10px;">Material</th>
                             <th style="padding: 10px;">Peso</th>
-                            <th style="padding: 10px;">Costo</th>
-                            <th style="padding: 10px;">Margen</th>
-                            <th style="padding: 10px;">Desc.</th>
+                            ${esAdmin ? `
+                                <th style="padding: 10px;">Costo</th>
+                                <th style="padding: 10px;">Margen</th>
+                                <th style="padding: 10px;">Desc.</th>
+                            ` : ''}
                             <th style="padding: 10px;">Venta Final</th>
                             <th style="padding: 10px;">Ubicación</th>
                             <th style="padding: 10px;">Foto</th>
                             <th style="padding: 10px; text-align: center;">Etiqueta</th>
-                            <th style="padding: 10px; text-align: center;">Acciones</th>
+                            ${esAdmin ? `<th style="padding: 10px; text-align: center;">Acciones</th>` : ''}
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody">
-                        <tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
+                        <tr><td colspan="${esAdmin ? '14' : '10'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -157,10 +168,16 @@ async function renderizarModuloProductos(container) {
 }
 
 async function cargarListaProductos() {
+    const esAdmin = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
+    );
+    const colspanVal = esAdmin ? '14' : '10';
+
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando inventario y valor del oro...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #64748b;">Sincronizando inventario y valor del oro...</td></tr>`;
 
     try {
         const [resOro, resProd] = await Promise.all([
@@ -178,21 +195,27 @@ async function cargarListaProductos() {
             paginaActual = 1;
             renderizarTablaProductosAdmin();
         } else {
-            tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
         }
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
     }
 }
 
 function renderizarTablaProductosAdmin() {
+    const esAdmin = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
+    );
+    const colspanVal = esAdmin ? '14' : '10';
+
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
 
     const lista = window.listaProductosFiltradosCache || [];
     if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="14" style="text-align: center; padding: 30px; color: #64748b;">No hay productos registrados o coincidentes.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #64748b;">No hay productos registrados o coincidentes.</td></tr>`;
         document.getElementById("lblPaginacionTexto").textContent = "Mostrando 0 a 0 de 0";
         document.getElementById("lblPaginaActualNum").textContent = "Página 1 de 1";
         return;
@@ -237,7 +260,7 @@ function renderizarTablaProductosAdmin() {
 
         html += `
             <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px;"><input type="checkbox" class="check-producto-item" value="${sku}"></td>
+                ${esAdmin ? `<td style="padding: 10px;"><input type="checkbox" class="check-producto-item" value="${sku}"></td>` : ''}
                 <td style="padding: 10px; max-width: 220px;">
                     <div style="font-weight: 500; color: #0f172a;">${nombre}</div>
                     <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-top: 2px;">SKU: ${sku}</div>
@@ -246,18 +269,22 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${color}</td>
                 <td style="padding: 10px; color: #475569;">${material}</td>
                 <td style="padding: 10px;">${pesoItem}g</td>
-                <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
-                <td style="padding: 10px;">${margen}%</td>
-                <td style="padding: 10px;">${descBadge}</td>
+                ${esAdmin ? `
+                    <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
+                    <td style="padding: 10px;">${margen}%</td>
+                    <td style="padding: 10px;">${descBadge}</td>
+                ` : ''}
                 <td style="padding: 10px; font-weight: bold; color: #059669;">$${valorVentaFinal.toLocaleString()}</td>
                 <td style="padding: 10px; color: #64748b;">${ubicacion}</td>
                 <td style="padding: 10px;">${fotoHtml}</td>
                 <td style="padding: 10px; text-align: center;">
                     <button type="button" onclick="abrirEtiquetaProducto('${sku}', '${nombre.replace(/'/g, "\\'")}', '${valorVentaFinal.toLocaleString()}', '${codigoBarra}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Generar Etiqueta QR y Código de Barras">🏷️</button>
                 </td>
-                <td style="padding: 10px; text-align: center;">
-                    <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️</button>
-                </td>
+                ${esAdmin ? `
+                    <td style="padding: 10px; text-align: center;">
+                        <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️</button>
+                    </td>
+                ` : ''}
             </tr>
         `;
     });
