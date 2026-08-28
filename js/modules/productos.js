@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Íntegra con Mapeo CSV Corregido para Peso, Costo y Valor Piedra
+ * Versión Íntegra con Cálculo Automático de Valor Compra (Oro + Piedra) en la Columna R
  */
 
 async function renderizarModuloProductos(container) {
@@ -584,6 +584,10 @@ function exportarProductosCSV() {
 
     let csv = "ID_Producto;SKU;Ref;Codigo_Barra;Nombre;Descripcion;ID_Categoria;Color;Material;ID_Ubicacion;Stock_Min;Stock_Max;Estado;Fecha_Creacion;Peso;Valor_Oro;Valor_Piedra;Valor_Compra\n";
     window.listaProductosCache.forEach(p => {
+        let costoP = Number(p.Costo || p.costo) || 0;
+        let piedraP = Number(p.Valor_Piedra || p.valor_piedra) || 0;
+        let valorCompraTotal = costoP + piedraP;
+
         csv += [
             p.SKU || "",
             `"${(p.Nombre || "").replace(/"/g, '""')}"`,
@@ -600,9 +604,9 @@ function exportarProductosCSV() {
             "DISPONIBLE",
             new Date().toISOString().slice(0,10),
             p.Peso || 0,
-            p.Costo || 0,
-            p.Valor_Piedra || 0,
-            0
+            costoP,
+            piedraP,
+            valorCompraTotal
         ].join(";") + "\n";
     });
 
@@ -614,7 +618,7 @@ function exportarProductosCSV() {
     document.body.removeChild(link);
 }
 
-// ================= MÓDULO DE IMPORTACIÓN CSV CON MAPEO EXACTO =================
+// ================= MÓDULO DE IMPORTACIÓN CSV CON CÁLCULO DE VALOR COMPRA =================
 function abrirModalImportarExcel() {
     let modal = document.getElementById("modalImportarExcel");
     if (!modal) {
@@ -684,40 +688,37 @@ async function procesarArchivoCsvImportado() {
             }
 
             if (columnas.length >= 5) {
-                // Mapeo exacto basado en el orden real de las columnas de tu CSV (imagen 1):
-                // [0] Nombre
-                // [1] Categoria
-                // [2] Material
-                // [3] Tipo_Piedra
-                // [4] Color
-                // [5] Peso
-                // [6] Valor_Oro (Costo)
-                // [7] Valor_Piedra
-                // [8] Porcentaje_Venta
-                // [9] Tiene_Descuento
-                // [10] Ubicacion
+                // Mapeo exacto según tu CSV actual:
+                // [0] Nombre, [1] Categoria, [2] Material, [3] Tipo_Piedra, [4] Color, [5] Peso, [6] Valor_Compra (Oro), [7] Valor_Piedra, [8] Porcentaje_Venta, [9] Tiene_Descuento, [10] Ubicacion
 
                 let nombre = columnas[0] ? columnas[0].replace(/"/g, '').trim() : '';
                 let categoria = columnas[1] ? columnas[1].replace(/"/g, '').trim().toUpperCase() : 'ANILLOS';
                 let material = columnas[2] ? columnas[2].replace(/"/g, '').trim() : 'ORO';
                 let color = columnas[4] ? columnas[4].replace(/"/g, '').trim() : 'AMARILLO';
                 
-                // Limpieza robusta de montos numéricos (eliminando símbolos $, puntos de miles y comas decimales de Excel)
-                let limpiarNumero = (val) => {
+                let limpiarMonto = (val) => {
                     if (!val) return 0;
-                    let limpio = String(val).replace(/[\$\s"]/g, '').replace(/\./g, '').replace(',', '.');
+                    let limpio = String(val).replace(/[\$\s"]/g, '');
+                    if (limpio.includes(',')) {
+                        limpio = limpio.replace(/\./g, '').replace(',', '.');
+                    } else {
+                        limpio = limpio.replace(/,/g, '');
+                    }
                     return parseFloat(limpio) || 0;
                 };
 
-                let peso = limpiarNumero(columnas[5]);
-                let costo = limpiarNumero(columnas[6]);
-                let valorPiedra = limpiarNumero(columnas[7]);
+                let peso = limpiarMonto(columnas[5]);
+                let costoOro = limpiarMonto(columnas[6]);
+                let valorPiedra = limpiarMonto(columnas[7]);
+                
+                // Cálculo automático del valor de compra total (Columna R = Valor Compra Oro + Valor Piedra)
+                let valorCompraTotal = costoOro + valorPiedra;
+
                 let margen = Number(columnas[8]) || 100;
                 let descuento = Number(columnas[9]) || 0;
                 let ubicacion = columnas[10] ? columnas[10].replace(/"/g, '').trim() : 'CAJA FUERTE';
 
                 if (nombre) {
-                    // Generación automática del SKU exacto según categoría (ej. AN00001, CAN00001)
                     let prefijo = "JO";
                     if (categoria.includes("CANDON")) {
                         prefijo = "CAN";
@@ -753,7 +754,8 @@ async function procesarArchivoCsvImportado() {
                             color: color,
                             peso: peso,
                             valor_piedra: valorPiedra,
-                            costo: costo,
+                            costo: costoOro,
+                            valor_compra: valorCompraTotal, // Se envía el acumulado para la columna R
                             porcentaje_venta: margen,
                             tiene_descuento: descuento,
                             ubicacion: ubicacion,
