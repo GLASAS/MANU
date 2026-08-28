@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida con Validación de Longitud y Retraso (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida con Disparador de 13 Dígitos (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -12,11 +12,11 @@ async function renderizarModuloConsulta(container) {
         <div class="card" style="max-width: 650px; margin: 30px auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="text-align: center; margin-bottom: 25px;">
                 <h3 style="margin: 0; color: #0f172a; font-size: 1.4rem;">🔍 Consulta Rápida de Joyas</h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Escanee con la pistola o digite el SKU (menos de 5 caracteres requiere Enter o Consultar).</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Escanee con la pistola o pegue (autodisparo a los 13 dígitos) o digite el SKU y presione Consultar.</p>
             </div>
 
             <div style="display: flex; gap: 10px; margin-bottom: 25px;">
-                <input type="text" id="inputConsultaCodigo" placeholder="Escanee código de barras o digite SKU..." style="flex: 1; padding: 12px 15px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;" oninput="manejarInputConsulta(event)" onkeydown="if(event.key === 'Enter') ejecutarConsultaRapidaProducto()">
+                <input type="text" id="inputConsultaCodigo" placeholder="Escanee código de barras o digite SKU..." style="flex: 1; padding: 12px 15px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none;" oninput="manejarInputConsulta(event)" onpaste="setTimeout(ejecutarConsultaRapidaProducto, 50)" onkeydown="if(event.key === 'Enter') ejecutarConsultaRapidaProducto()">
                 <button type="button" onclick="ejecutarConsultaRapidaProducto()" style="background: #0f172a; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">Consultar</button>
                 <button type="button" onclick="limpiarConsultaRapida()" style="background: #ef4444; color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem;" title="Limpiar consulta">🧹 Limpiar</button>
             </div>
@@ -79,23 +79,18 @@ async function renderizarModuloConsulta(container) {
     }
 }
 
-// Validación de 1 segundo: Si hay entre 5 y 10 números se dispara solo; si hay menos de 5 es manual
-let timerEscaneoPistola = null;
+// Validación exacta: Si la longitud llega a 13 caracteres (código completo de pistola o pegado), se dispara automáticamente
 function manejarInputConsulta(event) {
     const input = document.getElementById("inputConsultaCodigo");
     if (!input) return;
 
     const valor = input.value.trim();
-    clearTimeout(timerEscaneoPistola);
-
-    if (valor.length >= 5) {
-        timerEscaneoPistola = setTimeout(() => {
-            const valorActual = document.getElementById("inputConsultaCodigo") ? document.getElementById("inputConsultaCodigo").value.trim() : "";
-            // Si pasados 1000ms (1 segundo) la longitud es menor o igual a 10, disparamos automático
-            if (valorActual === valor && valorActual.length <= 10) {
+    if (valor.length === 13) {
+        setTimeout(() => {
+            if (document.getElementById("inputConsultaCodigo") && document.getElementById("inputConsultaCodigo").value.trim() === valor) {
                 ejecutarConsultaRapidaProducto();
             }
-        }, 2000); // 1 segundo exacto
+        }, 50);
     }
 }
 
