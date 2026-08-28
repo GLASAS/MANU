@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida con Spinner de Carga (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida con Formato de Imagen de Catálogo (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -23,9 +23,9 @@ async function renderizarModuloConsulta(container) {
 
             <!-- CONTENEDOR DE RESULTADO -->
             <div id="resultadoConsultaContainer" style="display: none; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #f8fafc; text-align: center;">
-                <div style="margin-bottom: 15px; position: relative; display: inline-block;">
-                    <img id="imgConsultaFoto" src="" style="width: 180px; height: 180px; object-fit: cover; border-radius: 8px; border: 2px solid #cbd5e1; display: block; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto del Producto">
-                    <div id="badgeEstadoConsulta" style="position: absolute; top: 8px; right: 8px; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: none;"></div>
+                <div style="margin-bottom: 15px; position: relative; display: inline-block; width: 200px; height: 200px; background: #ffffff; border-radius: 8px; border: 2px solid #cbd5e1; overflow: hidden; padding: 5px; box-sizing: border-box;">
+                    <img id="imgConsultaFoto" src="" style="width: 100%; height: 100%; object-fit: contain; display: block; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto del Producto">
+                    <div id="badgeEstadoConsulta" style="position: absolute; top: 6px; right: 6px; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: none; z-index: 5;"></div>
                 </div>
                 <div style="margin-bottom: 15px;">
                     <span id="lblConsultaSku" style="background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;"></span>
@@ -51,7 +51,6 @@ async function renderizarModuloConsulta(container) {
         if (inp) inp.focus();
     }, 200);
 
-    // Mostrar spinner flotante si la caché no está cargada
     if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
         if (typeof mostrarSpinner === "function") {
             mostrarSpinner("Sincronizando inventario y valor del oro...");
