@@ -1,5 +1,5 @@
 /**
- * MANU JOYEROS - Módulo de Consulta Rápida de Productos por Código de Barras o SKU (consulta.js)
+ * MANU JOYEROS - Módulo de Consulta Rápida de Joyas (consulta.js)
  * Versión Completa e Íntegra - 2026
  */
 
@@ -19,7 +19,7 @@ async function renderizarModuloConsulta(container) {
             <!-- CONTENEDOR DE RESULTADO -->
             <div id="resultadoConsultaContainer" style="display: none; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #f8fafc; text-align: center;">
                 <div style="margin-bottom: 15px;">
-                    <img id="imgConsultaFoto" src="" style="width: 180px; height: 180px; object-fit: cover; border-radius: 8px; border: 2px solid #cbd5e1; display: inline-block;" alt="Foto del Producto">
+                    <img id="imgConsultaFoto" src="" style="width: 180px; height: 180px; object-fit: cover; border-radius: 8px; border: 2px solid #cbd5e1; display: inline-block; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto del Producto">
                 </div>
                 <div style="margin-bottom: 15px;">
                     <span id="lblConsultaSku" style="background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;"></span>
@@ -41,13 +41,11 @@ async function renderizarModuloConsulta(container) {
         </div>
     `;
 
-    // Asegurar que el input tenga el foco automáticamente al entrar al módulo
     setTimeout(() => {
         const inp = document.getElementById("inputConsultaCodigo");
         if (inp) inp.focus();
     }, 200);
 
-    // Cargar caché de productos si no está disponible
     if (!window.listaProductosCache || window.listaProductosCache.length === 0) {
         try {
             const [resOro, resProd] = await Promise.all([
@@ -93,7 +91,6 @@ async function ejecutarConsultaRapidaProducto() {
         return;
     }
 
-    // Datos del producto
     let sku = productoEncontrado.SKU || productoEncontrado.sku || "-";
     let nombre = productoEncontrado.Nombre || productoEncontrado.nombre || "Joya sin nombre";
     let categoria = productoEncontrado.ID_Categoria || productoEncontrado.categoria || "-";
@@ -110,7 +107,6 @@ async function ejecutarConsultaRapidaProducto() {
     let precioBaseConMargen = valorVentaBase * (1 + (margen / 100));
     let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
 
-    // Rellenar elementos visuales
     document.getElementById("imgConsultaFoto").src = foto || "https://via.placeholder.com/180?text=Sin+Foto";
     document.getElementById("lblConsultaSku").textContent = `SKU: ${sku}`;
     document.getElementById("lblConsultaNombre").textContent = nombre;
