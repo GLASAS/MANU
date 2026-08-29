@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Modal Global de Carga - 2026
+ * Versión Completa e Íntegra con Modal Global de Carga y Opciones de Foto (Galería / Cámara) - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -144,8 +144,13 @@ async function renderizarModuloProductos(container) {
                             <input type="text" id="prodUbicacion" placeholder="CAJA FUERTE" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto</label>
-                            <input type="text" id="prodFoto" placeholder="https://..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
+                                <input type="file" id="inputArchivoFoto" accept="image/*" style="display: none;" onchange="procesarImagenSeleccionada(this)">
+                                <button type="button" onclick="document.getElementById('inputArchivoFoto').removeAttribute('capture'); document.getElementById('inputArchivoFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
+                                <button type="button" onclick="const inp = document.getElementById('inputArchivoFoto'); inp.setAttribute('capture', 'environment'); inp.click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
+                            </div>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -188,7 +193,6 @@ async function cargarListaProductos() {
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
 
-    // Activamos el modal flotante exacto con el mensaje deseado
     if (typeof mostrarSpinner === "function") {
         mostrarSpinner("Sincronizando catálogo digital...");
     }
@@ -395,6 +399,41 @@ function generarSkuYBarraAutomatico() {
 
 function cerrarModalFormularioProducto() {
     document.getElementById("modalFormularioProducto").style.display = "none";
+}
+
+function procesarImagenSeleccionada(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+                
+                const maxDim = 800;
+                if (width > height && width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                document.getElementById("prodFoto").value = dataUrl;
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 async function guardarProductoInventario(event) {
