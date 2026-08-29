@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Modal Global de Carga y Opciones de Foto (Galería / Cámara) - 2026
+ * Versión Completa e Íntegra con Soporte Robusto de Cámara y Galería para Celulares - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -147,9 +147,12 @@ async function renderizarModuloProductos(container) {
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
-                                <input type="file" id="inputArchivoFoto" accept="image/*" style="display: none;" onchange="procesarImagenSeleccionada(this)">
-                                <button type="button" onclick="document.getElementById('inputArchivoFoto').removeAttribute('capture'); document.getElementById('inputArchivoFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
-                                <button type="button" onclick="const inp = document.getElementById('inputArchivoFoto'); inp.setAttribute('capture', 'environment'); inp.click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
+                                <!-- Inputs de archivos físicos separados y visibles mediante opacidad para compatibilidad móvil -->
+                                <input type="file" id="inputGaleriaFoto" accept="image/*" style="display:none;" onchange="procesarImagenSeleccionada(this)">
+                                <input type="file" id="inputCamaraFoto" accept="image/*" capture="environment" style="display:none;" onchange="procesarImagenSeleccionada(this)">
+                                
+                                <button type="button" onclick="document.getElementById('inputGaleriaFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
+                                <button type="button" onclick="document.getElementById('inputCamaraFoto').click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
                             </div>
                         </div>
                     </div>
@@ -404,6 +407,11 @@ function cerrarModalFormularioProducto() {
 function procesarImagenSeleccionada(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
+        
+        if (typeof mostrarSpinner === "function") {
+            mostrarSpinner("Procesando imagen...");
+        }
+
         const reader = new FileReader();
         
         reader.onload = function(e) {
@@ -427,10 +435,22 @@ function procesarImagenSeleccionada(input) {
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0, width, height);
 
-                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.80);
                 document.getElementById("prodFoto").value = dataUrl;
+
+                if (typeof ocultarSpinner === "function") {
+                    ocultarSpinner();
+                }
+            };
+            img.onerror = function() {
+                if (typeof ocultarSpinner === "function") ocultarSpinner();
+                alert("⚠️ No se pudo procesar el archivo de imagen seleccionado.");
             };
             img.src = e.target.result;
+        };
+        reader.onerror = function() {
+            if (typeof ocultarSpinner === "function") ocultarSpinner();
+            alert("⚠️ Error al leer el archivo.");
         };
         reader.readAsDataURL(file);
     }
