@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Soporte Robusto de Cámara y Galería para Celulares - 2026
+ * Versión Completa e Íntegra con Optimización de Imagen y Guardado Robusto - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -147,7 +147,6 @@ async function renderizarModuloProductos(container) {
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
                             <div style="display: flex; gap: 6px; align-items: center;">
                                 <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
-                                <!-- Inputs de archivos físicos separados y visibles mediante opacidad para compatibilidad móvil -->
                                 <input type="file" id="inputGaleriaFoto" accept="image/*" style="display:none;" onchange="procesarImagenSeleccionada(this)">
                                 <input type="file" id="inputCamaraFoto" accept="image/*" capture="environment" style="display:none;" onchange="procesarImagenSeleccionada(this)">
                                 
@@ -409,7 +408,7 @@ function procesarImagenSeleccionada(input) {
         const file = input.files[0];
         
         if (typeof mostrarSpinner === "function") {
-            mostrarSpinner("Procesando imagen...");
+            mostrarSpinner("Optimizando foto...");
         }
 
         const reader = new FileReader();
@@ -421,7 +420,8 @@ function procesarImagenSeleccionada(input) {
                 let width = img.width;
                 let height = img.height;
                 
-                const maxDim = 800;
+                // Reducimos dimensiones máximas a 500px para garantizar que el Base64 no sature el servidor
+                const maxDim = 500;
                 if (width > height && width > maxDim) {
                     height *= maxDim / width;
                     width = maxDim;
@@ -435,7 +435,8 @@ function procesarImagenSeleccionada(input) {
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0, width, height);
 
-                const dataUrl = canvas.toDataURL("image/jpeg", 0.80);
+                // Calidad comprimida al 65% para evitar error de conexión por tamaño de payload
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
                 document.getElementById("prodFoto").value = dataUrl;
 
                 if (typeof ocultarSpinner === "function") {
@@ -444,13 +445,13 @@ function procesarImagenSeleccionada(input) {
             };
             img.onerror = function() {
                 if (typeof ocultarSpinner === "function") ocultarSpinner();
-                alert("⚠️ No se pudo procesar el archivo de imagen seleccionado.");
+                alert("⚠️ No se pudo procesar la imagen seleccionada.");
             };
             img.src = e.target.result;
         };
         reader.onerror = function() {
             if (typeof ocultarSpinner === "function") ocultarSpinner();
-            alert("⚠️ Error al leer el archivo.");
+            alert("⚠️ Error al leer el archivo de imagen.");
         };
         reader.readAsDataURL(file);
     }
@@ -515,7 +516,7 @@ async function guardarProductoInventario(event) {
     } catch(err) {
         if (typeof ocultarSpinner === "function") ocultarSpinner();
         console.error(err);
-        alert("⚠️ Error de conexión al guardar el producto.");
+        alert("⚠️ Error de conexión o tamaño de imagen excedido. Intente con una foto más ligera.");
     }
 }
 
