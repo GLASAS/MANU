@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Soporte Total para Vendedores (Creación, Edición y Fotos) - 2026
+ * Versión Completa con Protección de Costos de Oro y Cálculo Exacto de Venta - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -483,9 +483,12 @@ async function guardarProductoInventario(event) {
     const color = document.getElementById("prodColor").value.trim();
     const peso = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
     const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
+    
+    // Respetamos estrictamente el valor de compra de oro introducido por el usuario sin modificarlo
     const valor_oro = Number(document.getElementById("prodCosto").value) || 0;
     const valor_compra = valor_oro + valor_piedra;
     
+    // El valor de venta se calcula multiplicando el peso por el oro del día + el valor de la piedra
     let valorOroActual = window.valorOroDelDiaCache || 250000;
     let valor_venta = (valorOroActual * peso) + valor_piedra;
 
@@ -508,9 +511,9 @@ async function guardarProductoInventario(event) {
             color: color,
             peso: Number(peso.toFixed(2)),
             valor_piedra: valor_piedra,
-            valor_oro: valor_oro,
+            valor_oro: valor_oro,          // Envía exactamente el costo digitado (ej. 411000)
             valor_compra: valor_compra,
-            valor_venta: valor_venta,
+            valor_venta: valor_venta,       // Envía el valor de venta calculado (Peso * Oro Día + Piedra)
             porcentaje_venta: porcentaje_venta,
             tiene_descuento: tiene_descuento,
             ubicacion: ubicacion,
@@ -541,32 +544,38 @@ function editarProducto(sku) {
     }
 
     const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
-    let valorOroActual = window.valorOroDelDiaCache || 250000;
-    let pValorOro = Number(prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)))) || 0;
-    if (pValorOro === 0 && pPeso > 0) {
-        pValorOro = valorOroActual * pPeso;
-    }
+    
+    // Lectura robusta y segura del costo real de compra de oro guardado, sin cálculos automáticos que lo alteren
+    let pValorOro = Number(
+        prod.Valor_Oro !== undefined ? prod.Valor_Oro : 
+        (prod.valor_oro !== undefined ? prod.valor_oro : 
+        (prod.VALOR_ORO !== undefined ? prod.VALOR_ORO : 
+        (prod.Costo !== undefined ? prod.Costo : 
+        (prod.costo !== undefined ? prod.costo : 
+        (prod.COSTO !== undefined ? prod.COSTO : 
+        (prod.Valor_Compra !== undefined ? prod.Valor_Compra : 
+        (prod.valor_compra !== undefined ? prod.valor_compra : 0)))))))) || 0;
 
-    const pValorPiedra = Number(prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0)) || 0;
-    const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100)) || 100;
-    const pDescuento = Number(prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : 0)) || 0;
-    const pUbicacion = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || "CAJA FUERTE";
+    const pValorPiedra = Number(prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : (prod.VALOR_PIEDRA !== undefined ? prod.VALOR_PIEDRA : 0))) || 0;
+    const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : (prod.PORCENTAJE_VENTA !== undefined ? prod.PORCENTAJE_VENTA : 100))) || 100;
+    const pDescuento = Number(prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : (prod.TIENE_DESCUENTO !== undefined ? prod.TIENE_DESCUENTO : 0))) || 0;
+    const pUbicacion = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || prod.ID_UBICACION || "CAJA FUERTE";
 
     document.getElementById("modalProductoTitulo").textContent = `Editar Producto: ${sku}`;
     document.getElementById("prodSkuOriginal").value = sku;
-    document.getElementById("prodSku").value = prod.SKU || prod.sku || "";
-    document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
-    document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
-    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "ANILLOS";
-    document.getElementById("prodMaterial").value = prod.Material || prod.material || "ORO";
-    document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
+    document.getElementById("prodSku").value = prod.SKU || prod.sku || sku;
+    document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || prod.CODIGO_BARRA || "";
+    document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || prod.NOMBRE || "";
+    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || prod.ID_CATEGORIA || "ANILLOS";
+    document.getElementById("prodMaterial").value = prod.Material || prod.material || prod.MATERIAL || "ORO";
+    document.getElementById("prodColor").value = prod.Color || prod.color || prod.COLOR || "AMARILLO";
     document.getElementById("prodPeso").value = pPeso;
     document.getElementById("prodValorPiedra").value = pValorPiedra;
-    document.getElementById("prodCosto").value = Math.round(pValorOro);
+    document.getElementById("prodCosto").value = Math.round(pValorOro); // Mantiene el valor exacto guardado
     document.getElementById("prodMargen").value = pMargen;
     document.getElementById("prodDescuento").value = pDescuento;
     document.getElementById("prodUbicacion").value = pUbicacion;
-    document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
+    document.getElementById("prodFoto").value = prod.Foto || prod.foto || prod.FOTO || "";
 
     document.getElementById("modalFormularioProducto").style.display = "flex";
 }
