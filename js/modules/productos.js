@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Bloqueo de Descripción y Campos Financieros para Vendedores - 2026
+ * Versión Completa con Mapeo Exacto de Valor_Compra_Oro y Restricción de Vendedores - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -284,7 +284,7 @@ function renderizarTablaProductosAdmin() {
         let pesoCrudo = p.Peso !== undefined ? p.Peso : (p.peso !== undefined ? p.peso : 0);
         let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-        let costoItem = Number(p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))) || 0;
+        let costoItem = Number(p.Valor_Compra_Oro !== undefined ? p.Valor_Compra_Oro : (p.valor_compra_oro !== undefined ? p.valor_compra_oro : (p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))))) || 0;
         let valPiedra = Number(p.Valor_Piedra !== undefined ? p.Valor_Piedra : (p.valor_piedra !== undefined ? p.valor_piedra : 0)) || 0;
         let margen = Number(p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100)) || 100;
         let descPct = Number(p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0)) || 0;
@@ -495,8 +495,10 @@ async function guardarProductoInventario(event) {
     const color = document.getElementById("prodColor").value.trim();
     const peso = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
     const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
-    const valor_oro = Number(document.getElementById("prodCosto").value) || 0;
-    const valor_compra = valor_oro + valor_piedra;
+    
+    // Mapeo exacto hacia la columna de la base de datos: Valor_Compra_Oro
+    const valor_compra_oro = Number(document.getElementById("prodCosto").value) || 0;
+    const valor_compra = valor_compra_oro + valor_piedra;
     
     let valorOroActual = window.valorOroDelDiaCache || 250000;
     let valor_venta = (valorOroActual * peso) + valor_piedra;
@@ -519,7 +521,7 @@ async function guardarProductoInventario(event) {
         color: esAdmin ? color : (productoOriginalCache.Color || productoOriginalCache.color || color),
         peso: esAdmin ? Number(peso.toFixed(2)) : (parseFloat(String(productoOriginalCache.Peso || productoOriginalCache.peso || 0).replace(',', '.')) || 0),
         valor_piedra: esAdmin ? valor_piedra : (Number(productoOriginalCache.Valor_Piedra || productoOriginalCache.valor_piedra || 0) || 0),
-        valor_oro: esAdmin ? valor_oro : (Number(productoOriginalCache.Valor_Oro || productoOriginalCache.valor_oro || productoOriginalCache.Costo || productoOriginalCache.costo || 0) || 0),
+        valor_compra_oro: esAdmin ? valor_compra_oro : (Number(productoOriginalCache.Valor_Compra_Oro || productoOriginalCache.valor_compra_oro || productoOriginalCache.Valor_Oro || productoOriginalCache.valor_oro || productoOriginalCache.Costo || productoOriginalCache.costo || 0) || 0),
         valor_compra: esAdmin ? valor_compra : (Number(productoOriginalCache.Valor_Compra || productoOriginalCache.valor_compra || 0) || 0),
         valor_venta: esAdmin ? valor_venta : (Number(productoOriginalCache.Valor_Venta || productoOriginalCache.valor_venta || 0) || 0),
         porcentaje_venta: esAdmin ? porcentaje_venta : (Number(productoOriginalCache.Porcentaje_Venta || productoOriginalCache.porcentaje_venta || 100) || 100),
@@ -560,11 +562,16 @@ function editarProducto(sku) {
     );
 
     const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
-    let pValorOro = Number(
-        prod.Valor_Oro !== undefined ? prod.Valor_Oro : 
+    
+    // Lectura exacta y prioritaria de la columna Valor_Compra_Oro
+    let pValorCompraOro = Number(
+        prod.Valor_Compra_Oro !== undefined ? prod.Valor_Compra_Oro : 
+        (prod.valor_compra_oro !== undefined ? prod.valor_compra_oro : 
+        (prod.VALOR_COMPRA_ORO !== undefined ? prod.VALOR_COMPRA_ORO : 
+        (prod.Valor_Oro !== undefined ? prod.Valor_Oro : 
         (prod.valor_oro !== undefined ? prod.valor_oro : 
         (prod.Costo !== undefined ? prod.Costo : 
-        (prod.costo !== undefined ? prod.costo : 0)))) || 0;
+        (prod.costo !== undefined ? prod.costo : 0))))))) || 0;
 
     const pValorPiedra = Number(prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0)) || 0;
     const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100)) || 100;
@@ -576,7 +583,6 @@ function editarProducto(sku) {
     document.getElementById("prodSku").value = prod.SKU || prod.sku || sku;
     document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
     
-    // Asignamos el nombre y aplicamos el bloqueo de lectura si es vendedor
     const inputNombre = document.getElementById("prodNombre");
     inputNombre.value = prod.Nombre || prod.nombre || "";
     if (!esAdmin) {
@@ -591,13 +597,12 @@ function editarProducto(sku) {
     document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
     document.getElementById("prodPeso").value = pPeso;
     document.getElementById("prodValorPiedra").value = pValorPiedra;
-    document.getElementById("prodCosto").value = Math.round(pValorOro);
+    document.getElementById("prodCosto").value = Math.round(pValorCompraOro); // Muestra exactamente Valor_Compra_Oro
     document.getElementById("prodMargen").value = pMargen;
     document.getElementById("prodDescuento").value = pDescuento;
     document.getElementById("prodUbicacion").value = pUbicacion;
     document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
 
-    // Ocultar completamente los campos financieros y de configuración si es VENDEDOR
     const seccionAdmin = document.getElementById("seccionCamposAdmin");
     if (seccionAdmin) {
         seccionAdmin.style.display = esAdmin ? "block" : "none";
@@ -632,14 +637,14 @@ function exportarProductosCSV() {
         return;
     }
 
-    let csv = "ID_Producto;SKU;Codigo_Barra;Nombre;ID_Categoria;Material;Color;Peso;Valor_Piedra;Valor_Oro;Porcentaje_Venta;Tiene_Descuento;ID_Ubicacion;Estado;Fecha_Creacion;Valor_Compra;Valor_Venta\n";
+    let csv = "ID_Producto;SKU;Codigo_Barra;Nombre;ID_Categoria;Material;Color;Peso;Valor_Piedra;Valor_Compra_Oro;Porcentaje_Venta;Tiene_Descuento;ID_Ubicacion;Estado;Fecha_Creacion;Valor_Compra;Valor_Venta\n";
     let valorOroActual = window.valorOroDelDiaCache || 250000;
 
     window.listaProductosCache.forEach(p => {
-        let valOro = Number(p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
+        let valCompraOro = Number(p.Valor_Compra_Oro || p.valor_compra_oro || p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
         let valPiedra = Number(p.Valor_Piedra || p.valor_piedra) || 0;
         let pesoItem = parseFloat(String(p.Peso || p.peso || 0).replace(',', '.')) || 0;
-        let valorCompraTotal = valOro + valPiedra;
+        let valorCompraTotal = valCompraOro + valPiedra;
         let valorVentaCalc = (valorOroActual * pesoItem) + valPiedra;
 
         csv += [
@@ -652,7 +657,7 @@ function exportarProductosCSV() {
             p.Color || p.color || "AMARILLO",
             pesoItem.toFixed(2),
             valPiedra,
-            valOro,
+            valCompraOro,
             p.Porcentaje_Venta || p.porcentaje_venta || 100,
             p.Tiene_Descuento || p.tiene_descuento || 0,
             p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "CAJA FUERTE",
@@ -712,7 +717,7 @@ async function procesarArchivoCsvImportado() {
         let idxMat = headers.findIndex(h => h.includes('material'));
         let idxColor = headers.findIndex(h => h.includes('color'));
         let idxPeso = headers.findIndex(h => h.includes('peso'));
-        let idxValorOro = headers.findIndex(h => h.includes('valor_oro') || h.includes('valor_compra_oro') || h.includes('costo'));
+        let idxValorCompraOro = headers.findIndex(h => h.includes('valor_compra_oro') || h.includes('valor_oro') || h.includes('costo'));
         let idxValorPiedra = headers.findIndex(h => h.includes('valor_piedra'));
         let idxMargen = headers.findIndex(h => h.includes('porcentaje_venta') || h.includes('margen'));
         let idxDescuento = headers.findIndex(h => h.includes('tiene_descuento') || h.includes('descuento'));
@@ -755,9 +760,9 @@ async function procesarArchivoCsvImportado() {
             let color = getVal(idxColor) || 'AMARILLO';
             
             let peso = limpiarPesoDecimal(getVal(idxPeso));
-            let valorOro = limpiarMonto(getVal(idxValorOro));
+            let valorCompraOro = limpiarMonto(getVal(idxValorCompraOro));
             let valorPiedra = limpiarMonto(getVal(idxValorPiedra));
-            let valorCompraTotal = valorOro + valorPiedra;
+            let valorCompraTotal = valorCompraOro + valorPiedra;
 
             let valorOroActual = window.valorOroDelDiaCache || 250000;
             let valorVentaCalc = (valorOroActual * peso) + valorPiedra;
@@ -805,7 +810,7 @@ async function procesarArchivoCsvImportado() {
                         color: color,
                         peso: peso,
                         valor_piedra: valorPiedra,
-                        valor_oro: valorOro,
+                        valor_compra_oro: valorCompraOro,
                         valor_compra: valorCompraTotal,
                         valor_venta: valorVentaCalc,
                         porcentaje_venta: margen,
