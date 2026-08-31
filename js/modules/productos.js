@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Mapeo Exacto de Valor_Compra_Oro y Restricción de Vendedores - 2026
+ * Versión Completa con Botón de Descarga de Plantilla CSV - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -50,8 +50,8 @@ async function renderizarModuloProductos(container) {
                             <th style="padding: 10px;">Material</th>
                             <th style="padding: 10px;">Peso</th>
                             ${esAdmin ? `
-                                <th style="padding: 10px;">Costo Oro</th>
-                                <th style="padding: 10px;">Valor Venta (Base)</th>
+                                <th style="padding: 10px;">Valor Compra Oro</th>
+                                <th style="padding: 10px;">Valor Compra Oro</th>
                                 <th style="padding: 10px;">Margen</th>
                                 <th style="padding: 10px;">Desc.</th>
                             ` : ''}
@@ -172,12 +172,22 @@ async function renderizarModuloProductos(container) {
 
         <!-- MODAL IMPORTAR CSV -->
         <div class="image-modal" id="modalImportarExcel" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index:9998; position:fixed; top:0; left:0; width:100%; height:100%;">
-            <div style="background: white; width: 95%; max-width: 480px; border-radius: 12px; padding: 25px;" onclick="event.stopPropagation()">
+            <div style="background: white; width: 95%; max-width: 500px; border-radius: 12px; padding: 25px;" onclick="event.stopPropagation()">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #0f172a;">📁 Importar Productos Masivos (CSV)</h3>
                     <button type="button" onclick="cerrarModalImportarExcel()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">✕</button>
                 </div>
                 <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">Seleccione un archivo CSV con las cabeceras correspondientes para cargar el inventario masivamente.</p>
+                
+                <!-- BOTÓN PARA DESCARGAR LA PLANTILLA OFICIAL -->
+                <div style="margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 0.85rem; font-weight: bold; color: #0f172a;">¿No tienes la plantilla?</div>
+                        <div style="font-size: 0.75rem; color: #64748b;">Descarga el formato CSV listo para rellenar.</div>
+                    </div>
+                    <button type="button" onclick="descargarPlantillaCsvInventario()" style="background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">📥 Descargar Plantilla</button>
+                </div>
+
                 <div style="margin-bottom: 20px;">
                     <input type="file" id="inputArchivoCsvImport" accept=".csv" style="width: 100%; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
                 </div>
@@ -284,7 +294,7 @@ function renderizarTablaProductosAdmin() {
         let pesoCrudo = p.Peso !== undefined ? p.Peso : (p.peso !== undefined ? p.peso : 0);
         let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-        let costoItem = Number(p.Valor_Compra_Oro !== undefined ? p.Valor_Compra_Oro : (p.valor_compra_oro !== undefined ? p.valor_compra_oro : (p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))))) || 0;
+        let valorCompraOroItem = Number(p.Valor_Compra_Oro !== undefined ? p.Valor_Compra_Oro : (p.valor_compra_oro !== undefined ? p.valor_compra_oro : (p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))))) || 0;
         let valPiedra = Number(p.Valor_Piedra !== undefined ? p.Valor_Piedra : (p.valor_piedra !== undefined ? p.valor_piedra : 0)) || 0;
         let margen = Number(p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100)) || 100;
         let descPct = Number(p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0)) || 0;
@@ -308,8 +318,8 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${material}</td>
                 <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>
                 ${esAdmin ? `
-                    <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
-                    <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
+                    <td style="padding: 10px; font-weight: bold; color: #059669;">$${valorCompraOroItem.toLocaleString()}</td>
+                    <td style="padding: 10px; font-weight: bold; color: #059669;">$${valorCompraOroItem.toLocaleString()}</td>
                     <td style="padding: 10px;">${margen}%</td>
                     <td style="padding: 10px;">${descBadge}</td>
                 ` : ''}
@@ -320,7 +330,7 @@ function renderizarTablaProductosAdmin() {
                 </td>
                 ${esAdminOrVendedor ? `
                     <td style="padding: 10px; text-align: center;">
-                        <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️ Editar Foto</button>
+                        <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️ Editar</button>
                     </td>
                 ` : ''}
             </tr>
@@ -496,7 +506,6 @@ async function guardarProductoInventario(event) {
     const peso = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
     const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
     
-    // Mapeo exacto hacia la columna de la base de datos: Valor_Compra_Oro
     const valor_compra_oro = Number(document.getElementById("prodCosto").value) || 0;
     const valor_compra = valor_compra_oro + valor_piedra;
     
@@ -563,7 +572,6 @@ function editarProducto(sku) {
 
     const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
     
-    // Lectura exacta y prioritaria de la columna Valor_Compra_Oro
     let pValorCompraOro = Number(
         prod.Valor_Compra_Oro !== undefined ? prod.Valor_Compra_Oro : 
         (prod.valor_compra_oro !== undefined ? prod.valor_compra_oro : 
@@ -597,7 +605,7 @@ function editarProducto(sku) {
     document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
     document.getElementById("prodPeso").value = pPeso;
     document.getElementById("prodValorPiedra").value = pValorPiedra;
-    document.getElementById("prodCosto").value = Math.round(pValorCompraOro); // Muestra exactamente Valor_Compra_Oro
+    document.getElementById("prodCosto").value = Math.round(pValorCompraOro);
     document.getElementById("prodMargen").value = pMargen;
     document.getElementById("prodDescuento").value = pDescuento;
     document.getElementById("prodUbicacion").value = pUbicacion;
@@ -671,6 +679,19 @@ function exportarProductosCSV() {
     let link = document.createElement("a");
     link.href = encodeURI("data:text/csv;charset=utf-8,\uFEFF" + csv);
     link.download = `inventario_manu.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function descargarPlantillaCsvInventario() {
+    let csvPlantilla = "SKU;Codigo_Barra;Nombre;ID_Categoria;Material;Color;Peso;Valor_Piedra;Valor_Compra_Oro;Porcentaje_Venta;Tiene_Descuento;ID_Ubicacion\n";
+    csvPlantilla += "CA0001;7700649302291;CADENA VENECIANA ORO AMARILLO 18K - 45cm;CADENAS;ORO;AMARILLO;1,2;0;600000;100;0;CAJA FUERTE\n";
+    csvPlantilla += "AN0001;7700649302292;ANILLO SOLITARIO ORO BLANCO 18K;ANILLOS;ORO;BLANCO;2,5;50000;1200000;100;0;VITRINA 1\n";
+
+    let link = document.createElement("a");
+    link.href = encodeURI("data:text/csv;charset=utf-8,\uFEFF" + csvPlantilla);
+    link.download = "plantilla_carga_masiva_manu.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
