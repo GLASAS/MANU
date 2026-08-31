@@ -1,9 +1,16 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Optimización de Imagen y Guardado Robusto - 2026
+ * Versión Completa e Íntegra con Soporte Total para Vendedores (Creación, Edición y Fotos) - 2026
  */
 
 async function renderizarModuloProductos(container) {
+    const esAdminOrVendedor = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR' ||
+        String(usuarioActual.rol || "").toUpperCase() === 'VENDEDOR' ||
+        String(usuarioActual.rol || "").toUpperCase() === 'VENTAS'
+    );
+
     const esAdmin = usuarioActual && (
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
@@ -12,8 +19,10 @@ async function renderizarModuloProductos(container) {
     container.innerHTML = `
         <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="contenedorBotonesAccionProductos">
-                ${esAdmin ? `
+                ${esAdminOrVendedor ? `
                     <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
+                ` : ''}
+                ${esAdmin ? `
                     <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
                 ` : ''}
                 <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
@@ -51,7 +60,7 @@ async function renderizarModuloProductos(container) {
                             <th style="padding: 10px;">Venta Final</th>
                             <th style="padding: 10px;">Ubicación</th>
                             <th style="padding: 10px; text-align: center;">Etiqueta</th>
-                            ${esAdmin ? `<th style="padding: 10px; text-align: center;">Acciones</th>` : ''}
+                            ${esAdminOrVendedor ? `<th style="padding: 10px; text-align: center;">Acciones</th>` : ''}
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody">
@@ -231,6 +240,12 @@ async function cargarListaProductos() {
 }
 
 function renderizarTablaProductosAdmin() {
+    const esAdminOrVendedor = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR' ||
+        String(usuarioActual.rol || "").toUpperCase() === 'VENDEDOR' ||
+        String(usuarioActual.rol || "").toUpperCase() === 'VENTAS'
+    );
     const esAdmin = usuarioActual && (
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
@@ -305,7 +320,7 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; text-align: center;">
                     <button type="button" onclick="abrirEtiquetaProducto('${sku}', '${nombre.replace(/'/g, "\\'")}', '${valorVentaFinal.toLocaleString()}', '${codigoBarra}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Generar Código de Barras">🏷️</button>
                 </td>
-                ${esAdmin ? `
+                ${esAdminOrVendedor ? `
                     <td style="padding: 10px; text-align: center;">
                         <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️</button>
                     </td>
@@ -420,7 +435,6 @@ function procesarImagenSeleccionada(input) {
                 let width = img.width;
                 let height = img.height;
                 
-                // Reducimos dimensiones máximas a 500px para garantizar que el Base64 no sature el servidor
                 const maxDim = 500;
                 if (width > height && width > maxDim) {
                     height *= maxDim / width;
@@ -435,7 +449,6 @@ function procesarImagenSeleccionada(input) {
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Calidad comprimida al 65% para evitar error de conexión por tamaño de payload
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
                 document.getElementById("prodFoto").value = dataUrl;
 
