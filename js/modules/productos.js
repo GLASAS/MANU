@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Restricción de Edición Exclusiva de Fotos para Vendedores - 2026
+ * Versión Completa con Ocultamiento Dinámico de Campos Sensibles para Vendedores - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -99,67 +99,67 @@ async function renderizarModuloProductos(container) {
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Nombre / Descripción de la Joya *</label>
                         <input type="text" id="prodNombre" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Categoría *</label>
-                            <select id="prodCategoria" onchange="generarSkuYBarraAutomatico()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-                                <option value="ANILLOS">ANILLOS</option>
-                                <option value="CADENAS">CADENAS</option>
-                                <option value="CANDONGAS">CANDONGAS</option>
-                                <option value="ARETES">ARETES</option>
-                                <option value="DIJES">DIJES</option>
-                                <option value="PULSERAS">PULSERAS</option>
-                                <option value="TOPOS">TOPOS</option>
-                            </select>
+                    <div id="seccionCamposAdmin" style="display: block;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Categoría *</label>
+                                <select id="prodCategoria" onchange="generarSkuYBarraAutomatico()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                                    <option value="ANILLOS">ANILLOS</option>
+                                    <option value="CADENAS">CADENAS</option>
+                                    <option value="CANDONGAS">CANDONGAS</option>
+                                    <option value="ARETES">ARETES</option>
+                                    <option value="DIJES">DIJES</option>
+                                    <option value="PULSERAS">PULSERAS</option>
+                                    <option value="TOPOS">TOPOS</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Material</label>
+                                <input type="text" id="prodMaterial" placeholder="ORO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Color</label>
+                                <input type="text" id="prodColor" placeholder="AMARILLO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Material</label>
-                            <input type="text" id="prodMaterial" placeholder="ORO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Peso (g)</label>
+                                <input type="number" step="0.01" id="prodPeso" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Piedra ($)</label>
+                                <input type="number" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Color</label>
-                            <input type="text" id="prodColor" placeholder="AMARILLO" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Oro ($)</label>
+                                <input type="number" id="prodCosto" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Margen (%)</label>
+                                <input type="number" id="prodMargen" value="100" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Descuento (%)</label>
+                                <input type="number" id="prodDescuento" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
                         </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Peso (g)</label>
-                            <input type="number" step="0.01" id="prodPeso" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Piedra ($)</label>
-                            <input type="number" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Oro ($)</label>
-                            <input type="number" id="prodCosto" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Margen (%)</label>
-                            <input type="number" id="prodMargen" value="100" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Descuento (%)</label>
-                            <input type="number" id="prodDescuento" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
-                        <div>
+                        <div style="margin-bottom: 12px;">
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Ubicación / Vitrina</label>
                             <input type="text" id="prodUbicacion" placeholder="CAJA FUERTE" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
-                                <input type="file" id="inputGaleriaFoto" accept="image/*" style="display:none;" onchange="procesarImagenSeleccionada(this)">
-                                <input type="file" id="inputCamaraFoto" accept="image/*" capture="environment" style="display:none;" onchange="procesarImagenSeleccionada(this)">
-                                
-                                <button type="button" onclick="document.getElementById('inputGaleriaFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
-                                <button type="button" onclick="document.getElementById('inputCamaraFoto').click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
-                            </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
+                            <input type="file" id="inputGaleriaFoto" accept="image/*" style="display:none;" onchange="procesarImagenSeleccionada(this)">
+                            <input type="file" id="inputCamaraFoto" accept="image/*" capture="environment" style="display:none;" onchange="procesarImagenSeleccionada(this)">
+                            
+                            <button type="button" onclick="document.getElementById('inputGaleriaFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
+                            <button type="button" onclick="document.getElementById('inputCamaraFoto').click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -506,7 +506,6 @@ async function guardarProductoInventario(event) {
     const ubicacion = document.getElementById("prodUbicacion").value.trim();
     const foto = document.getElementById("prodFoto").value.trim();
 
-    // Si es vendedor, buscamos el producto original en caché para enviar intactos todos sus valores financieros y datos originales
     let productoOriginalCache = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuOriginal.toUpperCase()) || {};
 
     const payload = {
@@ -526,7 +525,7 @@ async function guardarProductoInventario(event) {
         porcentaje_venta: esAdmin ? porcentaje_venta : (Number(productoOriginalCache.Porcentaje_Venta || productoOriginalCache.porcentaje_venta || 100) || 100),
         tiene_descuento: esAdmin ? tiene_descuento : (Number(productoOriginalCache.Tiene_Descuento || productoOriginalCache.tiene_descuento || 0) || 0),
         ubicacion: esAdmin ? ubicacion : (productoOriginalCache.ID_Ubicacion || productoOriginalCache.id_ubicacion || productoOriginalCache.ubicacion || "CAJA FUERTE"),
-        foto: foto // El vendedor sí puede modificar libremente la foto
+        foto: foto
     };
 
     try {
@@ -588,18 +587,11 @@ function editarProducto(sku) {
     document.getElementById("prodUbicacion").value = pUbicacion;
     document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
 
-    // Si el usuario es VENDEDOR, bloqueamos todos los inputs excepto el campo de la foto y el botón de guardar/cancelar
-    const inputsForm = document.querySelectorAll("#formCrudProducto input, #formCrudProducto select");
-    inputsForm.forEach(input => {
-        if (input.id !== "prodFoto" && input.id !== "prodSkuOriginal" && input.type !== "file") {
-            if (!esAdmin) {
-                input.disabled = true;
-                input.style.backgroundColor = "#f1f5f9";
-                input.style.color = "#64748b";
-                input.style.cursor = "not-allowed";
-            }
-        }
-    });
+    // Ocultar completamente los campos financieros y de configuración si es VENDEDOR
+    const seccionAdmin = document.getElementById("seccionCamposAdmin");
+    if (seccionAdmin) {
+        seccionAdmin.style.display = esAdmin ? "block" : "none";
+    }
 
     document.getElementById("modalFormularioProducto").style.display = "flex";
 }
