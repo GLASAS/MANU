@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Ocultamiento Dinámico de Campos Sensibles para Vendedores - 2026
+ * Versión Completa con Bloqueo de Descripción y Campos Financieros para Vendedores - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -575,7 +575,17 @@ function editarProducto(sku) {
     document.getElementById("prodSkuOriginal").value = sku;
     document.getElementById("prodSku").value = prod.SKU || prod.sku || sku;
     document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
-    document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
+    
+    // Asignamos el nombre y aplicamos el bloqueo de lectura si es vendedor
+    const inputNombre = document.getElementById("prodNombre");
+    inputNombre.value = prod.Nombre || prod.nombre || "";
+    if (!esAdmin) {
+        inputNombre.disabled = true;
+        inputNombre.style.backgroundColor = "#f1f5f9";
+        inputNombre.style.color = "#64748b";
+        inputNombre.style.cursor = "not-allowed";
+    }
+
     document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "ANILLOS";
     document.getElementById("prodMaterial").value = prod.Material || prod.material || "ORO";
     document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
