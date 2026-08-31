@@ -153,7 +153,7 @@ function prepararEdicionUsuario(login) {
     if (contenedor && titulo) {
         document.getElementById("usrModoEdicion").value = "1";
         document.getElementById("usrUsuario").value = usr.Usuario || usr.usuario || "";
-        document.getElementById("usrUsuario").disabled = true; // No se cambia el login principal
+        document.getElementById("usrUsuario").disabled = false; // Permitir que se envíe en el POST si el backend lo requiere
         document.getElementById("usrNombre").value = usr.Nombre || usr.nombre || "";
         document.getElementById("usrRol").value = usr.Rol || usr.rol || "VENDEDOR";
         document.getElementById("usrPassword").value = usr.Password || usr.password || "";
