@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Protección de Costos de Oro y Cálculo Exacto de Venta - 2026
+ * Versión Completa con Restricción de Edición Exclusiva de Fotos para Vendedores - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -19,10 +19,8 @@ async function renderizarModuloProductos(container) {
     container.innerHTML = `
         <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="contenedorBotonesAccionProductos">
-                ${esAdminOrVendedor ? `
-                    <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
-                ` : ''}
                 ${esAdmin ? `
+                    <button type="button" class="btn-action" onclick="abrirModalNuevoProducto()" style="background: #0f172a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">✨ Nuevo Producto</button>
                     <button type="button" class="btn-action" onclick="abrirModalImportarExcel()" style="background: #059669; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📁 Importar</button>
                 ` : ''}
                 <button type="button" class="btn-action" onclick="exportarProductosCSV()" style="background: #2563eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">📤 Exportar</button>
@@ -322,7 +320,7 @@ function renderizarTablaProductosAdmin() {
                 </td>
                 ${esAdminOrVendedor ? `
                     <td style="padding: 10px; text-align: center;">
-                        <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️</button>
+                        <button type="button" onclick="editarProducto('${sku}')" style="background: #0f172a; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Editar">✏️ Editar Foto</button>
                     </td>
                 ` : ''}
             </tr>
@@ -366,6 +364,15 @@ function toggleSelectAllProductos(source) {
 }
 
 function abrirModalNuevoProducto() {
+    const esAdmin = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
+    );
+    if (!esAdmin) {
+        alert("⚠️ Los vendedores solo tienen permitido actualizar fotografías de productos existentes.");
+        return;
+    }
+
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
     document.getElementById("prodSkuOriginal").value = "";
@@ -474,6 +481,11 @@ async function guardarProductoInventario(event) {
     event.preventDefault();
     if (typeof mostrarSpinner === "function") mostrarSpinner("Guardando producto...");
 
+    const esAdmin = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
+    );
+
     const skuOriginal = document.getElementById("prodSkuOriginal").value.trim();
     const sku = document.getElementById("prodSku").value.trim();
     const codigo_barra = document.getElementById("prodCodigoBarra").value.trim();
@@ -483,12 +495,9 @@ async function guardarProductoInventario(event) {
     const color = document.getElementById("prodColor").value.trim();
     const peso = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
     const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
-    
-    // Respetamos estrictamente el valor de compra de oro introducido por el usuario sin modificarlo
     const valor_oro = Number(document.getElementById("prodCosto").value) || 0;
     const valor_compra = valor_oro + valor_piedra;
     
-    // El valor de venta se calcula multiplicando el peso por el oro del día + el valor de la piedra
     let valorOroActual = window.valorOroDelDiaCache || 250000;
     let valor_venta = (valorOroActual * peso) + valor_piedra;
 
@@ -497,37 +506,40 @@ async function guardarProductoInventario(event) {
     const ubicacion = document.getElementById("prodUbicacion").value.trim();
     const foto = document.getElementById("prodFoto").value.trim();
 
-    const accionApi = skuOriginal ? "actualizarProducto" : "guardarProducto";
+    // Si es vendedor, buscamos el producto original en caché para enviar intactos todos sus valores financieros y datos originales
+    let productoOriginalCache = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuOriginal.toUpperCase()) || {};
+
+    const payload = {
+        action: "actualizarProducto",
+        sku: sku,
+        sku_original: skuOriginal,
+        codigo_barra: esAdmin ? codigo_barra : (productoOriginalCache.Codigo_Barra || productoOriginalCache.codigo_barra || codigo_barra),
+        nombre: esAdmin ? nombre : (productoOriginalCache.Nombre || productoOriginalCache.nombre || nombre),
+        categoria: esAdmin ? categoria : (productoOriginalCache.ID_Categoria || productoOriginalCache.categoria || categoria),
+        material: esAdmin ? material : (productoOriginalCache.Material || productoOriginalCache.material || material),
+        color: esAdmin ? color : (productoOriginalCache.Color || productoOriginalCache.color || color),
+        peso: esAdmin ? Number(peso.toFixed(2)) : (parseFloat(String(productoOriginalCache.Peso || productoOriginalCache.peso || 0).replace(',', '.')) || 0),
+        valor_piedra: esAdmin ? valor_piedra : (Number(productoOriginalCache.Valor_Piedra || productoOriginalCache.valor_piedra || 0) || 0),
+        valor_oro: esAdmin ? valor_oro : (Number(productoOriginalCache.Valor_Oro || productoOriginalCache.valor_oro || productoOriginalCache.Costo || productoOriginalCache.costo || 0) || 0),
+        valor_compra: esAdmin ? valor_compra : (Number(productoOriginalCache.Valor_Compra || productoOriginalCache.valor_compra || 0) || 0),
+        valor_venta: esAdmin ? valor_venta : (Number(productoOriginalCache.Valor_Venta || productoOriginalCache.valor_venta || 0) || 0),
+        porcentaje_venta: esAdmin ? porcentaje_venta : (Number(productoOriginalCache.Porcentaje_Venta || productoOriginalCache.porcentaje_venta || 100) || 100),
+        tiene_descuento: esAdmin ? tiene_descuento : (Number(productoOriginalCache.Tiene_Descuento || productoOriginalCache.tiene_descuento || 0) || 0),
+        ubicacion: esAdmin ? ubicacion : (productoOriginalCache.ID_Ubicacion || productoOriginalCache.id_ubicacion || productoOriginalCache.ubicacion || "CAJA FUERTE"),
+        foto: foto // El vendedor sí puede modificar libremente la foto
+    };
 
     try {
-        const res = await API.llamar(accionApi, {
-            action: accionApi,
-            sku: sku,
-            sku_original: skuOriginal,
-            codigo_barra: codigo_barra,
-            nombre: nombre,
-            categoria: categoria,
-            material: material,
-            color: color,
-            peso: Number(peso.toFixed(2)),
-            valor_piedra: valor_piedra,
-            valor_oro: valor_oro,          // Envía exactamente el costo digitado (ej. 411000)
-            valor_compra: valor_compra,
-            valor_venta: valor_venta,       // Envía el valor de venta calculado (Peso * Oro Día + Piedra)
-            porcentaje_venta: porcentaje_venta,
-            tiene_descuento: tiene_descuento,
-            ubicacion: ubicacion,
-            foto: foto
-        }, "POST");
+        const res = await API.llamar("actualizarProducto", payload, "POST");
 
         if (typeof ocultarSpinner === "function") ocultarSpinner();
 
         if (res && res.status === "success") {
-            alert(res.message || "Operación realizada con éxito.");
+            alert(res.message || "Fotografía actualizada con éxito.");
             cerrarModalFormularioProducto();
             cargarListaProductos();
         } else {
-            alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
+            alert("Error: " + (res ? res.message : "No se pudo actualizar el producto."));
         }
     } catch(err) {
         if (typeof ocultarSpinner === "function") ocultarSpinner();
@@ -543,39 +555,51 @@ function editarProducto(sku) {
         return;
     }
 
+    const esAdmin = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
+    );
+
     const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
-    
-    // Lectura robusta y segura del costo real de compra de oro guardado, sin cálculos automáticos que lo alteren
     let pValorOro = Number(
         prod.Valor_Oro !== undefined ? prod.Valor_Oro : 
         (prod.valor_oro !== undefined ? prod.valor_oro : 
-        (prod.VALOR_ORO !== undefined ? prod.VALOR_ORO : 
         (prod.Costo !== undefined ? prod.Costo : 
-        (prod.costo !== undefined ? prod.costo : 
-        (prod.COSTO !== undefined ? prod.COSTO : 
-        (prod.Valor_Compra !== undefined ? prod.Valor_Compra : 
-        (prod.valor_compra !== undefined ? prod.valor_compra : 0)))))))) || 0;
+        (prod.costo !== undefined ? prod.costo : 0)))) || 0;
 
-    const pValorPiedra = Number(prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : (prod.VALOR_PIEDRA !== undefined ? prod.VALOR_PIEDRA : 0))) || 0;
-    const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : (prod.PORCENTAJE_VENTA !== undefined ? prod.PORCENTAJE_VENTA : 100))) || 100;
-    const pDescuento = Number(prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : (prod.TIENE_DESCUENTO !== undefined ? prod.TIENE_DESCUENTO : 0))) || 0;
-    const pUbicacion = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || prod.ID_UBICACION || "CAJA FUERTE";
+    const pValorPiedra = Number(prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0)) || 0;
+    const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100)) || 100;
+    const pDescuento = Number(prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : 0)) || 0;
+    const pUbicacion = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || "CAJA FUERTE";
 
-    document.getElementById("modalProductoTitulo").textContent = `Editar Producto: ${sku}`;
+    document.getElementById("modalProductoTitulo").textContent = esAdmin ? `Editar Producto: ${sku}` : `Actualizar Foto - Producto: ${sku}`;
     document.getElementById("prodSkuOriginal").value = sku;
     document.getElementById("prodSku").value = prod.SKU || prod.sku || sku;
-    document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || prod.CODIGO_BARRA || "";
-    document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || prod.NOMBRE || "";
-    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || prod.ID_CATEGORIA || "ANILLOS";
-    document.getElementById("prodMaterial").value = prod.Material || prod.material || prod.MATERIAL || "ORO";
-    document.getElementById("prodColor").value = prod.Color || prod.color || prod.COLOR || "AMARILLO";
+    document.getElementById("prodCodigoBarra").value = prod.Codigo_Barra || prod.codigo_barra || "";
+    document.getElementById("prodNombre").value = prod.Nombre || prod.nombre || "";
+    document.getElementById("prodCategoria").value = prod.ID_Categoria || prod.categoria || "ANILLOS";
+    document.getElementById("prodMaterial").value = prod.Material || prod.material || "ORO";
+    document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
     document.getElementById("prodPeso").value = pPeso;
     document.getElementById("prodValorPiedra").value = pValorPiedra;
-    document.getElementById("prodCosto").value = Math.round(pValorOro); // Mantiene el valor exacto guardado
+    document.getElementById("prodCosto").value = Math.round(pValorOro);
     document.getElementById("prodMargen").value = pMargen;
     document.getElementById("prodDescuento").value = pDescuento;
     document.getElementById("prodUbicacion").value = pUbicacion;
-    document.getElementById("prodFoto").value = prod.Foto || prod.foto || prod.FOTO || "";
+    document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
+
+    // Si el usuario es VENDEDOR, bloqueamos todos los inputs excepto el campo de la foto y el botón de guardar/cancelar
+    const inputsForm = document.querySelectorAll("#formCrudProducto input, #formCrudProducto select");
+    inputsForm.forEach(input => {
+        if (input.id !== "prodFoto" && input.id !== "prodSkuOriginal" && input.type !== "file") {
+            if (!esAdmin) {
+                input.disabled = true;
+                input.style.backgroundColor = "#f1f5f9";
+                input.style.color = "#64748b";
+                input.style.cursor = "not-allowed";
+            }
+        }
+    });
 
     document.getElementById("modalFormularioProducto").style.display = "flex";
 }
