@@ -1,5 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Usuarios (usuarios.js)
+ * Versión Completa con Corrección de Edición y Guardado Integrado
  */
 
 async function renderizarModuloUsuarios(container) {
@@ -153,7 +154,7 @@ function prepararEdicionUsuario(login) {
     if (contenedor && titulo) {
         document.getElementById("usrModoEdicion").value = "1";
         document.getElementById("usrUsuario").value = usr.Usuario || usr.usuario || "";
-        document.getElementById("usrUsuario").disabled = false; // Permitir que se envíe en el POST si el backend lo requiere
+        document.getElementById("usrUsuario").disabled = true; // Bloqueado para mantener la consistencia del login
         document.getElementById("usrNombre").value = usr.Nombre || usr.nombre || "";
         document.getElementById("usrRol").value = usr.Rol || usr.rol || "VENDEDOR";
         document.getElementById("usrPassword").value = usr.Password || usr.password || "";
@@ -166,26 +167,46 @@ function prepararEdicionUsuario(login) {
 
 async function guardarUsuarioSistema(event) {
     event.preventDefault();
+    
+    if (typeof mostrarSpinner === "function") {
+        mostrarSpinner("Guardando usuario...");
+    }
+
     const login = document.getElementById("usrUsuario").value.trim();
     const nombre = document.getElementById("usrNombre").value.trim();
     const rol = document.getElementById("usrRol").value;
     const password = document.getElementById("usrPassword").value.trim();
     const esEdicion = document.getElementById("usrModoEdicion").value === "1";
 
-    const accionApi = esEdicion ? "actualizarUsuario" : "guardarUsuario";
+    // Usamos la acción estándar "guardarUsuario" que ya reconoce tu servidor de Google Apps Script
+    const accionApi = "guardarUsuario";
 
-    const res = await API.llamar(accionApi, {
-        action: accionApi,
-        usuario: login,
-        nombre: nombre,
-        rol: rol,
-        password: password
-    }, "POST");
+    try {
+        const res = await API.llamar(accionApi, {
+            action: accionApi,
+            usuario: login,
+            nombre: nombre,
+            rol: rol,
+            password: password,
+            es_edicion: esEdicion ? "1" : "0"
+        }, "POST");
 
-    if (res && res.status === "success") {
-        cerrarFormularioUsuarioInline();
-        cargarListaUsuarios();
-    } else {
-        alert("Error al guardar el usuario: " + (res ? res.message : "Desconocido"));
+        if (typeof ocultarSpinner === "function") {
+            ocultarSpinner();
+        }
+
+        if (res && res.status === "success") {
+            alert(res.message || "Usuario guardado correctamente.");
+            cerrarFormularioUsuarioInline();
+            cargarListaUsuarios();
+        } else {
+            alert("Error al guardar el usuario: " + (res ? res.message : "Desconocido"));
+        }
+    } catch (err) {
+        if (typeof ocultarSpinner === "function") {
+            ocultarSpinner();
+        }
+        console.error(err);
+        alert("⚠️ Error de conexión al guardar el usuario.");
     }
 }
