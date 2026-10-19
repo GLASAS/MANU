@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa con Valor Compra Oro, Valor Piedra, Cálculo de Gramo y Restricción de Vendedores - 2026
+ * Versión 100% Completa con Renderizado de Interfaz, Cálculo de Gramo y Restricciones - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -543,7 +543,7 @@ async function guardarProductoInventario(event) {
     let productoOriginalCache = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuOriginal.toUpperCase()) || {};
 
     const payload = {
-        action: "actualizarProducto",
+        action: skuOriginal ? "actualizarProducto" : "guardarProducto",
         sku: sku,
         sku_original: skuOriginal,
         codigo_barra: esAdmin ? codigo_barra : (productoOriginalCache.Codigo_Barra || productoOriginalCache.codigo_barra || codigo_barra),
@@ -563,7 +563,8 @@ async function guardarProductoInventario(event) {
     };
 
     try {
-        const res = await API.llamar("actualizarProducto", payload, "POST");
+        const endpoint = skuOriginal ? "actualizarProducto" : "guardarProducto";
+        const res = await API.llamar(endpoint, payload, "POST");
 
         if (typeof ocultarSpinner === "function") ocultarSpinner();
 
