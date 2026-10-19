@@ -1,9 +1,9 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión 100% Completa con Renderizado de Interfaz, Cálculo de Gramo y Restricciones - 2026
+ * Versión 100% Completa e Íntegra - 2026
  */
 
-async function renderizarModuloProductos(container) {
+function renderizarModuloProductos(container) {
     const esAdminOrVendedor = usuarioActual && (
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR' ||
@@ -202,10 +202,10 @@ async function renderizarModuloProductos(container) {
         </div>
     `;
 
-    await cargarListaProductos();
+    cargarListaProductos();
 }
 
-async function cargarListaProductos() {
+function cargarListaProductos() {
     const esAdmin = usuarioActual && (
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
@@ -219,12 +219,10 @@ async function cargarListaProductos() {
         mostrarSpinner("Sincronizando catálogo digital...");
     }
 
-    try {
-        const [resOro, resProd] = await Promise.all([
-            API.llamar("obtenerValorOroDia", {}, "GET"),
-            API.llamar("obtenerProductos", {}, "GET")
-        ]);
-
+    Promise.all([
+        API.llamar("obtenerValorOroDia", {}, "GET"),
+        API.llamar("obtenerProductos", {}, "GET")
+    ]).then(([resOro, resProd]) => {
         if (typeof ocultarSpinner === "function") {
             ocultarSpinner();
         }
@@ -241,13 +239,13 @@ async function cargarListaProductos() {
         } else {
             tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">No se pudieron cargar los productos.</td></tr>`;
         }
-    } catch (e) {
+    }).catch(e => {
         if (typeof ocultarSpinner === "function") {
             ocultarSpinner();
         }
         console.error(e);
         tbody.innerHTML = `<tr><td colspan="${colspanVal}" style="text-align: center; padding: 30px; color: #ef4444;">Error de conexión con el servidor.</td></tr>`;
-    }
+    });
 }
 
 function renderizarTablaProductosAdmin() {
@@ -509,7 +507,7 @@ function procesarImagenSeleccionada(input) {
     }
 }
 
-async function guardarProductoInventario(event) {
+function guardarProductoInventario(event) {
     event.preventDefault();
     if (typeof mostrarSpinner === "function") mostrarSpinner("Guardando producto...");
 
@@ -562,10 +560,9 @@ async function guardarProductoInventario(event) {
         foto: foto
     };
 
-    try {
-        const endpoint = skuOriginal ? "actualizarProducto" : "guardarProducto";
-        const res = await API.llamar(endpoint, payload, "POST");
+    const endpoint = skuOriginal ? "actualizarProducto" : "guardarProducto";
 
+    API.llamar(endpoint, payload, "POST").then(res => {
         if (typeof ocultarSpinner === "function") ocultarSpinner();
 
         if (res && res.status === "success") {
@@ -575,11 +572,11 @@ async function guardarProductoInventario(event) {
         } else {
             alert("Error: " + (res ? res.message : "No se pudo guardar el producto."));
         }
-    } catch(err) {
+    }).catch(err => {
         if (typeof ocultarSpinner === "function") ocultarSpinner();
         console.error(err);
         alert("⚠️ Error de conexión o tamaño de imagen excedido. Intente con una foto más ligera.");
-    }
+    });
 }
 
 function editarProducto(sku) {
@@ -645,7 +642,7 @@ function editarProducto(sku) {
     document.getElementById("modalFormularioProducto").style.display = "flex";
 }
 
-async function eliminarProductosSeleccionados() {
+function eliminarProductosSeleccionados() {
     const checks = document.querySelectorAll('.check-producto-item:checked');
     if (checks.length === 0) {
         alert("Por favor seleccione al menos un producto para eliminar.");
@@ -656,13 +653,18 @@ async function eliminarProductosSeleccionados() {
 
     if (typeof mostrarSpinner === "function") mostrarSpinner("Eliminando productos...");
     let skusAEliminar = Array.from(checks).map(cb => cb.value);
-    for (let sku of skusAEliminar) {
-        await API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST");
-    }
+    
+    let promesas = skusAEliminar.map(sku => API.llamar("eliminarProducto", { action: "eliminarProducto", sku: sku }, "POST"));
 
-    if (typeof ocultarSpinner === "function") ocultarSpinner();
-    alert("Productos eliminados correctamente.");
-    cargarListaProductos();
+    Promise.all(promesas).then(() => {
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+        alert("Productos eliminados correctamente.");
+        cargarListaProductos();
+    }).catch(err => {
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+        console.error(err);
+        alert("⚠️ Error al eliminar algunos productos.");
+    });
 }
 
 function exportarProductosCSV() {
@@ -711,232 +713,4 @@ function exportarProductosCSV() {
 }
 
 function descargarPlantillaCsvInventario() {
-    let csvPlantilla = "SKU;Codigo_Barra;Nombre;ID_Categoria;Material;Color;Peso;Valor_Piedra;Valor_Compra_Oro;Porcentaje_Venta;Tiene_Descuento;ID_Ubicacion\n";
-    csvPlantilla += "CA0001;7700649302291;CADENA VENECIANA ORO AMARILLO 18K - 45cm;CADENAS;ORO;AMARILLO;1,2;0;600000;100;0;CAJA FUERTE\n";
-    csvPlantilla += "AN0001;7700649302292;ANILLO SOLITARIO ORO BLANCO 18K;ANILLOS;ORO;BLANCO;2,5;50000.50;1200000;100;0;VITRINA 1\n";
-
-    let link = document.createElement("a");
-    link.href = encodeURI("data:text/csv;charset=utf-8,\uFEFF" + csvPlantilla);
-    link.download = "plantilla_carga_masiva_manu.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function abrirModalImportarExcel() {
-    let modal = document.getElementById("modalImportarExcel");
-    if (modal) modal.style.display = "flex";
-}
-
-function cerrarModalImportarExcel() {
-    let modal = document.getElementById("modalImportarExcel");
-    if (modal) modal.style.display = "none";
-}
-
-async function procesarArchivoCsvImportado() {
-    const input = document.getElementById("inputArchivoCsvImport");
-    if (!input || !input.files || input.files.length === 0) {
-        alert("⚠️ Por favor seleccione un archivo CSV válido antes de procesar.");
-        return;
-    }
-
-    const file = input.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async function(e) {
-        const contenido = e.target.result;
-        const lineas = contenido.split(/\r\n|\n/);
-        
-        if (lineas.length < 2) {
-            alert("⚠️ El archivo CSV está vacío o no contiene registros válidos.");
-            return;
-        }
-
-        if (typeof mostrarSpinner === "function") mostrarSpinner("Procesando e importando productos...");
-
-        let cabeceraLinea = lineas[0].trim();
-        let separador = cabeceraLinea.includes(';') ? ';' : ',';
-        let headers = cabeceraLinea.split(separador).map(h => h.replace(/["\r]/g, "").trim().toLowerCase());
-
-        let idxSku = headers.findIndex(h => h === 'sku');
-        let idxNombre = headers.findIndex(h => h.includes('nombre'));
-        let idxCat = headers.findIndex(h => h.includes('categoria') || h.includes('id_categoria'));
-        let idxMat = headers.findIndex(h => h.includes('material'));
-        let idxColor = headers.findIndex(h => h.includes('color'));
-        let idxPeso = headers.findIndex(h => h.includes('peso'));
-        let idxValorCompraOro = headers.findIndex(h => h.includes('valor_compra_oro') || h.includes('valor_oro') || h.includes('costo'));
-        let idxValorPiedra = headers.findIndex(h => h.includes('valor_piedra'));
-        let idxMargen = headers.findIndex(h => h.includes('porcentaje_venta') || h.includes('margen'));
-        let idxDescuento = headers.findIndex(h => h.includes('tiene_descuento') || h.includes('descuento'));
-        let idxUbicacion = headers.findIndex(h => h.includes('ubicacion') || h.includes('id_ubicacion'));
-
-        let importadosCount = 0;
-        const listaActual = window.listaProductosCache || [];
-
-        let limpiarMonto = (val) => {
-            if (!val) return 0;
-            let limpio = String(val).replace(/[\$\s"]/g, '');
-            if (limpio.includes(',')) {
-                limpio = limpio.replace(/\./g, '').replace(',', '.');
-            } else {
-                limpio = limpio.replace(/,/g, '');
-            }
-            return parseFloat(limpio) || 0;
-        };
-
-        let limpiarPesoDecimal = (val) => {
-            if (!val) return 0;
-            let limpio = String(val).replace(/[\s"]/g, '').replace(',', '.');
-            let num = parseFloat(limpio);
-            return isNaN(num) ? 0 : Number(num.toFixed(2));
-        };
-
-        for (let i = 1; i < lineas.length; i++) {
-            let linea = lineas[i].trim();
-            if (!linea) continue;
-
-            let columnas = linea.split(separador);
-            if (columnas.length < 2) continue;
-
-            let getVal = (idx) => (idx !== -1 && columnas[idx] !== undefined) ? columnas[idx].replace(/"/g, '').trim() : '';
-
-            let nombre = getVal(idxNombre);
-            let skuCsv = getVal(idxSku);
-            let categoria = getVal(idxCat) ? getVal(idxCat).toUpperCase() : 'ANILLOS';
-            let material = getVal(idxMat) || 'ORO';
-            let color = getVal(idxColor) || 'AMARILLO';
-            
-            let peso = limpiarPesoDecimal(getVal(idxPeso));
-            let valorCompraOro = limpiarMonto(getVal(idxValorCompraOro));
-            let valorPiedra = limpiarMonto(getVal(idxValorPiedra));
-            let valorCompraTotal = valorCompraOro + valorPiedra;
-
-            let valorOroActual = window.valorOroDelDiaCache || 250000;
-            let valorVentaCalc = (valorOroActual * peso) + valorPiedra;
-
-            let margen = Number(getVal(idxMargen)) || 100;
-            let descuento = Number(getVal(idxDescuento)) || 0;
-            let ubicacion = getVal(idxUbicacion) || 'CAJA FUERTE';
-
-            if (nombre) {
-                let prefijo = "JO";
-                if (categoria.includes("CANDON")) {
-                    prefijo = "CAN";
-                } else if (categoria.length >= 2) {
-                    prefijo = categoria.substring(0, 2);
-                }
-
-                const filtradosPrefijo = listaActual.filter(p => {
-                    let s = String(p.SKU || p.sku || "").trim().toUpperCase();
-                    return s.startsWith(prefijo);
-                });
-
-                let skuGenerado = skuCsv;
-                if (!skuGenerado) {
-                    let siguienteNumero = filtradosPrefijo.length + importadosCount + 1;
-                    let consecutivoStr = String(siguienteNumero).padStart(5, '0');
-                    skuGenerado = `${prefijo}${consecutivoStr}`;
-
-                    while (listaActual.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
-                        siguienteNumero++;
-                        consecutivoStr = String(siguienteNumero).padStart(5, '0');
-                        skuGenerado = `${prefijo}${consecutivoStr}`;
-                    }
-                }
-
-                let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
-
-                try {
-                    await API.llamar("guardarProducto", {
-                        action: "guardarProducto",
-                        sku: skuGenerado,
-                        codigo_barra: String(codigoBarraUnico),
-                        nombre: nombre,
-                        categoria: categoria,
-                        material: material,
-                        color: color,
-                        peso: peso,
-                        valor_piedra: valorPiedra,
-                        valor_compra_oro: valorCompraOro,
-                        valor_compra: valorCompraTotal,
-                        valor_venta: valorVentaCalc,
-                        porcentaje_venta: margen,
-                        tiene_descuento: descuento,
-                        ubicacion: ubicacion,
-                        foto: ""
-                    }, "POST");
-                    importadosCount++;
-                } catch(err) {
-                    console.error("Error al importar producto:", nombre, err);
-                }
-            }
-        }
-
-        if (typeof ocultarSpinner === "function") ocultarSpinner();
-        alert(`✅ ¡Importación completada con éxito! Se procesaron y cargaron ${importadosCount} productos al inventario.`);
-        cerrarModalImportarExcel();
-        cargarListaProductos();
-    };
-
-    reader.readAsText(file, "UTF-8");
-}
-
-function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
-    let modalID = "modalEtiquetaJoya";
-    let modalDiv = document.getElementById(modalID);
-    
-    if (!modalDiv) {
-        modalDiv = document.createElement("div");
-        modalDiv.id = modalID;
-        modalDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:9999;";
-        document.body.appendChild(modalDiv);
-    } else {
-        modalDiv.style.display = "flex";
-    }
-
-    const valorBarras = codigoBarra && codigoBarra !== "undefined" && codigoBarra !== "" ? codigoBarra : sku;
-    const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(valorBarras)}&scale=3&height=12&includetext=true`;
-
-    modalDiv.innerHTML = `
-        <div style="background:white; padding:25px; border-radius:12px; text-align:center; max-width:340px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
-            <h4 style="color:#0f172a; margin-bottom:5px;">MANU JOYEROS</h4>
-            <p style="font-size:0.75rem; color:#64748b; margin-bottom:15px;">SKU: <strong id="lblSkuEtiqueta">${sku}</strong></p>
-            <p style="font-size:0.85rem; font-weight:600; color:#1e293b; margin-bottom:15px; max-height:40px; overflow:hidden;">${nombre}</p>
-            
-            <div style="display:flex; justify-content:center; align-items:center; margin-bottom:15px;">
-                <div>
-                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:200px; height:70px; object-fit:contain;" />
-                    <span style="display:block; font-size:0.7rem; color:#64748b; margin-top:4px;">${valorBarras}</span>
-                </div>
-            </div>
-
-            <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:15px;">Ref: ${sku}</p>
-
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <button onclick="descargarImagenPng('imgBarcodeCanvas', 'Barras_${sku}.png')" style="width:100%; padding:9px; background:#0d9488; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">📥 Descargar Código de Barras</button>
-                <button onclick="document.getElementById('${modalID}').style.display='none'" style="width:100%; padding:9px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
-            </div>
-        </div>
-    `;
-}
-
-function descargarImagenPng(imgId, nombreArchivo) {
-    const img = document.getElementById(imgId);
-    if (!img) return;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth || 300;
-    canvas.height = img.naturalHeight || 150;
-    const ctx = canvas.getContext("2d");
-
-    const imageObj = new Image();
-    imageObj.crossOrigin = "anonymous";
-    imageObj.onload = function() {
-        ctx.drawImage(imageObj, 0, 0);
-        const link = document.createElement("a");
-        link.download = nombreArchivo;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    };
-    imageObj.src = img.src;
-}
+    let csvPlantilla = "SKU;Codigo_Barra;
