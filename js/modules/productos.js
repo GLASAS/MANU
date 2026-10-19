@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Optimización de Imagen y Guardado Robusto - 2026
+ * Versión 100% Completa e Íntegra - Sincronizada con Google Sheets (P: Costo Oro, Q: Valor Piedra) - 2026
  */
 
 async function renderizarModuloProductos(container) {
@@ -291,14 +291,28 @@ function renderizarTablaProductosAdmin() {
         let pesoCrudo = p.Peso !== undefined ? p.Peso : (p.peso !== undefined ? p.peso : 0);
         let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-        let costoOroItem = Number(p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))) || 0;
-        let valPiedra = Number(p.Valor_Piedra !== undefined ? p.Valor_Piedra : (p.valor_piedra !== undefined ? p.valor_piedra : 0)) || 0;
+        // Costo Oro corresponde a Valor_Compra_Oro (Columna P)
+        let costoOroItem = Number(
+            p.Valor_Compra_Oro !== undefined ? p.Valor_Compra_Oro : 
+            (p.valor_compra_oro !== undefined ? p.valor_compra_oro : 
+            (p.Valor_Oro !== undefined ? p.Valor_Oro : 
+            (p.valor_oro !== undefined ? p.valor_oro : 
+            (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))))
+        ) || 0;
+
+        // Valor Venta (Base) corresponde a Valor_Piedra (Columna Q)
+        let valPiedra = Number(
+            p.Valor_Piedra !== undefined ? p.Valor_Piedra : 
+            (p.valor_piedra !== undefined ? p.valor_piedra : 0)
+        ) || 0;
+
         let margen = Number(p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100)) || 100;
         let descPct = Number(p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0)) || 0;
         let ubicacion = p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "VITRINA";
 
-        let valorVentaBase = valPiedra;
-        let precioBaseConMargen = (valorOroActual * pesoItem + valorVentaBase) * (1 + (margen / 100));
+        // Cálculo de Venta Final: (Valor Oro Actual * Peso + Valor Piedra) con Margen y Descuento
+        let valorVentaBaseCalc = (valorOroActual * pesoItem) + valPiedra;
+        let precioBaseConMargen = valorVentaBaseCalc * (1 + (margen / 100));
         let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
 
         let descBadge = descPct > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${descPct}%</span>` : `0%`;
@@ -315,7 +329,7 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${material}</td>
                 <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>
                 ${esAdmin ? `
-                    <td style="padding: 10px;">$${costoOroItem.toLocaleString()}</td> <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
+                    <td style="padding: 10px;">$${costoOroItem.toLocaleString()}</td> <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valPiedra).toLocaleString()}</td>
                     <td style="padding: 10px;">${margen}%</td>
                     <td style="padding: 10px;">${descBadge}</td>
                 ` : ''}
@@ -507,8 +521,9 @@ async function guardarProductoInventario(event) {
     const color = document.getElementById("prodColor").value.trim();
     const peso = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
     
-    const valor_piedra = obtenerValorNumericoMoneda(document.getElementById("prodValorPiedra").value);
-    const valor_oro = obtenerValorNumericoMoneda(document.getElementById("prodCosto").value);
+    // Mapeo exacto con las columnas de Google Sheets:
+    const valor_piedra = obtenerValorNumericoMoneda(document.getElementById("prodValorPiedra").value); // Columna Q
+    const valor_oro = obtenerValorNumericoMoneda(document.getElementById("prodCosto").value);       // Columna P (Valor_Compra_Oro)
     const valor_compra = valor_oro + valor_piedra;
     
     let valorOroActual = window.valorOroDelDiaCache || 250000;
@@ -566,13 +581,22 @@ function editarProducto(sku) {
     }
 
     const pPeso = parseFloat(String(prod.Peso !== undefined ? prod.Peso : (prod.peso !== undefined ? prod.peso : 0)).replace(',', '.')) || 0;
-    let valorOroActual = window.valorOroDelDiaCache || 250000;
-    let pValorOro = Number(prod.Valor_Oro !== undefined ? prod.Valor_Oro : (prod.valor_oro !== undefined ? prod.valor_oro : (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)))) || 0;
-    if (pValorOro === 0 && pPeso > 0) {
-        pValorOro = valorOroActual * pPeso;
-    }
+    
+    // Obtener Valor Compra Oro (Columna P)
+    let pValorOro = Number(
+        prod.Valor_Compra_Oro !== undefined ? prod.Valor_Compra_Oro : 
+        (prod.valor_compra_oro !== undefined ? prod.valor_compra_oro : 
+        (prod.Valor_Oro !== undefined ? prod.Valor_Oro : 
+        (prod.valor_oro !== undefined ? prod.valor_oro : 
+        (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)))))
+    ) || 0;
 
-    const pValorPiedra = Number(prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : (prod.valor_piedra !== undefined ? prod.valor_piedra : 0)) || 0;
+    // Obtener Valor Piedra (Columna Q)
+    let pValorPiedra = Number(
+        prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : 
+        (prod.valor_piedra !== undefined ? prod.valor_piedra : 0)
+    ) || 0;
+
     const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100)) || 100;
     const pDescuento = Number(prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : 0)) || 0;
     const pUbicacion = prod.ID_Ubicacion || prod.id_ubicacion || prod.ubicacion || "CAJA FUERTE";
@@ -627,7 +651,7 @@ function exportarProductosCSV() {
     let valorOroActual = window.valorOroDelDiaCache || 250000;
 
     window.listaProductosCache.forEach(p => {
-        let valOro = Number(p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
+        let valOro = Number(p.Valor_Compra_Oro || p.valor_compra_oro || p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
         let valPiedra = Number(p.Valor_Piedra || p.valor_piedra) || 0;
         let pesoItem = parseFloat(String(p.Peso || p.peso || 0).replace(',', '.')) || 0;
         let valorCompraTotal = valOro + valPiedra;
