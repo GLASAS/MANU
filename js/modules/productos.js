@@ -1,9 +1,9 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión 100% Completa e Íntegra - 2026
+ * Versión Completa e Íntegra con Optimización de Imagen y Guardado Robusto - 2026
  */
 
-function renderizarModuloProductos(container) {
+async function renderizarModuloProductos(container) {
     const esAdmin = usuarioActual && (
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
