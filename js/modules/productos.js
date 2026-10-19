@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Formato de Moneda y Campos de Costo y Piedra - 2026
+ * Versión 100% Completa e Íntegra - 2026
  */
 
 function renderizarModuloProductos(container) {
@@ -313,9 +313,9 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${categoria}</td>
                 <td style="padding: 10px; color: #475569;">${color}</td>
                 <td style="padding: 10px; color: #475569;">${material}</td>
-                <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>${esAdmin ? `
-                    <td style="padding: 10px;">$${costoOroItem.toLocaleString()}</td>
-                    <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
+                <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>
+                ${esAdmin ? `
+                    <td style="padding: 10px;">$${costoOroItem.toLocaleString()}</td> <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
                     <td style="padding: 10px;">${margen}%</td>
                     <td style="padding: 10px;">${descBadge}</td>
                 ` : ''}
@@ -335,8 +335,8 @@ function renderizarTablaProductosAdmin() {
 
     tbody.innerHTML = html;
 
-    document.getElementById("lblPaginacionTexto").textContent = `Mostrando ${inicio + 1} a ${Math.min(fin, totalRegistros)} de${totalRegistros} productos`;
-    document.getElementById("lblPaginaActualNum").textContent = `Página ${paginaActual} de${totalPaginas}`;
+    document.getElementById("lblPaginacionTexto").textContent = `Mostrando ${inicio + 1} a ${Math.min(fin, totalRegistros)} de ${totalRegistros} productos`;
+    document.getElementById("lblPaginaActualNum").textContent = `Página ${paginaActual} de ${totalPaginas}`;
     document.getElementById("btnPaginaAnterior").disabled = paginaActual === 1;
     document.getElementById("btnPaginaSiguiente").disabled = paginaActual === totalPaginas;
 }
@@ -844,4 +844,38 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
             
             <div style="display:flex; justify-content:center; align-items:center; margin-bottom:15px;">
                 <div>
-                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt
+                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:200px; height:70px; object-fit:contain;" />
+                    <span style="display:block; font-size:0.7rem; color:#64748b; margin-top:4px;">${valorBarras}</span>
+                </div>
+            </div>
+
+            <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:15px;">Ref: ${sku}</p>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button onclick="descargarImagenPng('imgBarcodeCanvas', 'Barras_${sku}.png')" style="width:100%; padding:9px; background:#0d9488; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">📥 Descargar Código de Barras</button>
+                <button onclick="document.getElementById('${modalID}').style.display='none'" style="width:100%; padding:9px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
+            </div>
+        </div>
+    `;
+}
+
+function descargarImagenPng(imgId, nombreArchivo) {
+    const img = document.getElementById(imgId);
+    if (!img) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || 300;
+    canvas.height = img.naturalHeight || 150;
+    const ctx = canvas.getContext("2d");
+
+    const imageObj = new Image();
+    imageObj.crossOrigin = "anonymous";
+    imageObj.onload = function() {
+        ctx.drawImage(imageObj, 0, 0);
+        const link = document.createElement("a");
+        link.download = nombreArchivo;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    };
+    imageObj.src = img.src;
+}
