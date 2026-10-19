@@ -1,9 +1,9 @@
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
- * Versión Completa e Íntegra con Optimización de Imagen y Guardado Robusto - 2026
+ * Versión Completa e Íntegra con Formato de Moneda y Campos de Costo y Piedra - 2026
  */
 
-async function renderizarModuloProductos(container) {
+function renderizarModuloProductos(container) {
     const esAdmin = usuarioActual && (
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
@@ -121,13 +121,13 @@ async function renderizarModuloProductos(container) {
                         </div>
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Piedra ($)</label>
-                            <input type="number" step="any" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <input type="text" id="prodValorPiedra" value="0" oninput="formatearEntradaMoneda(this)" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Oro ($)</label>
-                            <input type="number" step="any" id="prodCosto" value="0" oninput="calcularValorGramoOro()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <input type="text" id="prodCosto" value="0" oninput="formatearEntradaMoneda(this); calcularValorGramoOro();" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #0284c7; margin-bottom: 4px;">Valor Gramo de Oro ($)</label>
@@ -187,6 +187,22 @@ async function renderizarModuloProductos(container) {
     `;
 
     await cargarListaProductos();
+}
+
+function formatearEntradaMoneda(input) {
+    let valorLimpio = input.value.replace(/\D/g, "");
+    if (valorLimpio === "") {
+        input.value = "0";
+        return;
+    }
+    let numero = parseInt(valorLimpio, 10);
+    input.value = numero.toLocaleString("es-CO");
+}
+
+function obtenerValorNumericoMoneda(valorStr) {
+    if (!valorStr) return 0;
+    let limpio = String(valorStr).replace(/\./g, "").replace(/\D/g, "");
+    return parseFloat(limpio) || 0;
 }
 
 async function cargarListaProductos() {
@@ -275,14 +291,14 @@ function renderizarTablaProductosAdmin() {
         let pesoCrudo = p.Peso !== undefined ? p.Peso : (p.peso !== undefined ? p.peso : 0);
         let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-        let costoItem = Number(p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))) || 0;
+        let costoOroItem = Number(p.Valor_Oro !== undefined ? p.Valor_Oro : (p.valor_oro !== undefined ? p.valor_oro : (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))) || 0;
         let valPiedra = Number(p.Valor_Piedra !== undefined ? p.Valor_Piedra : (p.valor_piedra !== undefined ? p.valor_piedra : 0)) || 0;
         let margen = Number(p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100)) || 100;
         let descPct = Number(p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0)) || 0;
         let ubicacion = p.ID_Ubicacion || p.id_ubicacion || p.ubicacion || "VITRINA";
 
-        let valorVentaBase = (valorOroActual * pesoItem) + valPiedra;
-        let precioBaseConMargen = valorVentaBase * (1 + (margen / 100));
+        let valorVentaBase = valPiedra;
+        let precioBaseConMargen = (valorOroActual * pesoItem + valorVentaBase) * (1 + (margen / 100));
         let valorVentaFinal = Math.round(precioBaseConMargen - (precioBaseConMargen * (descPct / 100)));
 
         let descBadge = descPct > 0 ? `<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem;">${descPct}%</span>` : `0%`;
@@ -297,9 +313,9 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${categoria}</td>
                 <td style="padding: 10px; color: #475569;">${color}</td>
                 <td style="padding: 10px; color: #475569;">${material}</td>
-                <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>
-                ${esAdmin ? `
-                    <td style="padding: 10px;">$${costoItem.toLocaleString()}</td> <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
+                <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>${esAdmin ? `
+                    <td style="padding: 10px;">$${costoOroItem.toLocaleString()}</td>
+                    <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
                     <td style="padding: 10px;">${margen}%</td>
                     <td style="padding: 10px;">${descBadge}</td>
                 ` : ''}
@@ -319,8 +335,8 @@ function renderizarTablaProductosAdmin() {
 
     tbody.innerHTML = html;
 
-    document.getElementById("lblPaginacionTexto").textContent = `Mostrando ${inicio + 1} a ${Math.min(fin, totalRegistros)} de ${totalRegistros} productos`;
-    document.getElementById("lblPaginaActualNum").textContent = `Página ${paginaActual} de ${totalPaginas}`;
+    document.getElementById("lblPaginacionTexto").textContent = `Mostrando ${inicio + 1} a ${Math.min(fin, totalRegistros)} de${totalRegistros} productos`;
+    document.getElementById("lblPaginaActualNum").textContent = `Página ${paginaActual} de${totalPaginas}`;
     document.getElementById("btnPaginaAnterior").disabled = paginaActual === 1;
     document.getElementById("btnPaginaSiguiente").disabled = paginaActual === totalPaginas;
 }
@@ -355,13 +371,13 @@ function toggleSelectAllProductos(source) {
 
 function calcularValorGramoOro() {
     const pesoInput = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
-    const costoOroInput = parseFloat(String(document.getElementById("prodCosto").value || "0").replace(',', '.')) || 0;
+    const costoOroInput = obtenerValorNumericoMoneda(document.getElementById("prodCosto").value);
     const lblGramo = document.getElementById("prodValorGramoOroCalc");
 
     if (lblGramo) {
         if (pesoInput > 0 && costoOroInput > 0) {
             let resultadoGramo = costoOroInput / pesoInput;
-            lblGramo.value = "$" + Math.round(resultadoGramo).toLocaleString();
+            lblGramo.value = "$" + Math.round(resultadoGramo).toLocaleString("es-CO");
         } else {
             lblGramo.value = "$0";
         }
@@ -443,7 +459,6 @@ function procesarImagenSeleccionada(input) {
                 let width = img.width;
                 let height = img.height;
                 
-                // Reducimos dimensiones máximas a 500px para garantizar que el Base64 no sature el servidor
                 const maxDim = 500;
                 if (width > height && width > maxDim) {
                     height *= maxDim / width;
@@ -458,7 +473,6 @@ function procesarImagenSeleccionada(input) {
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Calidad comprimida al 65% para evitar error de conexión por tamaño de payload
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
                 document.getElementById("prodFoto").value = dataUrl;
 
@@ -492,8 +506,9 @@ async function guardarProductoInventario(event) {
     const material = document.getElementById("prodMaterial").value.trim();
     const color = document.getElementById("prodColor").value.trim();
     const peso = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
-    const valor_piedra = Number(document.getElementById("prodValorPiedra").value) || 0;
-    const valor_oro = Number(document.getElementById("prodCosto").value) || 0;
+    
+    const valor_piedra = obtenerValorNumericoMoneda(document.getElementById("prodValorPiedra").value);
+    const valor_oro = obtenerValorNumericoMoneda(document.getElementById("prodCosto").value);
     const valor_compra = valor_oro + valor_piedra;
     
     let valorOroActual = window.valorOroDelDiaCache || 250000;
@@ -571,8 +586,8 @@ function editarProducto(sku) {
     document.getElementById("prodMaterial").value = prod.Material || prod.material || "ORO";
     document.getElementById("prodColor").value = prod.Color || prod.color || "AMARILLO";
     document.getElementById("prodPeso").value = pPeso;
-    document.getElementById("prodValorPiedra").value = pValorPiedra;
-    document.getElementById("prodCosto").value = Math.round(pValorOro);
+    document.getElementById("prodValorPiedra").value = Math.round(pValorPiedra).toLocaleString("es-CO");
+    document.getElementById("prodCosto").value = Math.round(pValorOro).toLocaleString("es-CO");
     document.getElementById("prodMargen").value = pMargen;
     document.getElementById("prodDescuento").value = pDescuento;
     document.getElementById("prodUbicacion").value = pUbicacion;
@@ -829,38 +844,4 @@ function abrirEtiquetaProducto(sku, nombre, precio, codigoBarra) {
             
             <div style="display:flex; justify-content:center; align-items:center; margin-bottom:15px;">
                 <div>
-                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt="Código de Barras" style="width:200px; height:70px; object-fit:contain;" />
-                    <span style="display:block; font-size:0.7rem; color:#64748b; margin-top:4px;">${valorBarras}</span>
-                </div>
-            </div>
-
-            <p style="font-size:1rem; font-weight:bold; color:#d97706; margin-bottom:15px;">Ref: ${sku}</p>
-
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <button onclick="descargarImagenPng('imgBarcodeCanvas', 'Barras_${sku}.png')" style="width:100%; padding:9px; background:#0d9488; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">📥 Descargar Código de Barras</button>
-                <button onclick="document.getElementById('${modalID}').style.display='none'" style="width:100%; padding:9px; background:#ef4444; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">Cerrar</button>
-            </div>
-        </div>
-    `;
-}
-
-function descargarImagenPng(imgId, nombreArchivo) {
-    const img = document.getElementById(imgId);
-    if (!img) return;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth || 300;
-    canvas.height = img.naturalHeight || 150;
-    const ctx = canvas.getContext("2d");
-
-    const imageObj = new Image();
-    imageObj.crossOrigin = "anonymous";
-    imageObj.onload = function() {
-        ctx.drawImage(imageObj, 0, 0);
-        const link = document.createElement("a");
-        link.download = nombreArchivo;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    };
-    imageObj.src = img.src;
-}
+                    <img id="imgBarcodeCanvas" src="${barcodeUrl}" crossorigin="anonymous" alt
