@@ -117,42 +117,46 @@ async function renderizarModuloProductos(container) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Peso (g)</label>
-                            <input type="number" step="0.01" id="prodPeso" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <input type="number" step="0.01" id="prodPeso" value="0" oninput="calcularValorGramoOro()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Piedra ($)</label>
-                            <input type="number" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <input type="number" step="any" id="prodValorPiedra" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Valor Compra Oro ($)</label>
-                            <input type="number" id="prodCosto" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <input type="number" step="any" id="prodCosto" value="0" oninput="calcularValorGramoOro()" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #0284c7; margin-bottom: 4px;">Valor Gramo de Oro ($)</label>
+                            <input type="text" id="prodValorGramoOroCalc" readonly value="$0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f0fdf4; font-weight: bold; color: #15803d; cursor: not-allowed;">
                         </div>
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Margen (%)</label>
                             <input type="number" id="prodMargen" value="100" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Descuento (%)</label>
                             <input type="number" id="prodDescuento" value="0" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
                         <div>
                             <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Ubicación / Vitrina</label>
                             <input type="text" id="prodUbicacion" placeholder="CAJA FUERTE" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
-                                <input type="file" id="inputGaleriaFoto" accept="image/*" style="display:none;" onchange="procesarImagenSeleccionada(this)">
-                                <input type="file" id="inputCamaraFoto" accept="image/*" capture="environment" style="display:none;" onchange="procesarImagenSeleccionada(this)">
-                                
-                                <button type="button" onclick="document.getElementById('inputGaleriaFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
-                                <button type="button" onclick="document.getElementById('inputCamaraFoto').click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
-                            </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Foto del Producto (Galería o Cámara)</label>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <input type="text" id="prodFoto" placeholder="https://... o Base64" style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem;">
+                            <input type="file" id="inputGaleriaFoto" accept="image/*" style="display:none;" onchange="procesarImagenSeleccionada(this)">
+                            <input type="file" id="inputCamaraFoto" accept="image/*" capture="environment" style="display:none;" onchange="procesarImagenSeleccionada(this)">
+                            
+                            <button type="button" onclick="document.getElementById('inputGaleriaFoto').click();" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
+                            <button type="button" onclick="document.getElementById('inputCamaraFoto').click();" style="background: #0d9488; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -295,8 +299,7 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${material}</td>
                 <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>
                 ${esAdmin ? `
-                    <td style="padding: 10px;">$${costoItem.toLocaleString()}</td>
-                    <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
+                    <td style="padding: 10px;">$${costoItem.toLocaleString()}</td> <td style="padding: 10px; font-weight: bold; color: #2563eb;">$${Math.round(valorVentaBase).toLocaleString()}</td>
                     <td style="padding: 10px;">${margen}%</td>
                     <td style="padding: 10px;">${descBadge}</td>
                 ` : ''}
@@ -350,6 +353,21 @@ function toggleSelectAllProductos(source) {
     checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
+function calcularValorGramoOro() {
+    const pesoInput = parseFloat(String(document.getElementById("prodPeso").value || "0").replace(',', '.')) || 0;
+    const costoOroInput = parseFloat(String(document.getElementById("prodCosto").value || "0").replace(',', '.')) || 0;
+    const lblGramo = document.getElementById("prodValorGramoOroCalc");
+
+    if (lblGramo) {
+        if (pesoInput > 0 && costoOroInput > 0) {
+            let resultadoGramo = costoOroInput / pesoInput;
+            lblGramo.value = "$" + Math.round(resultadoGramo).toLocaleString();
+        } else {
+            lblGramo.value = "$0";
+        }
+    }
+}
+
 function abrirModalNuevoProducto() {
     document.getElementById("modalProductoTitulo").textContent = "Nuevo Producto";
     document.getElementById("formCrudProducto").reset();
@@ -358,9 +376,14 @@ function abrirModalNuevoProducto() {
     document.getElementById("prodCategoria").value = "ANILLOS";
     document.getElementById("prodMaterial").value = "ORO";
     document.getElementById("prodColor").value = "AMARILLO";
+    document.getElementById("prodPeso").value = "0";
+    document.getElementById("prodValorPiedra").value = "0";
+    document.getElementById("prodCosto").value = "0";
     document.getElementById("prodMargen").value = "100";
+    document.getElementById("prodDescuento").value = "0";
     document.getElementById("prodUbicacion").value = "CAJA FUERTE";
 
+    calcularValorGramoOro();
     generarSkuYBarraAutomatico();
     document.getElementById("modalFormularioProducto").style.display = "flex";
 }
@@ -555,6 +578,7 @@ function editarProducto(sku) {
     document.getElementById("prodUbicacion").value = pUbicacion;
     document.getElementById("prodFoto").value = prod.Foto || prod.foto || "";
 
+    calcularValorGramoOro();
     document.getElementById("modalFormularioProducto").style.display = "flex";
 }
 
