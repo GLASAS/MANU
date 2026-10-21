@@ -1,6 +1,6 @@
 /**
- * MANU JOYEROS - Módulo Independiente de Salidas (salidas.js)
- * Versión 100% Completa e Íntegra con Soporte para Código de Barras, Facturación, Contado, Crédito y Abonos - 2026
+ * MANU JOYEROS - Módulo de Salidas y Facturación (salidas.js)
+ * Versión 100% Completa e Íntegra con Facturación, Contado, Crédito, Abono y Escaneo - 2026
  */
 
 async function renderizarModuloSalidas(container) {
@@ -11,19 +11,20 @@ async function renderizarModuloSalidas(container) {
     container.innerHTML = `
         <div class="card" style="margin-bottom: 25px; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <h3 style="margin: 0; color: #0f172a; font-size: 1.2rem;">📤 Salidas de Inventario y Facturación</h3>
+                <h3 style="margin: 0; color: #0f172a; font-size: 1.2rem;">🛒 Módulo de Ventas y Salidas de Inventario</h3>
                 <div style="text-align: right;">
                     <span style="font-size: 0.75rem; color: #64748b; display: block;">Nro. Factura Sugerido:</span>
                     <strong id="lblFacturaSugerida" style="color: #2563eb; font-size: 0.95rem;">FAC-00001</strong>
                 </div>
             </div>
-            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Escanee el código de barras o digite el SKU para registrar la venta, garantía, traslado o abono.</p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Registre la venta indicando número de factura, modalidad (contado, crédito o abono), cliente y escanee el producto.</p>
             
             <form id="formRegistrarSalida" onsubmit="enviarRegistroSalida(event)">
+                <!-- FILA 1: SKU, Cantidad, Nro Factura, Modalidad de Pago -->
                 <div style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1.5fr; gap: 15px; margin-bottom: 15px;">
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras / SKU *</label>
-                        <input type="text" id="inputSalidaSku" required placeholder="Escanee o digite código..." oninput="manejarInputSalida(event)" onpaste="setTimeout(enviarRegistroSalidaDirecto, 50)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU o Código de Barras *</label>
+                        <input type="text" id="inputSalidaSku" required placeholder="Escanee o digite SKU..." oninput="manejarInputSalida(event)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Cantidad *</label>
@@ -34,43 +35,44 @@ async function renderizarModuloSalidas(container) {
                         <input type="text" id="inputSalidaFactura" required placeholder="Ej: FAC-00125" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-weight: bold; color: #0f172a;">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Modalidad de Pago *</label>
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Modalidad de Venta *</label>
                         <select id="inputSalidaModalidadPago" onchange="actualizarCamposModalidadPago()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-weight: bold; color: #0f172a;">
-                            <option value="CONTADO">💵 Contado</option>
-                            <option value="CREDITO">📋 Crédito</option>
+                            <option value="CONTADO">💵 Venta de Contado</option>
+                            <option value="CREDITO">📋 Venta a Crédito</option>
                             <option value="ABONO">💳 Sistema de Abono</option>
                         </select>
                     </div>
                 </div>
 
+                <!-- FILA 2: Cliente, Abono Inicial (dinámico), Motivo, Observaciones -->
                 <div style="display: grid; grid-template-columns: 1.5fr 1.5fr 1fr 2fr; gap: 15px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Cliente / Comprador *</label>
                         <input type="text" id="inputSalidaCliente" value="CONSUMIDOR FINAL" placeholder="Nombre del cliente" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
                     </div>
                     <div id="contenedorMontoAbono" style="display: none;">
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #d97706; margin-bottom: 4px;">Abono Inicial ($)</label>
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #d97706; margin-bottom: 4px;">Valor Abono Inicial ($)</label>
                         <input type="text" id="inputSalidaAbono" value="0" oninput="formatearEntradaMonedaSalida(this)" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-weight: bold;">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Motivo / Referencia *</label>
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Motivo / Tipo *</label>
                         <input type="text" id="inputSalidaMotivo" required placeholder="Ej: Venta directa" value="Venta Directa" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Observaciones</label>
-                        <input type="text" id="inputSalidaObservaciones" placeholder="Detalles adicionales..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                        <input type="text" id="inputSalidaObservaciones" placeholder="Detalles de entrega, saldo o notas..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
                     </div>
                 </div>
 
                 <div style="text-align: right;">
-                    <button type="submit" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);">Registrar Salida / Venta</button>
+                    <button type="submit" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);">💾 Registrar Venta / Salida</button>
                 </div>
             </form>
         </div>
 
         <div class="card" style="background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Historial de Salidas y Ventas</h3>
+                <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Historial de Ventas y Salidas</h3>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <input type="text" id="buscadorSalidas" onkeyup="filtrarTablaSalidas()" placeholder="Buscar por factura, SKU o cliente..." style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; width: 220px; font-size: 0.85rem;">
                     <button type="button" onclick="cargarHistorialSalidas()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🔄 Actualizar Lista</button>
@@ -80,19 +82,19 @@ async function renderizarModuloSalidas(container) {
                 <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
                     <thead>
                         <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569;">
-                            <th style="padding: 10px;">ID / Factura</th>
+                            <th style="padding: 10px;">Nro. Factura</th>
                             <th style="padding: 10px;">Fecha</th>
-                            <th style="padding: 10px;">SKU / Barras</th>
+                            <th style="padding: 10px;">SKU / Producto</th>
                             <th style="padding: 10px;">Cant.</th>
                             <th style="padding: 10px;">Modalidad</th>
                             <th style="padding: 10px;">Cliente</th>
                             <th style="padding: 10px;">Motivo</th>
-                            <th style="padding: 10px;">Usuario</th>
+                            <th style="padding: 10px;">Vendedor</th>
                             <th style="padding: 10px;">Observaciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaSalidasBody">
-                        <tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">Cargando historial de salidas...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">Cargando historial de ventas...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -164,22 +166,10 @@ function manejarInputSalida(event) {
     }
 }
 
-async function enviarRegistroSalidaDirecto() {
-    setTimeout(() => {
-        const skuVal = document.getElementById("inputSalidaSku")?.value.trim();
-        if (skuVal && skuVal.length >= 5) {
-            const motivoInput = document.getElementById("inputSalidaMotivo");
-            if (motivoInput && !motivoInput.value.trim()) {
-                motivoInput.value = "Venta Directa (Escaneo)";
-            }
-        }
-    }, 50);
-}
-
 async function cargarHistorialSalidas() {
     const tbody = document.getElementById("tablaSalidasBody");
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">Sincronizando salidas...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">Sincronizando ventas...</td></tr>`;
 
     try {
         const res = await API.llamar("obtenerSalidas", {}, "GET");
@@ -187,11 +177,11 @@ async function cargarHistorialSalidas() {
             window.listaSalidasCache = res.data;
             renderizarTablaSalidas(res.data);
         } else {
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">No se encontraron registros de salidas.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">No se encontraron registros de ventas o salidas.</td></tr>`;
         }
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #ef4444;">Error al cargar las salidas.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #ef4444;">Error al cargar el historial de ventas.</td></tr>`;
     }
 }
 
@@ -248,7 +238,7 @@ function filtrarTablaSalidas() {
 
 async function enviarRegistroSalida(event) {
     if (event) event.preventDefault();
-    if (typeof mostrarSpinner === "function") mostrarSpinner("Registrando salida y actualizando estado...");
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Registrando venta y actualizando inventario...");
 
     const sku = document.getElementById("inputSalidaSku").value.trim();
     const cantidad = document.getElementById("inputSalidaCantidad").value;
@@ -277,7 +267,7 @@ async function enviarRegistroSalida(event) {
         if (typeof ocultarSpinner === "function") ocultarSpinner();
 
         if (res && res.status === "success") {
-            alert(res.message || "✅ Salida registrada con éxito.");
+            alert(res.message || "✅ ¡Venta / Salida registrada con éxito!");
             document.getElementById("formRegistrarSalida").reset();
             document.getElementById("inputSalidaCantidad").value = "1";
             document.getElementById("inputSalidaCliente").value = "CONSUMIDOR FINAL";
@@ -289,11 +279,11 @@ async function enviarRegistroSalida(event) {
             const inputSku = document.getElementById("inputSalidaSku");
             if (inputSku) inputSku.focus();
         } else {
-            alert("Error: " + (res ? res.message : "No se pudo registrar la salida."));
+            alert("Error: " + (res ? res.message : "No se pudo registrar la venta."));
         }
     } catch (e) {
         if (typeof ocultarSpinner === "function") ocultarSpinner();
         console.error(e);
-        alert("⚠️ Error de conexión al registrar la salida.");
+        alert("⚠️ Error de conexión al registrar la venta.");
     }
 }
