@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo Independiente de Salidas (salidas.js)
- * Versión 100% Completa e Íntegra con Facturación, Contado, Crédito y Abonos - 2026
+ * Versión 100% Completa e Íntegra con Soporte para Código de Barras, Facturación, Contado, Crédito y Abonos - 2026
  */
 
 async function renderizarModuloSalidas(container) {
@@ -17,13 +17,13 @@ async function renderizarModuloSalidas(container) {
                     <strong id="lblFacturaSugerida" style="color: #2563eb; font-size: 0.95rem;">FAC-00001</strong>
                 </div>
             </div>
-            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Registre la salida de joyas por venta, garantía, traslado, contado, crédito o sistema de abono.</p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Escanee el código de barras o digite el SKU para registrar la venta, garantía, traslado o abono.</p>
             
             <form id="formRegistrarSalida" onsubmit="enviarRegistroSalida(event)">
                 <div style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1.5fr; gap: 15px; margin-bottom: 15px;">
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU o Código de Producto *</label>
-                        <input type="text" id="inputSalidaSku" required placeholder="Ej: AN5000 o Escaneo..." oninput="manejarInputSalida(event)" onpaste="setTimeout(enviarRegistroSalidaDirecto, 50)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras / SKU *</label>
+                        <input type="text" id="inputSalidaSku" required placeholder="Escanee o digite código..." oninput="manejarInputSalida(event)" onpaste="setTimeout(enviarRegistroSalidaDirecto, 50)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Cantidad *</label>
