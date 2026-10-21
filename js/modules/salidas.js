@@ -1,6 +1,6 @@
 /**
  * MANU JOYEROS - Módulo Independiente de Salidas (salidas.js)
- * Versión Completa e Íntegra con Soporte para Código de Barras, Facturación, Contado, Crédito y Abonos - 2026
+ * Versión 100% Completa e Íntegra con Facturación, Contado, Crédito y Abonos - 2026
  */
 
 async function renderizarModuloSalidas(container) {
@@ -17,53 +17,53 @@ async function renderizarModuloSalidas(container) {
                     <strong id="lblFacturaSugerida" style="color: #2563eb; font-size: 0.95rem;">FAC-00001</strong>
                 </div>
             </div>
-            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Escanee el código de barras o digite el SKU para registrar la venta o salida de mercancía.</p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Registre la salida de joyas por venta, garantía, traslado, contado, crédito o sistema de abono.</p>
             
             <form id="formRegistrarSalida" onsubmit="enviarRegistroSalida(event)">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1.5fr; gap: 15px; margin-bottom: 15px;">
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Código de Barras / SKU *</label>
-                        <input type="text" id="inputSalidaSku" required placeholder="Escanee o digite código..." oninput="manejarInputSalida(event)" onpaste="setTimeout(enviarRegistroSalidaDirecto, 50)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">SKU o Código de Producto *</label>
+                        <input type="text" id="inputSalidaSku" required placeholder="Ej: AN5000 o Escaneo..." oninput="manejarInputSalida(event)" onpaste="setTimeout(enviarRegistroSalidaDirecto, 50)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
                     </div>
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Cantidad *</label>
                         <input type="number" id="inputSalidaCantidad" min="1" value="1" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Nro. de Factura / Referencia *</label>
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Nro. de Factura *</label>
                         <input type="text" id="inputSalidaFactura" required placeholder="Ej: FAC-00125" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-weight: bold; color: #0f172a;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Modalidad de Pago *</label>
+                        <select id="inputSalidaModalidadPago" onchange="actualizarCamposModalidadPago()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-weight: bold; color: #0f172a;">
+                            <option value="CONTADO">💵 Contado</option>
+                            <option value="CREDITO">📋 Crédito</option>
+                            <option value="ABONO">💳 Sistema de Abono</option>
+                        </select>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Modalidad de Pago *</label>
-                        <select id="inputSalidaModalidadPago" onchange="actualizarCamposModalidadPago()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
-                            <option value="CONTADO">💵 Contado</option>
-                            <option value="CREDITO">📋 Crédito Directo</option>
-                            <option value="ABONO">💳 Sistema de Abonos</option>
-                        </select>
-                    </div>
+                <div style="display: grid; grid-template-columns: 1.5fr 1.5fr 1fr 2fr; gap: 15px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <div>
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Cliente / Comprador *</label>
-                        <input type="text" id="inputSalidaCliente" value="CONSUMIDOR FINAL" placeholder="Nombre del cliente" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                        <input type="text" id="inputSalidaCliente" value="CONSUMIDOR FINAL" placeholder="Nombre del cliente" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
                     </div>
                     <div id="contenedorMontoAbono" style="display: none;">
                         <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #d97706; margin-bottom: 4px;">Abono Inicial ($)</label>
-                        <input type="text" id="inputSalidaAbono" value="0" oninput="formatearEntradaMonedaSalida(this)" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-weight: bold;">
+                        <input type="text" id="inputSalidaAbono" value="0" oninput="formatearEntradaMonedaSalida(this)" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-weight: bold;">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Motivo / Operación *</label>
-                        <input type="text" id="inputSalidaMotivo" required placeholder="Ej: Venta directa / Garantía" value="Venta Directa" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; background: white;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Motivo / Referencia *</label>
+                        <input type="text" id="inputSalidaMotivo" required placeholder="Ej: Venta directa" value="Venta Directa" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Observaciones</label>
+                        <input type="text" id="inputSalidaObservaciones" placeholder="Detalles adicionales..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white;">
                     </div>
                 </div>
 
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-size: 0.8rem; font-weight: bold; color: #334155; margin-bottom: 4px;">Observaciones</label>
-                    <input type="text" id="inputSalidaObservaciones" placeholder="Detalles adicionales, garantía o notas de entrega..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none;">
-                </div>
                 <div style="text-align: right;">
-                    <button type="submit" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer;">Registrar Salida / Venta</button>
+                    <button type="submit" style="background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);">Registrar Salida / Venta</button>
                 </div>
             </form>
         </div>
