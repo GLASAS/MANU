@@ -50,12 +50,13 @@ async function renderizarModuloProductos(container) {
                             ` : ''}
                             <th style="padding: 10px;">Venta Final</th>
                             <th style="padding: 10px;">Ubicación</th>
+                            <th style="padding: 10px; text-align: center;">Foto</th>
                             <th style="padding: 10px; text-align: center;">Etiqueta</th>
                             ${esAdmin ? `<th style="padding: 10px; text-align: center;">Acciones</th>` : ''}
                         </tr>
                     </thead>
                     <tbody id="tablaProductosBody">
-                        <tr><td colspan="${esAdmin ? '14' : '9'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
+                        <tr><td colspan="${esAdmin ? '14' : '10'}" style="text-align: center; padding: 30px; color: #64748b;">Cargando inventario...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -210,7 +211,7 @@ async function cargarListaProductos() {
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
     );
-    const colspanVal = esAdmin ? '14' : '9';
+    const colspanVal = esAdmin ? '14' : '10';
 
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
@@ -255,7 +256,7 @@ function renderizarTablaProductosAdmin() {
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
     );
-    const colspanVal = esAdmin ? '14' : '9';
+    const colspanVal = esAdmin ? '14' : '10';
 
     const tbody = document.getElementById("tablaProductosBody");
     if (!tbody) return;
@@ -326,12 +327,19 @@ function renderizarTablaProductosAdmin() {
                 <td style="padding: 10px; color: #475569;">${material}</td>
                 <td style="padding: 10px;">${pesoItem.toFixed(2)}g</td>
                 ${esAdmin ? `
-                    <td style="padding: 10px; color: #0f172a;">$${costoOroItem.toLocaleString()}</td> <td style="padding: 10px; color: #0f172a;">$${Math.round(valPiedra).toLocaleString()}</td>
+                    <td style="padding: 10px; color: #0f172a;">$${costoOroItem.toLocaleString()}</td> 
+                    <td style="padding: 10px; color: #0f172a;">$${Math.round(valPiedra).toLocaleString()}</td>
                     <td style="padding: 10px;">${margen}%</td>
                     <td style="padding: 10px;">${descBadge}</td>
                 ` : ''}
                 <td style="padding: 10px; font-weight: bold; color: #059669;">$${valorVentaFinal.toLocaleString()}</td>
                 <td style="padding: 10px; color: #64748b;">${ubicacion}</td>
+                
+                <!-- BOTÓN DE FOTO PARA CUALQUIER ROL (ADMIN Y VENDEDORAS) -->
+                <td style="padding: 10px; text-align: center;">
+                    <button type="button" onclick="abrirModalFotoRapida('${sku}')" style="background: #0284c7; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;" title="Subir o Actualizar Foto">📸 Foto</button>
+                </td>
+
                 <td style="padding: 10px; text-align: center;">
                     <button type="button" onclick="abrirEtiquetaProducto('${sku}', '${nombre.replace(/'/g, "\\'")}', '${valorVentaFinal.toLocaleString()}', '${codigoBarra}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="Generar Código de Barras">🏷️</button>
                 </td>
@@ -896,4 +904,152 @@ function descargarImagenPng(imgId, nombreArchivo) {
         link.click();
     };
     imageObj.src = img.src;
+}
+
+// ========================================================
+// MÓDULO RÁPIDO DE FOTOS (ACCESIBLE PARA VENDEDORAS)
+// ========================================================
+
+function abrirModalFotoRapida(sku) {
+    const prod = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === sku.toUpperCase());
+    if (!prod) {
+        alert("Producto no encontrado en caché.");
+        return;
+    }
+
+    let modalID = "modalFotoRapidaJoya";
+    let modalDiv = document.getElementById(modalID);
+
+    if (!modalDiv) {
+        modalDiv = document.createElement("div");
+        modalDiv.id = modalID;
+        modalDiv.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:9999; padding: 15px;";
+        document.body.appendChild(modalDiv);
+    } else {
+        modalDiv.style.display = "flex";
+    }
+
+    let fotoActual = prod.Foto || prod.foto || "";
+    let nombre = prod.Nombre || prod.nombre || "";
+
+    modalDiv.innerHTML = `
+        <div style="background:white; padding:25px; border-radius:12px; max-width:400px; width:100%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:#0f172a; font-size:1.1rem;">📸 Foto: ${sku}</h3>
+                <button type="button" onclick="cerrarModalFotoRapida()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">${nombre}</p>
+
+            <div style="width:100%; height:180px; background:#f1f5f9; border-radius:8px; border:1px solid #cbd5e1; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:15px;">
+                <img id="imgPreviewFotoRapida" src="${fotoActual || 'https://via.placeholder.com/180?text=Sin+Foto'}" style="width:100%; height:100%; object-fit:contain;" alt="Vista previa">
+            </div>
+
+            <input type="hidden" id="inputSkuFotoRapida" value="${sku}">
+            <input type="hidden" id="inputBase64FotoRapida" value="${fotoActual}">
+
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <input type="file" id="fileGaleriaRapida" accept="image/*" style="display:none;" onchange="procesarFotoRapida(this)">
+                <input type="file" id="fileCamaraRapida" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoRapida(this)">
+                
+                <button type="button" onclick="document.getElementById('fileGaleriaRapida').click()" style="flex:1; background:#0284c7; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">📁 Galería</button>
+                <button type="button" onclick="document.getElementById('fileCamaraRapida').click()" style="flex:1; background:#0d9488; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.85rem;">📸 Cámara</button>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" onclick="cerrarModalFotoRapida()" style="padding:8px 16px; background:#e2e8f0; border:none; border-radius:6px; cursor:pointer;">Cancelar</button>
+                <button type="button" onclick="guardarFotoRapida()" style="padding:8px 20px; background:#059669; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">💾 Guardar Foto</button>
+            </div>
+        </div>
+    `;
+}
+
+function cerrarModalFotoRapida() {
+    const modal = document.getElementById("modalFotoRapidaJoya");
+    if (modal) modal.style.display = "none";
+}
+
+function procesarFotoRapida(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (typeof mostrarSpinner === "function") mostrarSpinner("Optimizando foto...");
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 500;
+                if (width > height && width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
+                document.getElementById("inputBase64FotoRapida").value = dataUrl;
+                document.getElementById("imgPreviewFotoRapida").src = dataUrl;
+
+                if (typeof ocultarSpinner === "function") ocultarSpinner();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function guardarFotoRapida() {
+    const sku = document.getElementById("inputSkuFotoRapida").value;
+    const fotoBase64 = document.getElementById("inputBase64FotoRapida").value;
+
+    const prod = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === sku.toUpperCase());
+    if (!prod) {
+        alert("Producto no encontrado.");
+        return;
+    }
+
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Guardando foto del producto...");
+
+    try {
+        const res = await API.llamar("actualizarProducto", {
+            action: "actualizarProducto",
+            sku: sku,
+            sku_original: sku,
+            codigo_barra: prod.Codigo_Barra || prod.codigo_barra || "",
+            nombre: prod.Nombre || prod.nombre || "",
+            categoria: prod.ID_Categoria || prod.categoria || "ANILLOS",
+            material: prod.Material || prod.material || "ORO",
+            color: prod.Color || prod.color || "AMARILLO",
+            peso: Number(prod.Peso || prod.peso || 0),
+            valor_piedra: Number(prod.Valor_Piedra || prod.valor_piedra || 0),
+            valor_oro: Number(prod.Valor_Compra_Oro || prod.valor_compra_oro || 0),
+            valor_compra: Number(prod.Valor_Compra || prod.valor_compra || 0),
+            valor_venta: Number(prod.Valor_Venta || prod.valor_venta || 0),
+            porcentaje_venta: Number(prod.Porcentaje_Venta || prod.porcentaje_venta || 100),
+            tiene_descuento: Number(prod.Tiene_Descuento || prod.tiene_descuento || 0),
+            ubicacion: prod.ID_Ubicacion || prod.id_ubicacion || "CAJA FUERTE",
+            foto: fotoBase64
+        }, "POST");
+
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+
+        if (res && res.status === "success") {
+            alert("✅ ¡Foto actualizada correctamente!");
+            cerrarModalFotoRapida();
+            cargarListaProductos();
+        } else {
+            alert("Error: " + (res ? res.message : "No se pudo actualizar la foto."));
+        }
+    } catch (e) {
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+        console.error(e);
+        alert("⚠️ Error de conexión al actualizar la foto.");
+    }
 }
