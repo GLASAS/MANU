@@ -77,6 +77,21 @@
                     <div id="lblCertValorComercial" style="font-size: 1.5rem; font-weight: bold; color: #059669;">$0 COP</div>
                 </div>
 
+                <div class="cert-field" style="margin-bottom: 18px; text-align: left;">
+                    <div style="text-align: center; font-weight: 700; letter-spacing: 1px; font-size: 0.9rem; text-transform: uppercase; color: #0f172a; margin-bottom: 8px;">CERTIFICACIÓN</div>
+                    <p style="margin: 0 0 8px 0; font-size: 0.88rem; color: #334155; line-height: 1.5;">
+                        Por medio del presente documento, <strong id="lblCertEmpresaCertificacion">Manu Joyeros</strong> certifica que la pieza descrita ha sido diseñada y fabricada artesanalmente bajo estándares de alta joyería, utilizando materiales genuinos y procesos de calidad controlada.
+                    </p>
+                    <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #334155; line-height: 1.5;">
+                        Cada pieza es única y ha sido elaborada con dedicación y precisión artesanal.
+                    </p>
+                    <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 12px 0;">
+                    <div style="text-align: center; font-weight: 700; letter-spacing: 1px; font-size: 0.9rem; text-transform: uppercase; color: #0f172a; margin-bottom: 8px;">AUTENTICIDAD</div>
+                    <p style="margin: 0; font-size: 0.88rem; color: #334155; line-height: 1.5;">
+                        Este certificado garantiza la autenticidad de la pieza y su procedencia dentro de nuestra Joyería.
+                    </p>
+                </div>
+
                 <div class="cert-seal">
                     <strong>MANU JOYEROS</strong><br>
                     NIT: 902.078.370-8 • Tel: +57 (311) 888 6137<br>
@@ -100,9 +115,54 @@
     <script src="js/api.js"></script>
     <script>
         let valorOroDiaCert = 250000;
+        let nombreJoyaCert = "Manu Joyeros";
+
+        function extraerValorPiedraCert(prod) {
+            if (!prod || typeof prod !== "object") return 0;
+            const candidatos = [
+                prod.Valor_Piedra,
+                prod.valor_piedra,
+                prod.VALOR_PIEDRA,
+                prod.Valor_Compra_Piedra,
+                prod.valor_compra_piedra,
+                prod.VALOR_COMPRA_PIEDRA,
+                prod["Valor Compra Piedra"],
+                prod["valor compra piedra"],
+                prod.Piedra,
+                prod.piedra
+            ];
+            for (let val of candidatos) {
+                if (val !== undefined && val !== null && String(val).trim() !== "") {
+                    let limpio = String(val).replace(/[\$\s"]/g, "");
+                    if (limpio.includes(",") && limpio.includes(".")) {
+                        limpio = limpio.replace(/\./g, "").replace(",", ".");
+                    } else if (limpio.includes(",")) {
+                        const partes = limpio.split(",");
+                        if (partes[partes.length - 1].length === 3 && partes.length === 2) {
+                            limpio = limpio.replace(",", "");
+                        } else {
+                            limpio = limpio.replace(",", ".");
+                        }
+                    } else if (limpio.includes(".")) {
+                        const partes = limpio.split(".");
+                        if (partes.length > 2 || (partes.length === 2 && partes[1].length === 3)) {
+                            limpio = limpio.replace(/\./g, "");
+                        }
+                    }
+                    const num = parseFloat(limpio);
+                    if (!isNaN(num)) return num;
+                }
+            }
+            return 0;
+        }
 
         document.addEventListener("DOMContentLoaded", async () => {
             if (typeof CONFIG !== 'undefined') {
+                if (CONFIG.NOMBRE_EMPRESA) {
+                    nombreJoyaCert = CONFIG.NOMBRE_EMPRESA;
+                    const elCertEmpresa = document.getElementById("lblCertEmpresaCertificacion");
+                    if (elCertEmpresa) elCertEmpresa.textContent = nombreJoyaCert;
+                }
                 const elVer = document.getElementById("lblCertVersion");
                 if (elVer) {
                     elVer.textContent = `Versión ${CONFIG.VERSION} • ${CONFIG.NOMBRE_EMPRESA}`;
@@ -121,9 +181,10 @@
             try {
                 const skuBuscado = atob(token).trim();
 
+                const _ts = Date.now();
                 const [resOro, resProd] = await Promise.all([
-                    API.llamar("obtenerValorOroDia", {}, "GET"),
-                    API.llamar("obtenerProductos", {}, "GET")
+                    API.llamar("obtenerValorOroDia", { _ts: _ts }, "GET"),
+                    API.llamar("obtenerProductos", { _ts: _ts }, "GET")
                 ]);
 
                 if (resOro && resOro.status === "success" && resOro.valor_oro_dia) {
@@ -142,9 +203,12 @@
                         let pesoCrudo = producto.Peso || producto.peso || 0;
                         let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-                        let valPiedra = Number(producto.Valor_Piedra) || 0;
-                        let margen = Number(producto.Porcentaje_Venta) || 100;
-                        let descPct = Number(producto.Tiene_Descuento) || 0;
+                        let valPiedra = extraerValorPiedraCert(producto);
+                        let margenRaw = producto.Porcentaje_Venta !== undefined ? producto.Porcentaje_Venta : (producto.porcentaje_venta !== undefined ? producto.porcentaje_venta : 100);
+                        let margen = Number(margenRaw);
+                        if (isNaN(margen)) margen = 100;
+                        let descRaw = producto.Tiene_Descuento !== undefined ? producto.Tiene_Descuento : (producto.tiene_descuento !== undefined ? producto.tiene_descuento : 0);
+                        let descPct = Number(descRaw) || 0;
 
                         let baseVentaCalculada = valPiedra + (pesoItem * valorOroDiaCert);
                         let precioBaseConMargen = baseVentaCalculada * (1 + (margen / 100));
