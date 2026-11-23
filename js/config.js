@@ -10,7 +10,7 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V23.0950"
+  VERSION: "V23.1010"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -235,4 +235,5 @@ function copiarUrlQr() {
     navigator.clipboard.writeText(input.value);
     alert("¡Enlace del catálogo copiado al portapapeles!");
 }
+
 
