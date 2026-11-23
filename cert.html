@@ -57,8 +57,14 @@
         .cert-seal { text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 20px; color: #475569; font-size: 0.85rem; line-height: 1.5; }
         
         .no-print { text-align: center; margin-top: 20px; }
-        .btn-print { background: #0f172a; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2); transition: background 0.2s; }
+        .btn-actions-wrap { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .btn-print { background: #0f172a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2); transition: background 0.2s; }
         .btn-print:hover { background: #1e293b; }
+        .btn-pdf { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); transition: background 0.2s; }
+        .btn-pdf:hover { background: #1d4ed8; }
+        .btn-whatsapp { background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); transition: background 0.2s; }
+        .btn-whatsapp:hover { background: #15803d; }
+        .btn-pdf:disabled, .btn-whatsapp:disabled { opacity: 0.65; cursor: wait; }
 
         /* Valor comercial oculto */
         #boxValorComercial,
@@ -86,10 +92,10 @@
 
     <!-- SPINNER / MODAL GLOBAL DE CARGA -->
     <div id="modalSpinnerCert" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); max-width: 300px; width: 90%;">
+        <div style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); max-width: 320px; width: 90%;">
             <div style="width: 50px; height: 50px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: girarSpinner 0.8s linear infinite; margin: 0 auto 15px auto;"></div>
-            <h4 style="color: #0f172a; margin: 0; font-size: 1rem;">Cargando certificado...</h4>
-            <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Sincronizando autenticidad y valores.</p>
+            <h4 id="lblSpinnerTitulo" style="color: #0f172a; margin: 0; font-size: 1rem;">Cargando certificado...</h4>
+            <p id="lblSpinnerSubtitulo" style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Sincronizando autenticidad y valores.</p>
         </div>
     </div>
 
@@ -146,18 +152,202 @@
         </div>
 
         <div class="no-print" style="margin-top: 20px;">
-            <button class="btn-print" onclick="window.print()">🖨️ Imprimir Certificado</button>
+            <div class="btn-actions-wrap">
+                <button class="btn-pdf" id="btnGuardarPdf" onclick="guardarCertificadoPdf()">💾 Guardar PDF</button>
+                <button class="btn-whatsapp" id="btnEnviarWhatsApp" onclick="enviarCertificadoWhatsApp()">📲 Enviar por WhatsApp</button>
+                <button class="btn-print" onclick="imprimirCertificadoConSku()">🖨️ Imprimir</button>
+            </div>
             <div style="text-align: right; margin-top: 8px;">
                 <span id="lblCertVersion" style="font-size: 0.75rem; color: #94a3b8;">Versión • 840 MANU JOYEROS</span>
             </div>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script>
         let valorOroDiaCert = 250000;
         let nombreJoyaCert = "Manu Joyeros";
+        let skuParaArchivo = "SIN_SKU";
+        let nombrePiezaActual = "Joya Certificada";
+        let materialPiezaActual = "";
+        const tituloOriginalCert = "Certificado Digital de Autenticidad - MANU JOYEROS";
+
+        function construirBaseNombreArchivo(skuTexto, empresaTexto) {
+            const skuLimpio = String(skuTexto || "SIN_SKU")
+                .trim()
+                .replace(/[\\/:*?"<>|]/g, "")
+                .replace(/\s+/g, "_");
+            const empresaLimpia = String(empresaTexto || "MANU JOYEROS")
+                .trim()
+                .replace(/[\\/:*?"<>|]/g, "")
+                .replace(/\s+/g, " ");
+            return `Cert ${empresaLimpia} ${skuLimpio}`.trim();
+        }
+
+        function actualizarTituloPdf(skuTexto) {
+            skuParaArchivo = skuTexto || skuParaArchivo || "SIN_SKU";
+            document.title = construirBaseNombreArchivo(skuParaArchivo, nombreJoyaCert);
+        }
+
+        function imprimirCertificadoConSku() {
+            actualizarTituloPdf(skuParaArchivo);
+            window.print();
+        }
+
+        window.addEventListener("beforeprint", () => {
+            actualizarTituloPdf(skuParaArchivo);
+        });
+
+        window.addEventListener("afterprint", () => {
+            setTimeout(() => {
+                document.title = tituloOriginalCert;
+            }, 400);
+        });
+
+        function mostrarSpinnerCert(titulo, subtitulo) {
+            const spinner = document.getElementById("modalSpinnerCert");
+            const lblTit = document.getElementById("lblSpinnerTitulo");
+            const lblSub = document.getElementById("lblSpinnerSubtitulo");
+            if (lblTit) lblTit.textContent = titulo || "Procesando...";
+            if (lblSub) lblSub.textContent = subtitulo || "";
+            if (spinner) spinner.style.display = "flex";
+        }
+
+        function ocultarSpinnerCert() {
+            const spinner = document.getElementById("modalSpinnerCert");
+            if (spinner) spinner.style.display = "none";
+        }
+
+        function obtenerOpcionesPdf(nombreArchivo) {
+            return {
+                margin: [6, 6, 6, 6],
+                filename: nombreArchivo,
+                image: { type: "jpeg", quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: "#ffffff",
+                    scrollY: 0,
+                    ignoreElements: (el) => {
+                        return el.id === "boxValorComercial" || (el.classList && el.classList.contains("badge-descuento-cert"));
+                    }
+                },
+                jsPDF: {
+                    unit: "mm",
+                    format: "letter",
+                    orientation: "portrait"
+                },
+                pagebreak: { mode: ["avoid-all"] }
+            };
+        }
+
+        async function generarWorkerPdf(nombreArchivo) {
+            const contenedor = document.getElementById("certContainer");
+            if (!contenedor || typeof html2pdf === "undefined") {
+                throw new Error("html2pdf no disponible");
+            }
+            const cardClon = contenedor.cloneNode(true);
+            cardClon.style.boxShadow = "none";
+            cardClon.style.border = "1px solid #cbd5e1";
+            cardClon.style.maxWidth = "100%";
+
+            const boxValorClon = cardClon.querySelector("#boxValorComercial");
+            if (boxValorClon) boxValorClon.remove();
+            cardClon.querySelectorAll(".badge-descuento-cert").forEach(b => b.remove());
+
+            return html2pdf().set(obtenerOpcionesPdf(nombreArchivo)).from(cardClon);
+        }
+
+        async function guardarCertificadoPdf() {
+            const btnPdf = document.getElementById("btnGuardarPdf");
+            const nombreArchivo = `${construirBaseNombreArchivo(skuParaArchivo, nombreJoyaCert)}.pdf`;
+
+            try {
+                if (btnPdf) btnPdf.disabled = true;
+                mostrarSpinnerCert("Guardando PDF...", `Preparando ${nombreArchivo}`);
+                await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 100)));
+
+                if (typeof html2pdf !== "undefined") {
+                    const worker = await generarWorkerPdf(nombreArchivo);
+                    await worker.save();
+                } else {
+                    imprimirCertificadoConSku();
+                }
+            } catch (e) {
+                console.error("Error al guardar PDF:", e);
+                alert("No se pudo generar el PDF automáticamente. Se abrirá el diálogo de impresión para guardar como PDF.");
+                imprimirCertificadoConSku();
+            } finally {
+                ocultarSpinnerCert();
+                if (btnPdf) btnPdf.disabled = false;
+            }
+        }
+
+        function construirMensajeWhatsApp() {
+            const urlActual = window.location.href;
+            let mensaje = `✨ *Certificado de Autenticidad - ${nombreJoyaCert}* ✨\n`;
+            mensaje += `📌 *SKU:* ${skuParaArchivo}\n`;
+            mensaje += `💍 *Pieza:* ${nombrePiezaActual}\n`;
+            if (materialPiezaActual) {
+                mensaje += `🔹 *${materialPiezaActual}*\n`;
+            }
+            mensaje += `📄 *Ver certificado digital:* ${urlActual}`;
+            return mensaje;
+        }
+
+        async function enviarCertificadoWhatsApp() {
+            const btnWa = document.getElementById("btnEnviarWhatsApp");
+            const nombreArchivo = `${construirBaseNombreArchivo(skuParaArchivo, nombreJoyaCert)}.pdf`;
+            const textoWhatsApp = construirMensajeWhatsApp();
+
+            try {
+                if (btnWa) btnWa.disabled = true;
+
+                // Si el navegador soporta compartir archivos (móviles / navegadores compatibles), intenta compartir el PDF directamente
+                if (typeof html2pdf !== "undefined" && navigator.canShare) {
+                    mostrarSpinnerCert("Preparando PDF para WhatsApp...", "Generando archivo adjunto...");
+                    await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 100)));
+
+                    const worker = await generarWorkerPdf(nombreArchivo);
+                    const pdfBlob = await worker.output("blob");
+                    const archivoPdf = new File([pdfBlob], nombreArchivo, { type: "application/pdf" });
+
+                    if (navigator.canShare({ files: [archivoPdf] })) {
+                        ocultarSpinnerCert();
+                        await navigator.share({
+                            title: nombreArchivo,
+                            text: textoWhatsApp,
+                            files: [archivoPdf]
+                        });
+                        return;
+                    }
+                }
+
+                // En escritorio o navegadores sin soporte de compartir archivos: descarga el PDF y abre WhatsApp con el mensaje y enlace
+                if (typeof html2pdf !== "undefined") {
+                    mostrarSpinnerCert("Descargando PDF y abriendo WhatsApp...", `Guardando ${nombreArchivo}`);
+                    await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 100)));
+                    const worker = await generarWorkerPdf(nombreArchivo);
+                    await worker.save();
+                }
+
+                const urlWa = `https://wa.me/?text=${encodeURIComponent(textoWhatsApp)}`;
+                window.open(urlWa, "_blank", "noopener,noreferrer");
+            } catch (e) {
+                if (e && e.name === "AbortError") {
+                    return;
+                }
+                console.error("Error al enviar por WhatsApp:", e);
+                const urlWa = `https://wa.me/?text=${encodeURIComponent(textoWhatsApp)}`;
+                window.open(urlWa, "_blank", "noopener,noreferrer");
+            } finally {
+                ocultarSpinnerCert();
+                if (btnWa) btnWa.disabled = false;
+            }
+        }
 
         function extraerValorPiedraCert(prod) {
             if (!prod || typeof prod !== "object") return 0;
@@ -215,13 +405,16 @@
             const token = urlParams.get('token');
 
             if (!token) {
-                document.getElementById("modalSpinnerCert").style.display = "none";
+                ocultarSpinnerCert();
                 document.getElementById("lblCertNombre").textContent = "❌ Token de certificación no válido o ausente.";
                 return;
             }
 
             try {
                 const skuBuscado = atob(token).trim();
+                if (skuBuscado) {
+                    actualizarTituloPdf(skuBuscado);
+                }
 
                 const _ts = Date.now();
                 const [resOro, resProd] = await Promise.all([
@@ -238,7 +431,9 @@
 
                     if (producto) {
                         let sku = producto.SKU || producto.sku || "-";
+                        actualizarTituloPdf(sku);
                         let nombre = producto.Nombre || producto.nombre || "Joya Exclusiva MANU";
+                        nombrePiezaActual = nombre;
                         let material = producto.Material_Oro || producto.Material || producto.material || "ORO";
                         let color = producto.Color || producto.color || "";
                         
@@ -263,6 +458,7 @@
                         if (color) {
                             detalleTexto += ` • Color: ${color}`;
                         }
+                        materialPiezaActual = detalleTexto;
                         document.getElementById("lblCertDetallesMaterial").textContent = detalleTexto;
 
                         const contenedorPrecio = document.getElementById("lblCertValorComercial");
@@ -305,7 +501,7 @@
                 console.error(e);
                 document.getElementById("lblCertNombre").textContent = "❌ Error al procesar el código de certificación.";
             } finally {
-                document.getElementById("modalSpinnerCert").style.display = "none";
+                ocultarSpinnerCert();
             }
         });
     </script>
