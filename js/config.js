@@ -10,7 +10,7 @@ const CONFIG = {
   DIRECCION: "Calle 114 6A 92 Local 301",
   EDIFICIO_O_LOCAL: "Hacienda Santa Barbara",
   CIUDAD: "Bogotá D.C., Colombia",
-  VERSION: "V23.0940"
+  VERSION: "V23.0920"
 };
 
 let usuarioActual = JSON.parse(localStorage.getItem("usuario_manu")) || JSON.parse(localStorage.getItem("usuario_manu_joyeros")) || null;
@@ -72,10 +72,21 @@ function toggleSidebar() {
     if (overlay) overlay.classList.toggle("active");
 }
 
+function esUsuarioAdmin() {
+    const rol = usuarioActual && usuarioActual.rol ? String(usuarioActual.rol).trim().toUpperCase() : "";
+    return rol === "ADMIN" || rol === "ADMINISTRADOR";
+}
+
 async function cambiarVista(vista, event) {
     if (event) event.preventDefault();
     const contenedor = document.getElementById('contentBody');
     const tituloVista = document.getElementById('viewTitle');
+
+    const vistasSoloAdmin = ['inventario', 'actualizacion_oro', 'entradas', 'kardex', 'proveedores', 'usuarios'];
+    if (vistasSoloAdmin.includes(vista) && !esUsuarioAdmin()) {
+        alert("⛔ No tiene permisos para acceder a este módulo.");
+        return;
+    }
 
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
     if (event && event.currentTarget) event.currentTarget.classList.add('active');
@@ -224,5 +235,3 @@ function copiarUrlQr() {
     navigator.clipboard.writeText(input.value);
     alert("¡Enlace del catálogo copiado al portapapeles!");
 }
-
-
