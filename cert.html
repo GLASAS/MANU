@@ -77,10 +77,26 @@
             100% { transform: rotate(360deg); }
         }
 
+        @page {
+            size: letter portrait;
+            margin: 6mm;
+        }
+
         @media print {
-            body { background: white; padding: 0; }
+            html, body { background: white; padding: 0; margin: 0; display: block; min-height: auto; }
             .no-print { display: none !important; }
-            .cert-card { box-shadow: none; border: none; max-width: 100%; }
+            .cert-card { box-shadow: none; border: 1px solid #e2e8f0; max-width: 100%; border-radius: 10px; page-break-inside: avoid; break-inside: avoid; }
+            .cert-header { padding: 12px 14px; }
+            .cert-logo { max-width: 115px; padding: 4px; margin-bottom: 6px; }
+            .cert-title { font-size: 0.9rem; letter-spacing: 1.5px; }
+            .cert-body { padding: 12px 16px; }
+            .cert-img-container { height: 145px; margin-bottom: 10px; padding: 6px; }
+            .cert-field { padding: 8px 10px; }
+            .cert-legal-box { padding: 10px 12px; margin-bottom: 10px; }
+            .cert-section-heading { font-size: 0.78rem; margin-bottom: 4px; }
+            .cert-legal-text { font-size: 0.76rem; line-height: 1.32; margin-bottom: 5px; }
+            .cert-legal-divider { margin: 7px auto; }
+            .cert-seal { padding-top: 8px; margin-top: 8px; font-size: 0.74rem; line-height: 1.28; }
             #boxValorComercial,
             .badge-descuento-cert {
                 display: none !important;
@@ -198,9 +214,11 @@
 
         window.addEventListener("beforeprint", () => {
             actualizarTituloPdf(skuParaArchivo);
+            ajustarEscalaCertificadoUnaHoja();
         });
 
         window.addEventListener("afterprint", () => {
+            restaurarEscalaCertificadoUnaHoja();
             setTimeout(() => {
                 document.title = tituloOriginalCert;
             }, 400);
@@ -220,9 +238,34 @@
             if (spinner) spinner.style.display = "none";
         }
 
+        function ajustarEscalaCertificadoUnaHoja(elementoObjetivo) {
+            const el = elementoObjetivo || document.getElementById("certContainer");
+            if (!el) return;
+            el.style.transform = "";
+            el.style.transformOrigin = "";
+            el.style.marginBottom = "";
+            // Carta en vertical con márgenes de ~6mm equivale a ~980px de alto útil
+            const altoMaxUtil = 980;
+            const altoReal = el.scrollHeight;
+            if (altoReal > altoMaxUtil) {
+                const factor = Math.max(0.65, Number((altoMaxUtil / altoReal).toFixed(3)));
+                el.style.transformOrigin = "top center";
+                el.style.transform = `scale(${factor})`;
+                el.style.marginBottom = `${Math.round((altoReal * factor) - altoReal)}px`;
+            }
+        }
+
+        function restaurarEscalaCertificadoUnaHoja(elementoObjetivo) {
+            const el = elementoObjetivo || document.getElementById("certContainer");
+            if (!el) return;
+            el.style.transform = "";
+            el.style.transformOrigin = "";
+            el.style.marginBottom = "";
+        }
+
         function obtenerOpcionesPdf(nombreArchivo) {
             return {
-                margin: [6, 6, 6, 6],
+                margin: [5, 5, 5, 5],
                 filename: nombreArchivo,
                 image: { type: "jpeg", quality: 0.98 },
                 html2canvas: {
@@ -253,6 +296,20 @@
             cardClon.style.boxShadow = "none";
             cardClon.style.border = "1px solid #cbd5e1";
             cardClon.style.maxWidth = "100%";
+
+            const headerClon = cardClon.querySelector(".cert-header");
+            if (headerClon) headerClon.style.padding = "12px 14px";
+            const logoClon = cardClon.querySelector(".cert-logo");
+            if (logoClon) { logoClon.style.maxWidth = "110px"; logoClon.style.marginBottom = "6px"; }
+            const bodyClon = cardClon.querySelector(".cert-body");
+            if (bodyClon) bodyClon.style.padding = "12px 16px";
+            const imgBoxClon = cardClon.querySelector(".cert-img-container");
+            if (imgBoxClon) { imgBoxClon.style.height = "140px"; imgBoxClon.style.marginBottom = "10px"; }
+            const legalBoxClon = cardClon.querySelector(".cert-legal-box");
+            if (legalBoxClon) { legalBoxClon.style.padding = "10px 12px"; legalBoxClon.style.marginBottom = "10px"; }
+            cardClon.querySelectorAll(".cert-legal-text").forEach(p => { p.style.fontSize = "0.76rem"; p.style.lineHeight = "1.32"; p.style.marginBottom = "4px"; });
+            const sealClon = cardClon.querySelector(".cert-seal");
+            if (sealClon) { sealClon.style.paddingTop = "8px"; sealClon.style.marginTop = "8px"; sealClon.style.fontSize = "0.74rem"; sealClon.style.lineHeight = "1.28"; }
 
             const boxValorClon = cardClon.querySelector("#boxValorComercial");
             if (boxValorClon) boxValorClon.remove();
