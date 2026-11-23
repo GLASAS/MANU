@@ -92,6 +92,9 @@ async function cambiarVista(vista, event) {
     } else if (vista === 'productos') {
         if (tituloVista) tituloVista.textContent = "Catálogo de Productos";
         if (typeof renderizarModuloProductos === 'function') await renderizarModuloProductos(contenedor);
+    } else if (vista === 'consulta_rapida') {
+        if (tituloVista) tituloVista.textContent = "Consulta Rápida de Joyas";
+        if (typeof renderizarModuloConsulta === 'function') await renderizarModuloConsulta(contenedor);
     } else if (vista === 'inventario') {
         if (tituloVista) tituloVista.textContent = "Inventario y Arqueo";
         if (typeof renderizarModuloInventario === 'function') await renderizarModuloInventario(contenedor);
@@ -221,5 +224,3 @@ function copiarUrlQr() {
     navigator.clipboard.writeText(input.value);
     alert("¡Enlace del catálogo copiado al portapapeles!");
 }
-
-
