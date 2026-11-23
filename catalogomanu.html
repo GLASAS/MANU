@@ -270,6 +270,7 @@
 
                 if (resProd && resProd.status === "success" && resProd.data) {
                     productosGlobales = resProd.data;
+                    sincronizarCategoriasCatalogo(productosGlobales);
                     renderizarProductos(productosGlobales);
                 } else {
                     document.getElementById("catalogGrid").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444; font-weight: bold;">No se pudo cargar el inventario de joyas.</p>`;
@@ -280,14 +281,84 @@
             }
         }
 
-        function filtrarPorCategoria(categoria, event) {
-            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-            if (event && event.target) event.target.classList.add("active");
+        function obtenerIconoCategoria(catUpper) {
+            const mapaIconos = {
+                "TODOS": "✨",
+                "ANILLOS": "💍",
+                "CADENAS": "⛓️",
+                "ARETES": "💎",
+                "DIJES": "✨",
+                "PULSERAS": "🔗",
+                "CANDONGA": "⭕",
+                "CANDONGAS": "⭕",
+                "TOPOS": "✦"
+            };
+            return mapaIconos[catUpper] || "💠";
+        }
 
-            if (categoria === 'TODOS') {
+        function formatearEtiquetaCategoria(catUpper) {
+            if (!catUpper || catUpper === "TODOS") return "Todos";
+            const lower = catUpper.toLowerCase();
+            return lower.charAt(0).toUpperCase() + lower.slice(1);
+        }
+
+        function sincronizarCategoriasCatalogo(lista) {
+            const contenedor = document.getElementById("filtersContainer");
+            if (!contenedor || !Array.isArray(lista)) return;
+
+            const botonesExistentes = Array.from(contenedor.querySelectorAll(".filter-btn"));
+            const categoriasPresentes = new Set();
+
+            botonesExistentes.forEach((btn) => {
+                const onclickAttr = btn.getAttribute("onclick") || "";
+                const matchCat = onclickAttr.match(/filtrarPorCategoria\(\s*['"]([^'"]+)['"]/i);
+                const catBtn = (btn.dataset.categoria || (matchCat ? matchCat[1] : "")).trim().toUpperCase();
+                if (catBtn) {
+                    btn.dataset.categoria = catBtn;
+                    categoriasPresentes.add(catBtn);
+                }
+            });
+
+            const nuevasCategorias = new Set();
+            lista.forEach((p) => {
+                const rawCat = p.ID_Categoria || p.id_categoria || p.Categoria || p.categoria || "";
+                const catUpper = String(rawCat).trim().toUpperCase();
+                if (catUpper && catUpper !== "ID_CATEGORIA" && catUpper !== "TODOS" && !categoriasPresentes.has(catUpper)) {
+                    nuevasCategorias.add(catUpper);
+                }
+            });
+
+            nuevasCategorias.forEach((catUpper) => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "filter-btn";
+                btn.dataset.categoria = catUpper;
+                btn.textContent = `${obtenerIconoCategoria(catUpper)} ${formatearEtiquetaCategoria(catUpper)}`;
+                btn.addEventListener("click", (ev) => filtrarPorCategoria(catUpper, ev));
+                contenedor.appendChild(btn);
+                categoriasPresentes.add(catUpper);
+            });
+        }
+
+        function filtrarPorCategoria(categoria, event) {
+            const catUpper = String(categoria || "TODOS").trim().toUpperCase();
+            document.querySelectorAll(".filter-btn").forEach((b) => {
+                b.classList.remove("active");
+                const onclickAttr = b.getAttribute("onclick") || "";
+                const matchCat = onclickAttr.match(/filtrarPorCategoria\(\s*['"]([^'"]+)['"]/i);
+                const catBtn = (b.dataset.categoria || (matchCat ? matchCat[1] : "")).trim().toUpperCase();
+                if (catBtn === catUpper) {
+                    b.classList.add("active");
+                }
+            });
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add("active");
+            }
+
+            if (catUpper === 'TODOS') {
                 renderizarProductos(productosGlobales);
             } else {
-                const filtrados = productosGlobales.filter(p => String(p.ID_Categoria || p.categoria || "").trim().toUpperCase() === categoria);
+                const filtrados = productosGlobales.filter(p => String(p.ID_Categoria || p.id_categoria || p.Categoria || p.categoria || "").trim().toUpperCase() === catUpper);
                 renderizarProductos(filtrados);
             }
         }
