@@ -1,3 +1,92 @@
+function obtenerPrefijoCategoriaSku(categoria) {
+    const catValor = String(categoria || "").trim().toUpperCase();
+    if (!catValor) return "JO";
+    if (catValor.includes("CANDON")) return "CAN";
+    if (catValor.length >= 2) return catValor.substring(0, 2);
+    return catValor.padEnd(2, "X");
+}
+
+function obtenerSiguienteNumeroSkuPorPrefijo(prefijo, listaProductos, contadoresExtra = null) {
+    const pref = String(prefijo || "JO").trim().toUpperCase();
+    let maxNum = 0;
+
+    (listaProductos || []).forEach(p => {
+        const rawSku = String(p.SKU || p.sku || p.ID_Producto || p.id_producto || "").trim().toUpperCase();
+        if (!rawSku) return;
+        const match = rawSku.match(/^([A-Z]+?)0*([0-9]+)$/);
+        if (match) {
+            const skuPref = match[1];
+            const numVal = parseInt(match[2], 10);
+            if (skuPref === pref && !isNaN(numVal) && numVal > maxNum) {
+                maxNum = numVal;
+            }
+        }
+    });
+
+    if (contadoresExtra && typeof contadoresExtra[pref] === "number" && contadoresExtra[pref] > maxNum) {
+        maxNum = contadoresExtra[pref];
+    }
+
+    let siguiente = maxNum + 1;
+    let candidato = `${pref}${String(siguiente).padStart(5, "0")}`;
+
+    const existeEnLista = (cod) => (listaProductos || []).some(p => {
+        const s = String(p.SKU || p.sku || "").trim().toUpperCase();
+        return s === cod.toUpperCase();
+    });
+
+    while (existeEnLista(candidato)) {
+        siguiente++;
+        candidato = `${pref}${String(siguiente).padStart(5, "0")}`;
+    }
+
+    if (contadoresExtra) {
+        contadoresExtra[pref] = siguiente;
+    }
+
+    return candidato;
+}
+
+function extraerValorPiedraProducto(prod) {
+    if (!prod || typeof prod !== "object") return 0;
+    const candidatos = [
+        prod.Valor_Piedra,
+        prod.valor_piedra,
+        prod.VALOR_PIEDRA,
+        prod.Valor_Compra_Piedra,
+        prod.valor_compra_piedra,
+        prod.VALOR_COMPRA_PIEDRA,
+        prod["Valor Compra Piedra"],
+        prod["valor compra piedra"],
+        prod.Piedra,
+        prod.piedra
+    ];
+
+    for (let val of candidatos) {
+        if (val !== undefined && val !== null && String(val).trim() !== "") {
+            let limpio = String(val).replace(/[\$\s"]/g, "");
+            if (limpio.includes(",") && limpio.includes(".")) {
+                limpio = limpio.replace(/\./g, "").replace(",", ".");
+            } else if (limpio.includes(",")) {
+                const partes = limpio.split(",");
+                if (partes[partes.length - 1].length === 3 && partes.length === 2) {
+                    limpio = limpio.replace(",", "");
+                } else {
+                    limpio = limpio.replace(",", ".");
+                }
+            } else if (limpio.includes(".")) {
+                const partes = limpio.split(".");
+                if (partes.length > 2 || (partes.length === 2 && partes[1].length === 3)) {
+                    limpio = limpio.replace(/\./g, "");
+                }
+            }
+            const num = parseFloat(limpio);
+            if (!isNaN(num)) return num;
+        }
+    }
+    return 0;
+}
+
 /**
  * MANU JOYEROS - Módulo de Gestión de Productos y Catálogo (productos.js)
  * Versión 100% Completa e Íntegra - 2026
@@ -8,6 +97,16 @@ async function renderizarModuloProductos(container) {
         String(usuarioActual.rol || "").toUpperCase() === 'ADMIN' || 
         String(usuarioActual.rol || "").toUpperCase() === 'ADMINISTRADOR'
     );
+
+    const esVendedor = usuarioActual && (
+        String(usuarioActual.rol || "").toUpperCase() === 'VENDEDOR' || 
+        String(usuarioActual.rol || "").toUpperCase() === 'VENDEDORA'
+    );
+
+    if (esVendedor && !esAdmin) {
+        renderizarVistaVendedoraFotosContainer(container);
+        return;
+    }
 
     container.innerHTML = `
         <div class="card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
@@ -300,10 +399,7 @@ function renderizarTablaProductosAdmin() {
             (p.Costo !== undefined ? p.Costo : (p.costo !== undefined ? p.costo : 0)))))
         ) || 0;
 
-        let valPiedra = Number(
-            p.Valor_Piedra !== undefined ? p.Valor_Piedra : 
-            (p.valor_piedra !== undefined ? p.valor_piedra : 0)
-        ) || 0;
+        let valPiedra = extraerValorPiedraProducto(p);
 
         let margen = Number(p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100)) || 100;
         let descPct = Number(p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0)) || 0;
@@ -428,28 +524,9 @@ function generarSkuYBarraAutomatico() {
     if (!categoriaSelect) return;
 
     const catValor = categoriaSelect.value.trim().toUpperCase();
-    let prefijo = "JO";
-    if (catValor.includes("CANDON")) {
-        prefijo = "CAN";
-    } else if (catValor.length >= 2) {
-        prefijo = catValor.substring(0, 2);
-    }
-
+    const prefijo = obtenerPrefijoCategoriaSku(catValor);
     const lista = window.listaProductosCache || [];
-    const filtradosPrefijo = lista.filter(p => {
-        let s = String(p.SKU || p.sku || "").trim().toUpperCase();
-        return s.startsWith(prefijo);
-    });
-    
-    let siguienteNumero = filtradosPrefijo.length + 1;
-    let consecutivoStr = String(siguienteNumero).padStart(5, '0');
-    let skuGenerado = `${prefijo}${consecutivoStr}`;
-
-    while (lista.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
-        siguienteNumero++;
-        consecutivoStr = String(siguienteNumero).padStart(5, '0');
-        skuGenerado = `${prefijo}${consecutivoStr}`;
-    }
+    const skuGenerado = obtenerSiguienteNumeroSkuPorPrefijo(prefijo, lista);
 
     let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
 
@@ -530,11 +607,13 @@ async function guardarProductoInventario(event) {
     const valor_oro = obtenerValorNumericoMoneda(document.getElementById("prodCosto").value);
     const valor_compra = valor_oro + valor_piedra;
     
-    let valorOroActual = window.valorOroDelDiaCache || 250000;
-    let valor_venta = (valorOroActual * peso) + valor_piedra;
-
     const porcentaje_venta = Number(document.getElementById("prodMargen").value) || 100;
     const tiene_descuento = Number(document.getElementById("prodDescuento").value) || 0;
+
+    let valorOroActual = window.valorOroDelDiaCache || 250000;
+    let valorVentaBaseCalc = (valorOroActual * peso) + valor_piedra;
+    let precioBaseConMargen = valorVentaBaseCalc * (1 + (porcentaje_venta / 100));
+    let valor_venta = Math.round(precioBaseConMargen - (precioBaseConMargen * (tiene_descuento / 100)));
     const ubicacion = document.getElementById("prodUbicacion").value.trim();
     const foto = document.getElementById("prodFoto").value.trim();
 
@@ -552,6 +631,7 @@ async function guardarProductoInventario(event) {
             color: color,
             peso: Number(peso.toFixed(2)),
             valor_piedra: valor_piedra,
+            valor_compra_piedra: valor_piedra,
             valor_oro: valor_oro,
             valor_compra: valor_compra,
             valor_venta: valor_venta,
@@ -594,10 +674,7 @@ function editarProducto(sku) {
         (prod.Costo !== undefined ? prod.Costo : (prod.costo !== undefined ? prod.costo : 0)))))
     ) || 0;
 
-    let pValorPiedra = Number(
-        prod.Valor_Piedra !== undefined ? prod.Valor_Piedra : 
-        (prod.valor_piedra !== undefined ? prod.valor_piedra : 0)
-    ) || 0;
+    let pValorPiedra = extraerValorPiedraProducto(prod);
 
     const pMargen = Number(prod.Porcentaje_Venta !== undefined ? prod.Porcentaje_Venta : (prod.porcentaje_venta !== undefined ? prod.porcentaje_venta : 100)) || 100;
     const pDescuento = Number(prod.Tiene_Descuento !== undefined ? prod.Tiene_Descuento : (prod.tiene_descuento !== undefined ? prod.tiene_descuento : 0)) || 0;
@@ -654,10 +731,14 @@ function exportarProductosCSV() {
 
     window.listaProductosCache.forEach(p => {
         let valOro = Number(p.Valor_Compra_Oro || p.valor_compra_oro || p.Valor_Oro || p.valor_oro || p.Costo || p.costo) || 0;
-        let valPiedra = Number(p.Valor_Piedra || p.valor_piedra) || 0;
+        let valPiedra = extraerValorPiedraProducto(p);
         let pesoItem = parseFloat(String(p.Peso || p.peso || 0).replace(',', '.')) || 0;
+        let margenItem = Number(p.Porcentaje_Venta || p.porcentaje_venta || 100) || 100;
+        let descItem = Number(p.Tiene_Descuento || p.tiene_descuento || 0) || 0;
         let valorCompraTotal = valOro + valPiedra;
-        let valorVentaCalc = (valorOroActual * pesoItem) + valPiedra;
+        let baseCalcExp = (valorOroActual * pesoItem) + valPiedra;
+        let margenCalcExp = baseCalcExp * (1 + (margenItem / 100));
+        let valorVentaCalc = Math.round(margenCalcExp - (margenCalcExp * (descItem / 100)));
 
         csv += [
             p.ID_Producto || p.sku || "",
@@ -730,12 +811,13 @@ async function procesarArchivoCsvImportado() {
         let idxColor = headers.findIndex(h => h.includes('color'));
         let idxPeso = headers.findIndex(h => h.includes('peso'));
         let idxValorOro = headers.findIndex(h => h.includes('valor_oro') || h.includes('valor_compra_oro') || h.includes('costo'));
-        let idxValorPiedra = headers.findIndex(h => h.includes('valor_piedra'));
+        let idxValorPiedra = headers.findIndex(h => h.includes('piedra') || h.includes('valor_piedra') || h.includes('valor_compra_piedra'));
         let idxMargen = headers.findIndex(h => h.includes('porcentaje_venta') || h.includes('margen'));
         let idxDescuento = headers.findIndex(h => h.includes('tiene_descuento') || h.includes('descuento'));
         let idxUbicacion = headers.findIndex(h => h.includes('ubicacion') || h.includes('id_ubicacion'));
 
         let importadosCount = 0;
+        const contadoresPorPrefijoCsv = {};
         const listaActual = window.listaProductosCache || [];
 
         let limpiarMonto = (val) => {
@@ -776,37 +858,20 @@ async function procesarArchivoCsvImportado() {
             let valorPiedra = limpiarMonto(getVal(idxValorPiedra));
             let valorCompraTotal = valorOro + valorPiedra;
 
-            let valorOroActual = window.valorOroDelDiaCache || 250000;
-            let valorVentaCalc = (valorOroActual * peso) + valorPiedra;
-
             let margen = Number(getVal(idxMargen)) || 100;
             let descuento = Number(getVal(idxDescuento)) || 0;
+
+            let valorOroActual = window.valorOroDelDiaCache || 250000;
+            let baseCalcCsv = (valorOroActual * peso) + valorPiedra;
+            let margenCalcCsv = baseCalcCsv * (1 + (margen / 100));
+            let valorVentaCalc = Math.round(margenCalcCsv - (margenCalcCsv * (descuento / 100)));
             let ubicacion = getVal(idxUbicacion) || 'CAJA FUERTE';
 
             if (nombre) {
-                let prefijo = "JO";
-                if (categoria.includes("CANDON")) {
-                    prefijo = "CAN";
-                } else if (categoria.length >= 2) {
-                    prefijo = categoria.substring(0, 2);
-                }
-
-                const filtradosPrefijo = listaActual.filter(p => {
-                    let s = String(p.SKU || p.sku || "").trim().toUpperCase();
-                    return s.startsWith(prefijo);
-                });
-
+                let prefijo = obtenerPrefijoCategoriaSku(categoria);
                 let skuGenerado = skuCsv;
                 if (!skuGenerado) {
-                    let siguienteNumero = filtradosPrefijo.length + importadosCount + 1;
-                    let consecutivoStr = String(siguienteNumero).padStart(5, '0');
-                    skuGenerado = `${prefijo}${consecutivoStr}`;
-
-                    while (listaActual.some(p => String(p.SKU || p.sku || "").trim().toUpperCase() === skuGenerado.toUpperCase())) {
-                        siguienteNumero++;
-                        consecutivoStr = String(siguienteNumero).padStart(5, '0');
-                        skuGenerado = `${prefijo}${consecutivoStr}`;
-                    }
+                    skuGenerado = obtenerSiguienteNumeroSkuPorPrefijo(prefijo, listaActual, contadoresPorPrefijoCsv);
                 }
 
                 let codigoBarraUnico = Math.floor(7700000000000 + Math.random() * 999999999);
@@ -822,6 +887,7 @@ async function procesarArchivoCsvImportado() {
                         color: color,
                         peso: peso,
                         valor_piedra: valorPiedra,
+                        valor_compra_piedra: valorPiedra,
                         valor_oro: valorOro,
                         valor_compra: valorCompraTotal,
                         valor_venta: valorVentaCalc,
@@ -1028,7 +1094,8 @@ async function guardarFotoRapida() {
             material: prod.Material || prod.material || "ORO",
             color: prod.Color || prod.color || "AMARILLO",
             peso: Number(prod.Peso || prod.peso || 0),
-            valor_piedra: Number(prod.Valor_Piedra || prod.valor_piedra || 0),
+            valor_piedra: extraerValorPiedraProducto(prod),
+            valor_compra_piedra: extraerValorPiedraProducto(prod),
             valor_oro: Number(prod.Valor_Compra_Oro || prod.valor_compra_oro || 0),
             valor_compra: Number(prod.Valor_Compra || prod.valor_compra || 0),
             valor_venta: Number(prod.Valor_Venta || prod.valor_venta || 0),
@@ -1051,5 +1118,248 @@ async function guardarFotoRapida() {
         if (typeof ocultarSpinner === "function") ocultarSpinner();
         console.error(e);
         alert("⚠️ Error de conexión al actualizar la foto.");
+    }
+}
+
+async function renderizarVistaVendedoraFotosContainer(container) {
+    container.innerHTML = `
+        <div class="card" style="margin-bottom: 20px; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 5px;">
+                <div>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 1.2rem;">📸 Módulo de Carga y Actualización de Fotografías</h3>
+                    <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #64748b;">Busque el producto por SKU o nombre para subir o actualizar su fotografía. No tiene acceso a precios, costos ni edición de datos.</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" onclick="cargarListaProductosVendedora()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; cursor: pointer;" title="Actualizar Lista">🔄</button>
+                    <input type="text" id="buscadorVendedoraFotos" onkeyup="filtrarProductosVendedoraFotos()" placeholder="Buscar SKU, Nombre..." style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; width: 250px; font-size: 0.85rem;">
+                </div>
+            </div>
+        </div>
+
+        <div id="gridProductosVendedoraFotos" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b;">Cargando catálogo de productos...</div>
+        </div>
+    `;
+
+    await cargarListaProductosVendedora();
+}
+
+async function cargarListaProductosVendedora() {
+    if (typeof mostrarSpinner === "function") {
+        mostrarSpinner("Sincronizando productos...");
+    }
+
+    try {
+        const res = await API.llamar("obtenerProductos", {}, "GET");
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+
+        if (res && res.status === "success" && res.data) {
+            window.listaProductosCache = res.data;
+            window.listaProductosFiltradosCache = res.data;
+            renderizarCardsVendedoraFotos(res.data);
+        } else {
+            document.getElementById("gridProductosVendedoraFotos").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444; padding: 30px;">No se pudieron cargar los productos.</p>`;
+        }
+    } catch (e) {
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+        console.error(e);
+        document.getElementById("gridProductosVendedoraFotos").innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #ef4444; padding: 30px;">Error de conexión con el servidor.</p>`;
+    }
+}
+
+function filtrarProductosVendedoraFotos() {
+    const texto = document.getElementById("buscadorVendedoraFotos").value.trim().toLowerCase();
+    if (!window.listaProductosCache) return;
+
+    const filtrados = window.listaProductosCache.filter(p => {
+        let sku = String(p.SKU || p.sku || "").toLowerCase();
+        let nombre = String(p.Nombre || p.nombre || "").toLowerCase();
+        let barras = String(p.Codigo_Barra || p.codigo_barra || "").toLowerCase();
+        return sku.includes(texto) || nombre.includes(texto) || barras.includes(texto);
+    });
+
+    renderizarCardsVendedoraFotos(filtrados);
+}
+
+function renderizarCardsVendedoraFotos(lista) {
+    const grid = document.getElementById("gridProductosVendedoraFotos");
+    if (!grid) return;
+
+    if (!lista || lista.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 40px;">No hay productos coincidentes.</p>`;
+        return;
+    }
+
+    let html = "";
+    lista.forEach(p => {
+        let sku = p.SKU || p.sku || "-";
+        let nombre = p.Nombre || p.nombre || "Joya sin nombre";
+        let categoria = p.ID_Categoria || p.categoria || "-";
+        let ubicacion = p.ID_Ubicacion || p.ubicacion || "VITRINA";
+        let fotoActual = p.Foto || p.foto || "";
+
+        let historialKey = `historial_fotos_${sku}`;
+        let historial = [];
+        try {
+            historial = JSON.parse(localStorage.getItem(historialKey) || "[]");
+        } catch(err) {}
+
+        if (fotoActual && !historial.includes(fotoActual)) {
+            historial.unshift(fotoActual);
+            if (historial.length > 2) historial = historial.slice(0, 2);
+            localStorage.setItem(historialKey, JSON.stringify(historial));
+        }
+
+        let imgPreview1 = historial[0] || fotoActual || "https://via.placeholder.com/200?text=Sin+Foto";
+        let imgPreview2 = historial[1] || "";
+
+        html += `
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="background: #0f172a; color: white; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;">SKU: ${sku}</span>
+                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">${categoria}</span>
+                </div>
+
+                <div style="font-weight: 600; color: #0f172a; font-size: 0.95rem; line-height: 1.3; min-height: 38px;">${nombre}</div>
+                
+                <div style="font-size: 0.78rem; color: #64748b;">Ubicación: <strong>${ubicacion}</strong></div>
+
+                <div style="display: flex; gap: 8px; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="flex: 1; text-align: center;">
+                        <span style="display: block; font-size: 0.65rem; color: #64748b; margin-bottom: 4px; font-weight: bold;">Foto Actual (Última)</span>
+                        <div style="width: 100%; height: 110px; background: white; border-radius: 6px; border: 1px solid #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <img src="${imgPreview1}" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto Actual">
+                        </div>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <span style="display: block; font-size: 0.65rem; color: #64748b; margin-bottom: 4px; font-weight: bold;">Foto Anterior (2da)</span>
+                        <div style="width: 100%; height: 110px; background: white; border-radius: 6px; border: 1px solid #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            ${imgPreview2 ? `<img src="${imgPreview2}" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer;" onclick="abrirZoomImagenSrc(this.src)" alt="Foto Anterior">` : `<span style="font-size: 0.75rem; color: #94a3b8;">Sin registro previo</span>`}
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="inputFotoBase64_${sku}" value="${fotoActual}">
+                
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="file" id="fileGaleria_${sku}" accept="image/*" style="display:none;" onchange="procesarFotoVendedora(this, '${sku}')">
+                    <input type="file" id="fileCamara_${sku}" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoVendedora(this, '${sku}')">
+                    
+                    <button type="button" onclick="document.getElementById('fileGaleria_${sku}').click();" style="flex: 1; background: #0284c7; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: bold;" title="Seleccionar de Galería">📁 Galería</button>
+                    <button type="button" onclick="document.getElementById('fileCamara_${sku}').click();" style="flex: 1; background: #0d9488; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: bold;" title="Tomar Foto con Cámara">📸 Cámara</button>
+                </div>
+
+                <button type="button" onclick="guardarFotoVendedora('${sku}')" style="background: #059669; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; width: 100%;">💾 Subir / Actualizar Foto</button>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
+
+function procesarFotoVendedora(input, sku) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (typeof mostrarSpinner === "function") mostrarSpinner("Optimizando foto...");
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+                const maxDim = 500;
+                if (width > height && width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.65);
+                document.getElementById(`inputFotoBase64_${sku}`).value = dataUrl;
+
+                if (typeof ocultarSpinner === "function") ocultarSpinner();
+                alert("✅ Foto cargada temporalmente. Haga clic en 'Subir / Actualizar Foto' para guardarla.");
+            };
+            img.onerror = function() {
+                if (typeof ocultarSpinner === "function") ocultarSpinner();
+                alert("⚠️ No se pudo procesar la imagen.");
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function guardarFotoVendedora(sku) {
+    const inputFoto = document.getElementById(`inputFotoBase64_${sku}`);
+    if (!inputFoto || !inputFoto.value) {
+        alert("⚠️ Por favor seleccione o capture una foto primero.");
+        return;
+    }
+
+    const prod = (window.listaProductosCache || []).find(p => String(p.SKU || p.sku || "").trim().toUpperCase() === sku.toUpperCase());
+    if (!prod) {
+        alert("❌ No se encontró el producto.");
+        return;
+    }
+
+    if (typeof mostrarSpinner === "function") mostrarSpinner("Actualizando fotografía en el sistema...");
+
+    const valPiedraActual = extraerValorPiedraProducto(prod);
+
+    try {
+        const res = await API.llamar("actualizarProducto", {
+            action: "actualizarProducto",
+            sku: sku,
+            sku_original: sku,
+            codigo_barra: prod.Codigo_Barra || prod.codigo_barra || sku,
+            nombre: prod.Nombre || prod.nombre || "",
+            categoria: prod.ID_Categoria || prod.categoria || "ANILLOS",
+            material: prod.Material || prod.material || "ORO",
+            color: prod.Color || prod.color || "",
+            peso: Number(prod.Peso || prod.peso || 0),
+            valor_piedra: valPiedraActual,
+            valor_compra_piedra: valPiedraActual,
+            valor_oro: Number(prod.Valor_Compra_Oro || prod.valor_oro || 0),
+            valor_compra: Number(prod.Valor_Compra || 0),
+            valor_venta: Number(prod.Valor_Venta || 0),
+            porcentaje_venta: Number(prod.Porcentaje_Venta || 100),
+            tiene_descuento: Number(prod.Tiene_Descuento || 0),
+            ubicacion: prod.ID_Ubicacion || prod.ubicacion || "",
+            foto: inputFoto.value
+        }, "POST");
+
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+
+        if (res && res.status === "success") {
+            alert("✅ ¡Fotografía actualizada con éxito!");
+            
+            let historialKey = `historial_fotos_${sku}`;
+            let historial = [];
+            try { historial = JSON.parse(localStorage.getItem(historialKey) || "[]"); } catch(e) {}
+            if (!historial.includes(inputFoto.value)) {
+                historial.unshift(inputFoto.value);
+                if (historial.length > 2) historial = historial.slice(0, 2);
+                localStorage.setItem(historialKey, JSON.stringify(historial));
+            }
+
+            prod.Foto = inputFoto.value;
+            prod.foto = inputFoto.value;
+            renderizarCardsVendedoraFotos(window.listaProductosFiltradosCache || window.listaProductosCache);
+        } else {
+            alert("Error: " + (res ? res.message : "No se pudo actualizar la fotografía."));
+        }
+    } catch(err) {
+        if (typeof ocultarSpinner === "function") ocultarSpinner();
+        console.error(err);
+        alert("⚠️ Error de conexión o tamaño de imagen excedido. Intente con una foto más ligera.");
     }
 }
