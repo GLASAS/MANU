@@ -256,9 +256,10 @@
             mostrarSpinner("Sincronizando catálogo digital...");
 
             try {
+                const _ts = Date.now();
                 const [resOro, resProd] = await Promise.all([
-                    API.llamar("obtenerValorOroDia", {}, "GET"),
-                    API.llamar("obtenerProductos", {}, "GET")
+                    API.llamar("obtenerValorOroDia", { _ts: _ts }, "GET"),
+                    API.llamar("obtenerProductos", { _ts: _ts }, "GET")
                 ]);
 
                 ocultarSpinner();
@@ -291,6 +292,45 @@
             }
         }
 
+        function extraerValorPiedraCatalogo(prod) {
+            if (!prod || typeof prod !== "object") return 0;
+            const candidatos = [
+                prod.Valor_Piedra,
+                prod.valor_piedra,
+                prod.VALOR_PIEDRA,
+                prod.Valor_Compra_Piedra,
+                prod.valor_compra_piedra,
+                prod.VALOR_COMPRA_PIEDRA,
+                prod["Valor Compra Piedra"],
+                prod["valor compra piedra"],
+                prod.Piedra,
+                prod.piedra
+            ];
+            for (let val of candidatos) {
+                if (val !== undefined && val !== null && String(val).trim() !== "") {
+                    let limpio = String(val).replace(/[\$\s"]/g, "");
+                    if (limpio.includes(",") && limpio.includes(".")) {
+                        limpio = limpio.replace(/\./g, "").replace(",", ".");
+                    } else if (limpio.includes(",")) {
+                        const partes = limpio.split(",");
+                        if (partes[partes.length - 1].length === 3 && partes.length === 2) {
+                            limpio = limpio.replace(",", "");
+                        } else {
+                            limpio = limpio.replace(",", ".");
+                        }
+                    } else if (limpio.includes(".")) {
+                        const partes = limpio.split(".");
+                        if (partes.length > 2 || (partes.length === 2 && partes[1].length === 3)) {
+                            limpio = limpio.replace(/\./g, "");
+                        }
+                    }
+                    const num = parseFloat(limpio);
+                    if (!isNaN(num)) return num;
+                }
+            }
+            return 0;
+        }
+
         function renderizarProductos(lista) {
             const grid = document.getElementById("catalogGrid");
             if (!lista || lista.length === 0) {
@@ -308,9 +348,12 @@
                 let pesoCrudo = p.Peso || p.peso || 0;
                 let pesoItem = parseFloat(String(pesoCrudo).replace(',', '.')) || 0;
 
-                let valPiedra = Number(p.Valor_Piedra) || 0;
-                let margen = Number(p.Porcentaje_Venta) || 100;
-                let descPct = Number(p.Tiene_Descuento) || 0;
+                let valPiedra = extraerValorPiedraCatalogo(p);
+                let margenRaw = p.Porcentaje_Venta !== undefined ? p.Porcentaje_Venta : (p.porcentaje_venta !== undefined ? p.porcentaje_venta : 100);
+                let margen = Number(margenRaw);
+                if (isNaN(margen)) margen = 100;
+                let descRaw = p.Tiene_Descuento !== undefined ? p.Tiene_Descuento : (p.tiene_descuento !== undefined ? p.tiene_descuento : 0);
+                let descPct = Number(descRaw) || 0;
 
                 let baseVentaCalculada = valPiedra + (pesoItem * valorOroDiaGlobal);
                 let precioBase = baseVentaCalculada * (1 + (margen / 100));
@@ -400,6 +443,12 @@
 
             grid.innerHTML = html;
         }
+
+        window.addEventListener("pageshow", function(event) {
+            if (event.persisted && document.getElementById("catalogGrid")) {
+                cargarDatosCatalogo();
+            }
+        });
     </script>
 </body>
 </html>
